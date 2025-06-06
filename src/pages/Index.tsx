@@ -2,14 +2,18 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Users, Calendar, TrendingUp } from "lucide-react";
+import { PlusCircle, Users, Calendar, TrendingUp, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import AddExpenseForm from "@/components/AddExpenseForm";
 import UsersList from "@/components/UsersList";
 import DashboardStats from "@/components/DashboardStats";
 import ExpenseHistory from "@/components/ExpenseHistory";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const { profile, signOut } = useAuth();
 
   const handleExpenseAdded = () => {
     setRefreshTrigger(prev => prev + 1);
@@ -18,13 +22,29 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 p-4">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-orange-800 mb-2 flex items-center justify-center gap-2">
-            🧡 Canteen Buddy
-          </h1>
-          <p className="text-orange-600">Digital expense tracking for your canteen</p>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center">
+            <h1 className="text-4xl font-bold text-orange-800 mr-3">
+              🧡 Canteen Buddy
+            </h1>
+            {profile && (
+              <Badge variant="secondary" className="text-sm">
+                {profile.role.charAt(0).toUpperCase() + profile.role.slice(1)}
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center">
+            {profile && (
+              <span className="text-orange-700 mr-4">
+                Welcome, {profile.username}
+              </span>
+            )}
+            <Button variant="outline" size="sm" onClick={signOut} className="flex items-center gap-2">
+              <LogOut className="w-4 h-4" /> Sign Out
+            </Button>
+          </div>
         </div>
-
+        
         <Tabs defaultValue="add-expense" className="w-full">
           <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="add-expense" className="flex items-center gap-2">
