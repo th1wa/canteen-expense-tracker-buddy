@@ -2,13 +2,14 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Users, Calendar, TrendingUp, LogOut } from "lucide-react";
+import { PlusCircle, Users, Calendar, TrendingUp, LogOut, Cloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import AddExpenseForm from "@/components/AddExpenseForm";
 import UsersList from "@/components/UsersList";
 import DashboardStats from "@/components/DashboardStats";
 import ExpenseHistory from "@/components/ExpenseHistory";
+import GoogleDriveBackup from "@/components/GoogleDriveBackup";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -48,7 +49,7 @@ const Index = () => {
         </div>
         
         <Tabs defaultValue="add-expense" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsList className="grid w-full grid-cols-5 mb-6">
             <TabsTrigger value="add-expense" className="flex items-center gap-2">
               <PlusCircle className="w-4 h-4" />
               Add Expense
@@ -64,6 +65,10 @@ const Index = () => {
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
               Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="backup" className="flex items-center gap-2">
+              <Cloud className="w-4 h-4" />
+              Backup
             </TabsTrigger>
           </TabsList>
 
@@ -119,6 +124,20 @@ const Index = () => {
               </CardHeader>
               <CardContent>
                 <DashboardStats refreshTrigger={refreshTrigger} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="backup">
+            <Card>
+              <CardHeader>
+                <CardTitle>Google Drive Backup & Export</CardTitle>
+                <CardDescription>
+                  Backup your data to Google Drive and manage existing backups
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <GoogleDriveBackup />
               </CardContent>
             </Card>
           </TabsContent>
