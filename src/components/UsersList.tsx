@@ -47,9 +47,9 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
 
       if (expensesError) throw expensesError;
 
-      // Fetch payments
+      // Fetch payments using type assertion
       const { data: payments, error: paymentsError } = await supabase
-        .from('payments')
+        .from('payments' as any)
         .select('*')
         .order('user_name');
 
@@ -77,7 +77,7 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
       });
 
       // Process payments
-      payments?.forEach(payment => {
+      payments?.forEach((payment: any) => {
         const userName = payment.user_name;
         if (userMap.has(userName)) {
           const user = userMap.get(userName)!;

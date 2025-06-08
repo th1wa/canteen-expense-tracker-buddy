@@ -69,7 +69,7 @@ const PaymentModal = ({
 
     try {
       const { error } = await supabase
-        .from('payments')
+        .from('payments' as any)
         .insert([
           {
             user_name: userName,
