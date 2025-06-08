@@ -9,6 +9,7 @@ import AddExpenseForm from "@/components/AddExpenseForm";
 import UsersList from "@/components/UsersList";
 import DashboardStats from "@/components/DashboardStats";
 import ExpenseHistory from "@/components/ExpenseHistory";
+import ThemeToggle from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
@@ -20,11 +21,11 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 dark:from-gray-900 dark:to-gray-800 p-4 transition-colors">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center">
-            <h1 className="text-4xl font-bold text-orange-800 mr-3">
+            <h1 className="text-4xl font-bold text-orange-800 dark:text-orange-200 mr-3">
               🧡 Canteen Buddy
             </h1>
             {profile && (
@@ -33,12 +34,13 @@ const Index = () => {
               </Badge>
             )}
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center gap-3">
             {profile && (
-              <span className="text-orange-700 mr-4">
+              <span className="text-orange-700 dark:text-orange-300 mr-2">
                 Welcome, {profile.username}
               </span>
             )}
+            <ThemeToggle />
             <Button variant="outline" size="sm" onClick={signOut} className="flex items-center gap-2">
               <LogOut className="w-4 h-4" /> Sign Out
             </Button>
@@ -82,9 +84,9 @@ const Index = () => {
           <TabsContent value="users">
             <Card>
               <CardHeader>
-                <CardTitle>Users & Their Totals</CardTitle>
+                <CardTitle>Users & Payment Status</CardTitle>
                 <CardDescription>
-                  View all users and their total spending
+                  View all users with their spending, payments, and outstanding balances
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -112,7 +114,7 @@ const Index = () => {
               <CardHeader>
                 <CardTitle>Dashboard & Analytics</CardTitle>
                 <CardDescription>
-                  Daily and monthly collection statistics
+                  Daily and monthly collection statistics with payment tracking
                 </CardDescription>
               </CardHeader>
               <CardContent>
