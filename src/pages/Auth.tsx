@@ -6,23 +6,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { LogIn, UserPlus, Coffee } from "lucide-react";
+import { LogIn, UserPlus, Coffee, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
-export type UserRole = 'admin' | 'hr' | 'canteen';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [username, setUsername] = useState('');
-  const [role, setRole] = useState<UserRole>('canteen');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
+    // Auto-focus email input
+    const emailInput = document.getElementById('signin-email') || document.getElementById('signup-email');
+    if (emailInput) {
+      emailInput.focus();
+    }
+
     // Check if user is already logged in
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
@@ -81,14 +82,13 @@ const Auth = () => {
       // Clean up any existing auth state
       cleanupAuthState();
       
-      // Attempt to sign up
+      // Attempt to sign up with default role 'user'
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            username,
-            role
+            role: 'user'  // Default role for all new signups
           },
           emailRedirectTo: `${window.location.origin}/`
         }
@@ -98,7 +98,7 @@ const Auth = () => {
       
       toast({
         title: "Registration successful!",
-        description: "Your account has been created. Please check your email to confirm your registration.",
+        description: "Please check your email to confirm your registration before signing in.",
       });
     } catch (error: any) {
       toast({
@@ -121,58 +121,78 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-amber-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-amber-50 dark:from-gray-900 dark:to-gray-800 p-4 transition-colors">
       <div className="w-full max-w-md">
-        <div className="text-center mb-6">
-          <h1 className="text-4xl font-bold text-orange-800 mb-2 flex items-center justify-center gap-2">
-            <Coffee className="h-8 w-8" /> Canteen Buddy
+        <div className="text-center mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-orange-800 dark:text-orange-200 mb-4 flex items-center justify-center gap-3">
+            <Coffee className="h-8 w-8" /> 
+            <span>Canteen Buddy</span>
           </h1>
-          <p className="text-orange-600">Sign in to access the canteen management system</p>
+          <p className="text-orange-600 dark:text-orange-400 text-sm sm:text-base">
+            Sign in to access the canteen management system
+          </p>
         </div>
         
         <Tabs defaultValue="signin" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="signin" className="flex items-center gap-2">
+            <TabsTrigger value="signin" className="flex items-center gap-2 text-xs sm:text-sm">
               <LogIn className="w-4 h-4" /> Sign In
             </TabsTrigger>
-            <TabsTrigger value="signup" className="flex items-center gap-2">
+            <TabsTrigger value="signup" className="flex items-center gap-2 text-xs sm:text-sm">
               <UserPlus className="w-4 h-4" /> Sign Up
             </TabsTrigger>
           </TabsList>
           
           <TabsContent value="signin">
-            <Card>
-              <CardHeader>
-                <CardTitle>Welcome Back</CardTitle>
-                <CardDescription>Sign in to your account to continue</CardDescription>
+            <Card className="shadow-lg border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur">
+              <CardHeader className="text-center">
+                <CardTitle className="text-lg sm:text-xl">Welcome Back</CardTitle>
+                <CardDescription className="text-sm sm:text-base">
+                  Sign in to your account to continue
+                </CardDescription>
               </CardHeader>
               <form onSubmit={handleSignIn}>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signin-email">Email</Label>
+                    <Label htmlFor="signin-email" className="text-sm sm:text-base">Email</Label>
                     <Input 
                       id="signin-email" 
                       type="email" 
                       placeholder="your@email.com" 
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      className="h-10 sm:h-11 text-sm sm:text-base focus:ring-2 focus:ring-orange-500 transition-all"
                       required
+                      autoFocus
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signin-password">Password</Label>
+                    <Label htmlFor="signin-password" className="text-sm sm:text-base">Password</Label>
                     <Input 
                       id="signin-password" 
                       type="password" 
+                      placeholder="Enter your password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      className="h-10 sm:h-11 text-sm sm:text-base focus:ring-2 focus:ring-orange-500 transition-all"
                       required
                     />
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Signing in..." : "Sign In"}
+                  <Button 
+                    type="submit" 
+                    className="w-full h-10 sm:h-11 bg-orange-600 hover:bg-orange-700 text-sm sm:text-base transition-all" 
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Signing in...
+                      </>
+                    ) : (
+                      "Sign In"
+                    )}
                   </Button>
                 </CardFooter>
               </form>
@@ -180,74 +200,58 @@ const Auth = () => {
           </TabsContent>
           
           <TabsContent value="signup">
-            <Card>
-              <CardHeader>
-                <CardTitle>Create a New Account</CardTitle>
-                <CardDescription>Register to access the canteen management system</CardDescription>
+            <Card className="shadow-lg border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur">
+              <CardHeader className="text-center">
+                <CardTitle className="text-lg sm:text-xl">Create Account</CardTitle>
+                <CardDescription className="text-sm sm:text-base">
+                  Register to access the canteen system
+                </CardDescription>
               </CardHeader>
               <form onSubmit={handleSignUp}>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
+                    <Label htmlFor="signup-email" className="text-sm sm:text-base">Email</Label>
                     <Input 
                       id="signup-email" 
                       type="email" 
                       placeholder="your@email.com" 
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      className="h-10 sm:h-11 text-sm sm:text-base focus:ring-2 focus:ring-orange-500 transition-all"
                       required
+                      autoFocus
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-username">Username</Label>
-                    <Input 
-                      id="signup-username" 
-                      placeholder="johndoe" 
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
+                    <Label htmlFor="signup-password" className="text-sm sm:text-base">Password</Label>
                     <Input 
                       id="signup-password" 
                       type="password" 
+                      placeholder="Create a strong password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      className="h-10 sm:h-11 text-sm sm:text-base focus:ring-2 focus:ring-orange-500 transition-all"
                       required
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Role</Label>
-                    <div className="flex flex-wrap gap-2 pt-2">
-                      <Badge 
-                        variant={role === 'admin' ? 'default' : 'outline'}
-                        className="cursor-pointer"
-                        onClick={() => setRole('admin')}
-                      >
-                        Admin
-                      </Badge>
-                      <Badge 
-                        variant={role === 'hr' ? 'default' : 'outline'}
-                        className="cursor-pointer"
-                        onClick={() => setRole('hr')}
-                      >
-                        HR
-                      </Badge>
-                      <Badge 
-                        variant={role === 'canteen' ? 'default' : 'outline'}
-                        className="cursor-pointer"
-                        onClick={() => setRole('canteen')}
-                      >
-                        Canteen Staff
-                      </Badge>
-                    </div>
+                  <div className="text-xs sm:text-sm text-muted-foreground bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md">
+                    <p><strong>Note:</strong> New accounts will be created with basic user permissions. Admin access must be granted separately.</p>
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Creating account..." : "Sign Up"}
+                  <Button 
+                    type="submit" 
+                    className="w-full h-10 sm:h-11 bg-orange-600 hover:bg-orange-700 text-sm sm:text-base transition-all" 
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Creating account...
+                      </>
+                    ) : (
+                      "Sign Up"
+                    )}
                   </Button>
                 </CardFooter>
               </form>
