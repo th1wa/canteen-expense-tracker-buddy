@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AddExpenseFormProps {
   onExpenseAdded: () => void;
@@ -22,6 +23,10 @@ const AddExpenseForm = ({ onExpenseAdded }: AddExpenseFormProps) => {
   const [userSuggestions, setUserSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const { toast } = useToast();
+  const { profile } = useAuth();
+
+  // Check if user can manage expenses (admin or canteen)
+  const canManageExpenses = profile && (profile.role === 'admin' || profile.role === 'canteen');
 
   // Fetch existing user names for autocomplete
   useEffect(() => {
@@ -42,6 +47,15 @@ const AddExpenseForm = ({ onExpenseAdded }: AddExpenseFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!canManageExpenses) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to add expenses",
+        variant: "destructive"
+      });
+      return;
+    }
     
     if (!userName.trim() || !amount.trim()) {
       toast({
@@ -104,15 +118,24 @@ const AddExpenseForm = ({ onExpenseAdded }: AddExpenseFormProps) => {
     }
   };
 
+  if (!canManageExpenses) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">You don't have permission to add expenses.</p>
+        <p className="text-sm text-muted-foreground mt-2">Only admin and canteen staff can add expenses.</p>
+      </div>
+    );
+  }
+
   const filteredSuggestions = userSuggestions.filter(name =>
     name.toLowerCase().includes(userName.toLowerCase())
   );
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="relative">
-          <Label htmlFor="userName">User Name</Label>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <div className="relative sm:col-span-2 lg:col-span-1">
+          <Label htmlFor="userName" className="text-sm sm:text-base">User Name</Label>
           <Input
             id="userName"
             value={userName}
@@ -122,6 +145,7 @@ const AddExpenseForm = ({ onExpenseAdded }: AddExpenseFormProps) => {
             }}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
             placeholder="Enter user name (e.g., Kamal)"
+            className="text-sm sm:text-base"
             required
           />
           {showSuggestions && userName && filteredSuggestions.length > 0 && (
@@ -129,7 +153,7 @@ const AddExpenseForm = ({ onExpenseAdded }: AddExpenseFormProps) => {
               {filteredSuggestions.slice(0, 5).map((suggestion, index) => (
                 <div
                   key={index}
-                  className="p-2 hover:bg-gray-100 cursor-pointer"
+                  className="p-2 sm:p-3 hover:bg-accent cursor-pointer text-sm sm:text-base"
                   onClick={() => {
                     setUserName(suggestion);
                     setShowSuggestions(false);
@@ -142,8 +166,8 @@ const AddExpenseForm = ({ onExpenseAdded }: AddExpenseFormProps) => {
           )}
         </div>
 
-        <div>
-          <Label htmlFor="amount">Amount (Rs.)</Label>
+        <div className="sm:col-span-2 lg:col-span-1">
+          <Label htmlFor="amount" className="text-sm sm:text-base">Amount (Rs.)</Label>
           <Input
             id="amount"
             type="number"
@@ -151,35 +175,38 @@ const AddExpenseForm = ({ onExpenseAdded }: AddExpenseFormProps) => {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="200.00"
+            className="text-sm sm:text-base"
             required
           />
         </div>
 
-        <div>
-          <Label htmlFor="expenseDate">Date</Label>
+        <div className="sm:col-span-1">
+          <Label htmlFor="expenseDate" className="text-sm sm:text-base">Date</Label>
           <Input
             id="expenseDate"
             type="date"
             value={expenseDate}
             onChange={(e) => setExpenseDate(e.target.value)}
+            className="text-sm sm:text-base"
             required
           />
         </div>
 
-        <div>
-          <Label htmlFor="note">Note (Optional)</Label>
+        <div className="sm:col-span-1">
+          <Label htmlFor="note" className="text-sm sm:text-base">Note (Optional)</Label>
           <Input
             id="note"
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Tea, Lunch, etc."
+            className="text-sm sm:text-base"
           />
         </div>
       </div>
 
       <Button 
         type="submit" 
-        className="w-full bg-orange-600 hover:bg-orange-700"
+        className="w-full bg-orange-600 hover:bg-orange-700 text-sm sm:text-base py-2 sm:py-3"
         disabled={isSubmitting}
       >
         {isSubmitting ? 'Saving...' : 'Save Expense'}

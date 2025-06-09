@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Search, User, DollarSign, CreditCard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import PaymentModal from "@/components/PaymentModal";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface UserTotal {
   user_name: string;
@@ -35,6 +36,10 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<UserTotal | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const { profile } = useAuth();
+
+  // Check if user can manage payments (admin or canteen)
+  const canManagePayments = profile && (profile.role === 'admin' || profile.role === 'canteen');
 
   const fetchUsersWithPayments = async () => {
     setLoading(true);
@@ -129,6 +134,9 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
   }, [searchTerm, users]);
 
   const handlePaymentClick = (user: UserTotal) => {
+    if (!canManagePayments) {
+      return;
+    }
     setSelectedUser(user);
     setIsPaymentModalOpen(true);
   };
@@ -149,7 +157,7 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
           placeholder="Search users..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
+          className="max-w-sm text-sm sm:text-base"
         />
       </div>
 
@@ -158,54 +166,54 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
           {searchTerm ? 'No users found matching your search.' : 'No users found.'}
         </div>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-3 sm:gap-4">
           {filteredUsers.map((user) => (
             <Card key={user.user_name} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <User className="w-5 h-5 text-muted-foreground" />
-                    <h3 className="font-semibold text-lg">{user.user_name}</h3>
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                    <User className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground flex-shrink-0" />
+                    <h3 className="font-semibold text-base sm:text-lg truncate">{user.user_name}</h3>
                     {user.is_settled && (
-                      <Badge className="bg-green-600">Settled ✓</Badge>
+                      <Badge className="bg-green-600 text-xs sm:text-sm">Settled ✓</Badge>
                     )}
                   </div>
-                  {!user.is_settled && (
+                  {!user.is_settled && canManagePayments && (
                     <Button
                       size="sm"
                       onClick={() => handlePaymentClick(user)}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
                     >
-                      <CreditCard className="w-4 h-4" />
+                      <CreditCard className="w-3 h-3 sm:w-4 sm:h-4" />
                       Pay
                     </Button>
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-3">
                   <div>
-                    <p className="text-sm text-muted-foreground">Total Amount</p>
-                    <p className="text-lg font-semibold flex items-center gap-1">
-                      <DollarSign className="w-4 h-4" />
+                    <p className="text-xs sm:text-sm text-muted-foreground">Total Amount</p>
+                    <p className="text-sm sm:text-lg font-semibold flex items-center gap-1">
+                      <DollarSign className="w-3 h-3 sm:w-4 sm:h-4" />
                       Rs. {user.total_amount.toFixed(2)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Amount Paid</p>
-                    <p className="text-lg font-semibold text-green-600">
+                    <p className="text-xs sm:text-sm text-muted-foreground">Amount Paid</p>
+                    <p className="text-sm sm:text-lg font-semibold text-green-600">
                       Rs. {user.total_paid.toFixed(2)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Remaining Balance</p>
-                    <p className={`text-lg font-semibold ${user.is_settled ? 'text-green-600' : 'text-orange-600'}`}>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Remaining Balance</p>
+                    <p className={`text-sm sm:text-lg font-semibold ${user.is_settled ? 'text-green-600' : 'text-orange-600'}`}>
                       Rs. {user.remaining_balance.toFixed(2)}
                     </p>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-xs sm:text-sm">
                     <span>Payment Progress</span>
                     <span>{Math.min(user.payment_progress, 100).toFixed(1)}%</span>
                   </div>
@@ -214,7 +222,7 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
 
                 {user.payments.length > 0 && (
                   <div className="mt-3 pt-3 border-t">
-                    <p className="text-sm text-muted-foreground mb-2">
+                    <p className="text-xs sm:text-sm text-muted-foreground mb-2">
                       Recent Payments ({user.payments.length})
                     </p>
                     <div className="flex flex-wrap gap-1">
@@ -229,6 +237,14 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
                         </Badge>
                       )}
                     </div>
+                  </div>
+                )}
+
+                {!canManagePayments && !user.is_settled && (
+                  <div className="mt-3 pt-3 border-t">
+                    <p className="text-xs text-muted-foreground">
+                      Contact admin or canteen staff to record payments
+                    </p>
                   </div>
                 )}
               </CardContent>
