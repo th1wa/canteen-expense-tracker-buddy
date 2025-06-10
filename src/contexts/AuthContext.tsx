@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 export interface UserProfile {
   id: string;
   username: string;
-  role: 'admin' | 'hr' | 'canteen';
+  role: 'admin' | 'hr' | 'canteen' | 'user';
 }
 
 interface AuthContextType {

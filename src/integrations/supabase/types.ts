@@ -99,6 +99,17 @@ export type Database = {
         Args: { requested_role: Database["public"]["Enums"]["app_role"] }
         Returns: boolean
       }
+      get_user_expense_summary: {
+        Args: { selected_month?: string }
+        Returns: {
+          user_name: string
+          expense_date: string
+          expense_amount: number
+          payment_made: boolean
+          payment_date: string
+          remainder_amount: number
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "hr" | "canteen" | "user"

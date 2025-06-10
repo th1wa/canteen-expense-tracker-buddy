@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Calendar, Users, TrendingUp, PlusCircle, Cloud, LogOut } from "lucide-react";
+import { Calendar, Users, TrendingUp, PlusCircle, Cloud, LogOut, FileBarChart } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -29,6 +29,8 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
   // Check permissions
   const canManageExpenses = profile && (profile.role === 'admin' || profile.role === 'canteen');
   const canAccessBackup = profile && profile.role === 'admin';
+  const canAccessSummary = profile && (profile.role === 'admin' || profile.role === 'hr');
+  const isBasicUser = profile && profile.role === 'user';
 
   const menuItems = [
     ...(canManageExpenses ? [{
@@ -39,15 +41,15 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
     }] : []),
     {
       id: "users",
-      title: "Users",
+      title: isBasicUser ? "My Status" : "Users",
       icon: Users,
-      description: "View user balances"
+      description: isBasicUser ? "View your balance" : "View user balances"
     },
     {
       id: "history",
-      title: "History",
+      title: isBasicUser ? "My History" : "History",
       icon: Calendar,
-      description: "Transaction history"
+      description: isBasicUser ? "Your transactions" : "Transaction history"
     },
     {
       id: "dashboard",
@@ -55,6 +57,12 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
       icon: TrendingUp,
       description: "Stats & insights"
     },
+    ...(canAccessSummary ? [{
+      id: "summary",
+      title: "Summary Report",
+      icon: FileBarChart,
+      description: "Monthly user summary"
+    }] : []),
     ...(canAccessBackup ? [{
       id: "backup",
       title: "Backup",
@@ -62,6 +70,26 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
       description: "Data backup & export"
     }] : [])
   ];
+
+  const getRoleDisplayName = (role: string) => {
+    switch (role) {
+      case 'user': return 'Basic User';
+      case 'admin': return 'Admin';
+      case 'hr': return 'HR';
+      case 'canteen': return 'Canteen';
+      default: return role;
+    }
+  };
+
+  const getRoleBadgeVariant = (role: string) => {
+    switch (role) {
+      case 'admin': return 'default';
+      case 'hr': return 'default';
+      case 'canteen': return 'secondary';
+      case 'user': return 'outline';
+      default: return 'secondary';
+    }
+  };
 
   return (
     <Sidebar>
@@ -73,8 +101,8 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
               Canteen Buddy
             </h2>
             {profile && (
-              <Badge variant="secondary" className="text-xs">
-                {profile.role.charAt(0).toUpperCase() + profile.role.slice(1)}
+              <Badge variant={getRoleBadgeVariant(profile.role)} className="text-xs">
+                {getRoleDisplayName(profile.role)}
               </Badge>
             )}
           </div>
