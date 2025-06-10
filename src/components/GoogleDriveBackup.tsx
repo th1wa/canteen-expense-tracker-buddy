@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,7 +36,49 @@ const GoogleDriveBackup = () => {
       setIsAuthenticated(true);
       loadBackups(storedToken);
     }
+
+    // Handle OAuth redirect with authorization code
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    if (code) {
+      exchangeCodeForTokens(code);
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }, []);
+
+  const exchangeCodeForTokens = async (code: string) => {
+    try {
+      setLoading(true);
+      const { data: tokenData } = await supabase.functions.invoke('google-drive-auth', {
+        body: { action: 'exchangeCode', code }
+      });
+
+      if (tokenData?.access_token) {
+        localStorage.setItem('google_drive_token', tokenData.access_token);
+        if (tokenData.refresh_token) {
+          localStorage.setItem('google_drive_refresh_token', tokenData.refresh_token);
+        }
+        setAccessToken(tokenData.access_token);
+        setIsAuthenticated(true);
+        loadBackups(tokenData.access_token);
+        
+        toast({
+          title: "Authentication Successful",
+          description: "Connected to Google Drive successfully!"
+        });
+      }
+    } catch (error) {
+      console.error('Token exchange error:', error);
+      toast({
+        title: "Authentication Failed",
+        description: "Failed to complete Google Drive authentication",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const authenticateGoogleDrive = async () => {
     try {
@@ -47,34 +88,8 @@ const GoogleDriveBackup = () => {
       });
 
       if (data?.authUrl) {
-        window.open(data.authUrl, '_blank', 'width=500,height=600');
-        
-        // Listen for auth completion
-        const handleAuthMessage = async (event: MessageEvent) => {
-          if (event.data?.type === 'GOOGLE_AUTH_SUCCESS' && event.data?.code) {
-            const { data: tokenData } = await supabase.functions.invoke('google-drive-auth', {
-              body: { action: 'exchangeCode', code: event.data.code }
-            });
-
-            if (tokenData?.access_token) {
-              localStorage.setItem('google_drive_token', tokenData.access_token);
-              if (tokenData.refresh_token) {
-                localStorage.setItem('google_drive_refresh_token', tokenData.refresh_token);
-              }
-              setAccessToken(tokenData.access_token);
-              setIsAuthenticated(true);
-              loadBackups(tokenData.access_token);
-              
-              toast({
-                title: "Authentication Successful",
-                description: "Connected to Google Drive successfully!"
-              });
-            }
-            window.removeEventListener('message', handleAuthMessage);
-          }
-        };
-        
-        window.addEventListener('message', handleAuthMessage);
+        // Redirect to Google OAuth
+        window.location.href = data.authUrl;
       }
     } catch (error) {
       console.error('Auth error:', error);

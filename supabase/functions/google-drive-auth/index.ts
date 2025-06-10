@@ -16,7 +16,10 @@ serve(async (req) => {
     
     const clientId = Deno.env.get('GOOGLE_CLIENT_ID')
     const clientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET')
-    const redirectUri = `${Deno.env.get('SUPABASE_URL')}/functions/v1/google-drive-auth`
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    
+    // Use the edge function URL as redirect URI
+    const redirectUri = `${supabaseUrl}/functions/v1/google-drive-auth`
 
     if (action === 'getAuthUrl') {
       const scope = 'https://www.googleapis.com/auth/drive.file'
