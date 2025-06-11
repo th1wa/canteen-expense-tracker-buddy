@@ -1,14 +1,14 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Calendar, DollarSign, Users, TrendingUp } from "lucide-react";
+import { Search, Calendar, DollarSign, Users, TrendingUp, Download, FileSpreadsheet, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface ExpenseSummary {
   user_name: string;
@@ -35,6 +35,9 @@ const UserExpenseSummary = () => {
   const [loading, setLoading] = useState(true);
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const { profile } = useAuth();
+  const { toast } = useToast();
+  const [isExporting, setIsExporting] = useState(false);
+  const [selectedUserForExport, setSelectedUserForExport] = useState<string>('');
 
   // Check if user has admin or hr role
   const hasAccess = profile && (profile.role === 'admin' || profile.role === 'hr');
@@ -95,6 +98,95 @@ const UserExpenseSummary = () => {
     );
     setFilteredData(filtered);
   }, [searchTerm, summaryData]);
+
+  const handleExportSummary = async () => {
+    if (!hasAccess) return;
+    
+    setIsExporting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No session');
+
+      const response = await supabase.functions.invoke('excel-export', {
+        body: {
+          type: 'summary',
+          selectedMonth: selectedMonth
+        }
+      });
+
+      if (response.error) throw response.error;
+
+      // Create download link
+      const blob = new Blob([response.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `canteen_summary_report_${selectedMonth}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Export Successful",
+        description: "Summary report has been downloaded successfully.",
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to generate summary report. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportUserDetail = async (userName: string) => {
+    if (!hasAccess || !userName) return;
+    
+    setIsExporting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No session');
+
+      const response = await supabase.functions.invoke('excel-export', {
+        body: {
+          type: 'user-detail',
+          userName: userName,
+          selectedMonth: selectedMonth
+        }
+      });
+
+      if (response.error) throw response.error;
+
+      // Create download link
+      const blob = new Blob([response.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `canteen_user_report_${userName.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Export Successful",
+        description: `Detailed report for ${userName} has been downloaded successfully.`,
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: "Export Failed",
+        description: `Failed to generate report for ${userName}. Please try again.`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   // Calculate totals
   const grandTotals = filteredData.reduce(
@@ -162,6 +254,58 @@ const UserExpenseSummary = () => {
           </div>
         </div>
       </div>
+
+      {/* Export Controls */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileSpreadsheet className="w-5 h-5" />
+            Export Reports
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+            <div className="flex-1">
+              <Button
+                onClick={handleExportSummary}
+                disabled={isExporting}
+                className="flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                {isExporting ? 'Exporting...' : 'Export Full Summary Report'}
+              </Button>
+              <p className="text-sm text-gray-500 mt-1">Download complete summary of all users</p>
+            </div>
+            
+            <div className="flex-1">
+              <div className="flex gap-2">
+                <Select value={selectedUserForExport} onValueChange={setSelectedUserForExport}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Select user for detailed report" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredData.map((user) => (
+                      <SelectItem key={user.user_name} value={user.user_name}>
+                        {user.user_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={() => handleExportUserDetail(selectedUserForExport)}
+                  disabled={isExporting || !selectedUserForExport}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <User className="w-4 h-4" />
+                  Export User Report
+                </Button>
+              </div>
+              <p className="text-sm text-gray-500 mt-1">Download detailed report for specific user</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -236,13 +380,25 @@ const UserExpenseSummary = () => {
                           Balance: Rs. {user.total_remainder.toFixed(2)}
                         </Badge>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setExpandedUser(expandedUser === user.user_name ? null : user.user_name)}
-                      >
-                        {expandedUser === user.user_name ? 'Hide Details' : 'View Details'}
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleExportUserDetail(user.user_name)}
+                          disabled={isExporting}
+                          className="flex items-center gap-1"
+                        >
+                          <Download className="w-3 h-3" />
+                          Export
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setExpandedUser(expandedUser === user.user_name ? null : user.user_name)}
+                        >
+                          {expandedUser === user.user_name ? 'Hide Details' : 'View Details'}
+                        </Button>
+                      </div>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
