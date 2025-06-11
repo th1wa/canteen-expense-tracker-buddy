@@ -53,7 +53,9 @@ serve(async (req) => {
       )
     }
 
-    const { action } = await req.json()
+    // Read the request body once and parse it
+    const requestBody = await req.json()
+    const { action } = requestBody
 
     if (action === 'export') {
       // Export all data
@@ -109,7 +111,7 @@ serve(async (req) => {
     }
 
     if (action === 'import') {
-      const { backupData } = await req.json()
+      const { backupData } = requestBody
 
       // Validate backup data structure
       if (!backupData || !backupData.data) {
