@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { PlusCircle, Users, Calendar, TrendingUp, Cloud, FileBarChart } from "lucide-react";
+import { PlusCircle, Users, Calendar, TrendingUp, Settings, FileBarChart } from "lucide-react";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -9,7 +9,7 @@ import AddExpenseForm from "@/components/AddExpenseForm";
 import UsersList from "@/components/UsersList";
 import DashboardStats from "@/components/DashboardStats";
 import ExpenseHistory from "@/components/ExpenseHistory";
-import GoogleDriveBackup from "@/components/GoogleDriveBackup";
+import LocalBackupSystem from "@/components/LocalBackupSystem";
 import UserExpenseSummary from "@/components/UserExpenseSummary";
 import BasicUserBanner from "@/components/BasicUserBanner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -103,11 +103,11 @@ const Index = () => {
         if (!canAccessBackup) return null;
         return (
           <DashboardCard
-            title="Google Drive Backup & Export"
-            description="Backup your data to Google Drive and manage existing backups"
-            icon={Cloud}
+            title="Local Backup & Data Management"
+            description="Export, import, and manage local database backups"
+            icon={Settings}
           >
-            <GoogleDriveBackup />
+            <LocalBackupSystem />
           </DashboardCard>
         );
 

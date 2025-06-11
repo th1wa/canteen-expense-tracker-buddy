@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Calendar, Users, TrendingUp, PlusCircle, Cloud, LogOut, FileBarChart } from "lucide-react";
+import { Calendar, Users, TrendingUp, PlusCircle, Settings, LogOut, FileBarChart } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -65,9 +65,9 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
     }] : []),
     ...(canAccessBackup ? [{
       id: "backup",
-      title: "Backup",
-      icon: Cloud,
-      description: "Data backup & export"
+      title: "Local Backup",
+      icon: Settings,
+      description: "Data backup & import"
     }] : [])
   ];
 
