@@ -14,6 +14,9 @@ interface ExportRequest {
 }
 
 serve(async (req) => {
+  console.log('Request method:', req.method)
+  console.log('Request headers:', Object.fromEntries(req.headers.entries()))
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -22,6 +25,7 @@ serve(async (req) => {
   try {
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
+      console.error('No authorization header found')
       throw new Error('No authorization header')
     }
 
@@ -67,7 +71,28 @@ serve(async (req) => {
 
     console.log('User has valid role:', profile.role)
 
-    const { type, selectedMonth, userName }: ExportRequest = await req.json()
+    // Parse request body safely
+    let requestBody: ExportRequest
+    try {
+      const bodyText = await req.text()
+      console.log('Request body text:', bodyText)
+      
+      if (!bodyText || bodyText.trim() === '') {
+        throw new Error('Empty request body')
+      }
+      
+      requestBody = JSON.parse(bodyText)
+      console.log('Parsed request body:', requestBody)
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError)
+      throw new Error('Invalid JSON in request body')
+    }
+
+    const { type, selectedMonth, userName } = requestBody
+
+    if (!type) {
+      throw new Error('Missing export type in request')
+    }
 
     if (type === 'summary') {
       return await generateSummaryExcel(supabaseClient, selectedMonth)
@@ -80,7 +105,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Excel export error:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: error.stack 
+      }),
       { 
         status: 400, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -105,10 +133,26 @@ async function generateSummaryExcel(supabase: any, selectedMonth?: string) {
 
   console.log('Got summary data:', data?.length, 'records')
 
+  if (!data || data.length === 0) {
+    console.log('No data found for the selected month')
+    // Return empty CSV
+    const csvContent = `Canteen Summary Report - ${monthDate.toISOString().slice(0, 7)}\n\nNo data found for the selected month`
+    
+    const filename = `canteen_summary_report_${monthDate.toISOString().slice(0, 7)}.csv`
+    
+    return new Response(csvContent, {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'text/csv',
+        'Content-Disposition': `attachment; filename="${filename}"`
+      }
+    })
+  }
+
   // Group data by user for summary
   const userMap = new Map()
   
-  data?.forEach((record: any) => {
+  data.forEach((record: any) => {
     if (!userMap.has(record.user_name)) {
       userMap.set(record.user_name, {
         user_name: record.user_name,

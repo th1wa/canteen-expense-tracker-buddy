@@ -2,6 +2,7 @@
 import React from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface ExpenseFormFieldsProps {
   amount: string;
@@ -11,6 +12,13 @@ interface ExpenseFormFieldsProps {
   note: string;
   onNoteChange: (value: string) => void;
 }
+
+const mealOptions = [
+  { value: "morning-tea", label: "Morning Tea" },
+  { value: "lunch", label: "Lunch" },
+  { value: "afternoon-tea", label: "Afternoon Tea" },
+  { value: "other", label: "Other" }
+];
 
 export const ExpenseFormFields = ({
   amount,
@@ -49,14 +57,19 @@ export const ExpenseFormFields = ({
       </div>
 
       <div className="sm:col-span-1">
-        <Label htmlFor="note" className="text-sm sm:text-base">Note (Optional)</Label>
-        <Input
-          id="note"
-          value={note}
-          onChange={(e) => onNoteChange(e.target.value)}
-          placeholder="Tea, Lunch, etc."
-          className="text-sm sm:text-base"
-        />
+        <Label htmlFor="note" className="text-sm sm:text-base">Meal Type</Label>
+        <Select value={note} onValueChange={onNoteChange}>
+          <SelectTrigger className="text-sm sm:text-base">
+            <SelectValue placeholder="Select meal type" />
+          </SelectTrigger>
+          <SelectContent>
+            {mealOptions.map((option) => (
+              <SelectItem key={option.value} value={option.label}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </>
   );
