@@ -128,7 +128,7 @@ const Index = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-orange-50 to-amber-50 dark:from-gray-900 dark:to-gray-800 transition-colors">
         <AppSidebar activeTab={activeTab} onTabChange={setActiveTab} />
         <SidebarInset className="flex-1">
           <DashboardHeader />

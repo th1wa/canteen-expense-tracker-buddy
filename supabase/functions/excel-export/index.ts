@@ -27,26 +27,16 @@ serve(async (req) => {
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: {
-            Authorization: authHeader,
-          },
-        },
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get the user from the token
+    // Set the auth context
     const token = authHeader.replace('Bearer ', '')
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
     
     if (authError || !user) {
-      console.error('Auth error:', authError)
-      throw new Error('Invalid authentication token')
+      throw new Error('Invalid token')
     }
-
-    console.log('User authenticated:', user.id)
 
     // Check if user has HR or Admin role
     const { data: profile, error: profileError } = await supabaseClient
@@ -55,27 +45,16 @@ serve(async (req) => {
       .eq('id', user.id)
       .single()
 
-    console.log('User profile:', profile)
-
-    if (profileError) {
-      console.error('Profile error:', profileError)
-      throw new Error('Failed to fetch user profile')
-    }
-
-    if (!profile || !['admin', 'hr'].includes(profile.role)) {
-      console.error('Access denied for user role:', profile?.role)
+    if (profileError || !['admin', 'hr'].includes(profile?.role)) {
       throw new Error('Access denied. HR or Admin role required.')
     }
 
-    console.log('Access granted for role:', profile.role)
+    const { type, selectedMonth, userName }: ExportRequest = await req.json()
 
-    const requestBody: ExportRequest = await req.json()
-    console.log('Export request:', requestBody)
-
-    if (requestBody.type === 'summary') {
-      return await generateSummaryExcel(supabaseClient, requestBody.selectedMonth)
-    } else if (requestBody.type === 'user-detail' && requestBody.userName) {
-      return await generateUserDetailExcel(supabaseClient, requestBody.userName, requestBody.selectedMonth)
+    if (type === 'summary') {
+      return await generateSummaryExcel(supabaseClient, selectedMonth)
+    } else if (type === 'user-detail' && userName) {
+      return await generateUserDetailExcel(supabaseClient, userName, selectedMonth)
     } else {
       throw new Error('Invalid request parameters')
     }
@@ -95,18 +74,11 @@ serve(async (req) => {
 async function generateSummaryExcel(supabase: any, selectedMonth?: string) {
   const monthDate = selectedMonth ? new Date(selectedMonth + '-01') : new Date()
   
-  console.log('Fetching summary data for month:', monthDate.toISOString().split('T')[0])
-
   const { data, error } = await supabase.rpc('get_user_expense_summary', {
     selected_month: monthDate.toISOString().split('T')[0]
   })
 
-  if (error) {
-    console.error('RPC error:', error)
-    throw error
-  }
-
-  console.log('Summary data fetched:', data?.length, 'records')
+  if (error) throw error
 
   // Group data by user for summary
   const userMap = new Map()
@@ -155,22 +127,15 @@ async function generateSummaryExcel(supabase: any, selectedMonth?: string) {
 async function generateUserDetailExcel(supabase: any, userName: string, selectedMonth?: string) {
   const monthDate = selectedMonth ? new Date(selectedMonth + '-01') : new Date()
   
-  console.log('Fetching user detail data for:', userName, 'month:', monthDate.toISOString().split('T')[0])
-
   const { data, error } = await supabase.rpc('get_user_expense_summary', {
     selected_month: monthDate.toISOString().split('T')[0]
   })
 
-  if (error) {
-    console.error('RPC error:', error)
-    throw error
-  }
+  if (error) throw error
 
   // Filter data for specific user
   const userRecords = data?.filter((record: any) => record.user_name === userName) || []
   
-  console.log('User detail data fetched:', userRecords.length, 'records for', userName)
-
   const csvContent = generateUserDetailCSV(userRecords, userName)
   
   const filename = `canteen_user_report_${userName.replace(/[^a-zA-Z0-9]/g, '_')}_${monthDate.toISOString().slice(0, 10)}.csv`
