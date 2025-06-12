@@ -27,7 +27,14 @@ serve(async (req) => {
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: {
+            Authorization: authHeader,
+          },
+        },
+      }
     )
 
     // Set the auth context
@@ -35,8 +42,11 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
     
     if (authError || !user) {
+      console.error('Auth error:', authError)
       throw new Error('Invalid token')
     }
+
+    console.log('User authenticated:', user.id)
 
     // Check if user has HR or Admin role
     const { data: profile, error: profileError } = await supabaseClient
@@ -45,9 +55,17 @@ serve(async (req) => {
       .eq('id', user.id)
       .single()
 
-    if (profileError || !['admin', 'hr'].includes(profile?.role)) {
+    if (profileError) {
+      console.error('Profile error:', profileError)
+      throw new Error('Failed to get user profile')
+    }
+
+    if (!profile || !['admin', 'hr'].includes(profile.role)) {
+      console.error('Access denied for role:', profile?.role)
       throw new Error('Access denied. HR or Admin role required.')
     }
+
+    console.log('User has valid role:', profile.role)
 
     const { type, selectedMonth, userName }: ExportRequest = await req.json()
 
@@ -74,11 +92,18 @@ serve(async (req) => {
 async function generateSummaryExcel(supabase: any, selectedMonth?: string) {
   const monthDate = selectedMonth ? new Date(selectedMonth + '-01') : new Date()
   
+  console.log('Generating summary for month:', monthDate.toISOString().split('T')[0])
+  
   const { data, error } = await supabase.rpc('get_user_expense_summary', {
     selected_month: monthDate.toISOString().split('T')[0]
   })
 
-  if (error) throw error
+  if (error) {
+    console.error('RPC error:', error)
+    throw error
+  }
+
+  console.log('Got summary data:', data?.length, 'records')
 
   // Group data by user for summary
   const userMap = new Map()
@@ -127,14 +152,21 @@ async function generateSummaryExcel(supabase: any, selectedMonth?: string) {
 async function generateUserDetailExcel(supabase: any, userName: string, selectedMonth?: string) {
   const monthDate = selectedMonth ? new Date(selectedMonth + '-01') : new Date()
   
+  console.log('Generating user detail for:', userName, 'month:', monthDate.toISOString().split('T')[0])
+  
   const { data, error } = await supabase.rpc('get_user_expense_summary', {
     selected_month: monthDate.toISOString().split('T')[0]
   })
 
-  if (error) throw error
+  if (error) {
+    console.error('RPC error:', error)
+    throw error
+  }
 
   // Filter data for specific user
   const userRecords = data?.filter((record: any) => record.user_name === userName) || []
+  
+  console.log('Got user records:', userRecords.length)
   
   const csvContent = generateUserDetailCSV(userRecords, userName)
   

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -83,6 +84,11 @@ const UserExpenseSummary = () => {
       setFilteredData(summaryArray);
     } catch (error) {
       console.error('Error fetching summary data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch summary data. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -100,21 +106,48 @@ const UserExpenseSummary = () => {
   }, [searchTerm, summaryData]);
 
   const handleExportSummary = async () => {
-    if (!hasAccess) return;
+    if (!hasAccess) {
+      toast({
+        title: "Access Denied",
+        description: "Only HR and Admin users can export reports.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     setIsExporting(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('No session');
+      if (!session) {
+        throw new Error('No active session');
+      }
+
+      console.log('Invoking excel-export function with:', {
+        type: 'summary',
+        selectedMonth: selectedMonth
+      });
 
       const response = await supabase.functions.invoke('excel-export', {
         body: {
           type: 'summary',
           selectedMonth: selectedMonth
+        },
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
         }
       });
 
-      if (response.error) throw response.error;
+      console.log('Excel export response:', response);
+
+      if (response.error) {
+        console.error('Function error:', response.error);
+        throw new Error(response.error.message || 'Export failed');
+      }
+
+      if (!response.data) {
+        throw new Error('No data received from export function');
+      }
 
       // Create download link
       const blob = new Blob([response.data], { type: 'text/csv' });
@@ -135,7 +168,7 @@ const UserExpenseSummary = () => {
       console.error('Export error:', error);
       toast({
         title: "Export Failed",
-        description: "Failed to generate summary report. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to generate summary report. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -144,22 +177,41 @@ const UserExpenseSummary = () => {
   };
 
   const handleExportUserDetail = async (userName: string) => {
-    if (!hasAccess || !userName) return;
+    if (!hasAccess || !userName) {
+      toast({
+        title: "Access Denied",
+        description: "Only HR and Admin users can export reports.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     setIsExporting(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('No session');
+      if (!session) {
+        throw new Error('No active session');
+      }
 
       const response = await supabase.functions.invoke('excel-export', {
         body: {
           type: 'user-detail',
           userName: userName,
           selectedMonth: selectedMonth
+        },
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
         }
       });
 
-      if (response.error) throw response.error;
+      if (response.error) {
+        throw new Error(response.error.message || 'Export failed');
+      }
+
+      if (!response.data) {
+        throw new Error('No data received from export function');
+      }
 
       // Create download link
       const blob = new Blob([response.data], { type: 'text/csv' });
@@ -180,7 +232,7 @@ const UserExpenseSummary = () => {
       console.error('Export error:', error);
       toast({
         title: "Export Failed",
-        description: `Failed to generate report for ${userName}. Please try again.`,
+        description: error instanceof Error ? error.message : `Failed to generate report for ${userName}. Please try again.`,
         variant: "destructive"
       });
     } finally {
@@ -202,8 +254,8 @@ const UserExpenseSummary = () => {
   if (!hasAccess) {
     return (
       <div className="text-center py-8">
-        <h2 className="text-xl font-semibold text-red-600 mb-2">Access Denied</h2>
-        <p className="text-gray-600">You don't have permission to view this page.</p>
+        <h2 className="text-xl font-semibold text-destructive mb-2">Access Denied</h2>
+        <p className="text-muted-foreground">Only HR and Admin users can access summary reports.</p>
       </div>
     );
   }
@@ -217,13 +269,13 @@ const UserExpenseSummary = () => {
       {/* Header Controls */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">User Expense & Payment Summary</h2>
-          <p className="text-gray-600">Monthly breakdown of user expenses and payments</p>
+          <h2 className="text-2xl font-bold">User Expense & Payment Summary</h2>
+          <p className="text-muted-foreground">Monthly breakdown of user expenses and payments</p>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex items-center space-x-2">
-            <Calendar className="w-4 h-4 text-gray-500" />
+            <Calendar className="w-4 h-4 text-muted-foreground" />
             <Select value={selectedMonth} onValueChange={setSelectedMonth}>
               <SelectTrigger className="w-40">
                 <SelectValue />
@@ -244,7 +296,7 @@ const UserExpenseSummary = () => {
           </div>
           
           <div className="flex items-center space-x-2">
-            <Search className="w-4 h-4 text-gray-500" />
+            <Search className="w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Search users..."
               value={searchTerm}
@@ -274,7 +326,7 @@ const UserExpenseSummary = () => {
                 <Download className="w-4 h-4" />
                 {isExporting ? 'Exporting...' : 'Export Full Summary Report'}
               </Button>
-              <p className="text-sm text-gray-500 mt-1">Download complete summary of all users</p>
+              <p className="text-sm text-muted-foreground mt-1">Download complete summary of all users</p>
             </div>
             
             <div className="flex-1">
@@ -301,7 +353,7 @@ const UserExpenseSummary = () => {
                   Export User Report
                 </Button>
               </div>
-              <p className="text-sm text-gray-500 mt-1">Download detailed report for specific user</p>
+              <p className="text-sm text-muted-foreground mt-1">Download detailed report for specific user</p>
             </div>
           </div>
         </CardContent>
@@ -314,7 +366,7 @@ const UserExpenseSummary = () => {
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-blue-600" />
               <div>
-                <p className="text-sm text-gray-600">Total Users</p>
+                <p className="text-sm text-muted-foreground">Total Users</p>
                 <p className="text-2xl font-bold">{grandTotals.totalUsers}</p>
               </div>
             </div>
@@ -326,7 +378,7 @@ const UserExpenseSummary = () => {
             <div className="flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-orange-600" />
               <div>
-                <p className="text-sm text-gray-600">Total Expenses</p>
+                <p className="text-sm text-muted-foreground">Total Expenses</p>
                 <p className="text-2xl font-bold">Rs. {grandTotals.totalExpenses.toFixed(2)}</p>
               </div>
             </div>
@@ -338,7 +390,7 @@ const UserExpenseSummary = () => {
             <div className="flex items-center gap-2">
               <DollarSign className="w-5 h-5 text-green-600" />
               <div>
-                <p className="text-sm text-gray-600">Total Paid</p>
+                <p className="text-sm text-muted-foreground">Total Paid</p>
                 <p className="text-2xl font-bold">Rs. {grandTotals.totalPaid.toFixed(2)}</p>
               </div>
             </div>
@@ -350,7 +402,7 @@ const UserExpenseSummary = () => {
             <div className="flex items-center gap-2">
               <DollarSign className="w-5 h-5 text-red-600" />
               <div>
-                <p className="text-sm text-gray-600">Total Remaining</p>
+                <p className="text-sm text-muted-foreground">Total Remaining</p>
                 <p className="text-2xl font-bold">Rs. {grandTotals.totalRemaining.toFixed(2)}</p>
               </div>
             </div>
@@ -365,7 +417,7 @@ const UserExpenseSummary = () => {
         </CardHeader>
         <CardContent>
           {filteredData.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               {searchTerm ? 'No users found matching your search.' : 'No data found for this month.'}
             </div>
           ) : (
@@ -403,15 +455,15 @@ const UserExpenseSummary = () => {
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                       <div>
-                        <p className="text-sm text-gray-600">Total Expenses</p>
+                        <p className="text-sm text-muted-foreground">Total Expenses</p>
                         <p className="text-lg font-semibold">Rs. {user.total_expenses.toFixed(2)}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Total Paid</p>
+                        <p className="text-sm text-muted-foreground">Total Paid</p>
                         <p className="text-lg font-semibold text-green-600">Rs. {user.total_paid.toFixed(2)}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Remaining</p>
+                        <p className="text-sm text-muted-foreground">Remaining</p>
                         <p className={`text-lg font-semibold ${user.total_remainder > 0 ? 'text-red-600' : 'text-green-600'}`}>
                           Rs. {user.total_remainder.toFixed(2)}
                         </p>

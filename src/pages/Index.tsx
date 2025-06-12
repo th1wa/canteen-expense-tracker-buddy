@@ -88,7 +88,20 @@ const Index = () => {
         );
 
       case 'summary':
-        if (!canAccessSummary) return null;
+        if (!canAccessSummary) {
+          return (
+            <DashboardCard
+              title="Access Denied"
+              description="You don't have permission to view this section"
+              icon={FileBarChart}
+            >
+              <div className="text-center py-8">
+                <h2 className="text-xl font-semibold text-destructive mb-2">Access Denied</h2>
+                <p className="text-muted-foreground">Only HR and Admin users can access summary reports.</p>
+              </div>
+            </DashboardCard>
+          );
+        }
         return (
           <DashboardCard
             title="User Expense & Payment Summary"
