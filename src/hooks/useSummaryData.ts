@@ -1,23 +1,6 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
-
-interface ExpenseSummary {
-  user_name: string;
-  expense_date: string;
-  expense_amount: number;
-  payment_made: boolean;
-  payment_date: string | null;
-  remainder_amount: number;
-}
-
-interface UserSummary {
-  user_name: string;
-  total_expenses: number;
-  total_paid: number;
-  total_remainder: number;
-  daily_records: ExpenseSummary[];
-}
+import { ExpenseSummary, UserSummary } from '@/types/summary';
 
 export const useSummaryData = (selectedMonth: string, hasAccess: boolean) => {
   const [summaryData, setSummaryData] = useState<UserSummary[]>([]);
