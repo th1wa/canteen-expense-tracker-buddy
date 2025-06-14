@@ -10,9 +10,11 @@ import { useAuth } from "@/contexts/AuthContext";
 const UserApprovalNotification = () => {
   const [showModal, setShowModal] = useState(false);
   const { profile } = useAuth();
+  
+  // Always call hooks first, before any conditional returns
   const { pendingUsers, updateUserRole, loading } = useUserApprovals();
 
-  // Only show for admin users
+  // Only show for admin users - conditional return AFTER all hooks
   if (profile?.role !== 'admin') {
     return null;
   }

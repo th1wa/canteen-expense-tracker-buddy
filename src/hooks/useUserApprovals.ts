@@ -17,7 +17,11 @@ export const useUserApprovals = () => {
   const { profile, refreshProfile } = useAuth();
 
   const fetchPendingUsers = async () => {
-    if (profile?.role !== 'admin') return;
+    // Only fetch if user is admin
+    if (profile?.role !== 'admin') {
+      setPendingUsers([]);
+      return;
+    }
     
     setLoading(true);
     try {
@@ -72,9 +76,7 @@ export const useUserApprovals = () => {
       // If the updated user is the current user, refresh their profile immediately
       if (userId === profile?.id) {
         console.log('Current user role updated, refreshing profile');
-        setTimeout(async () => {
-          await refreshProfile();
-        }, 100);
+        await refreshProfile();
       }
       
       // Refresh the list
@@ -87,10 +89,11 @@ export const useUserApprovals = () => {
   };
 
   useEffect(() => {
+    // Always set up the effect, but only fetch if admin
+    fetchPendingUsers();
+    
+    // Set up real-time subscription only for admin users
     if (profile?.role === 'admin') {
-      fetchPendingUsers();
-      
-      // Set up real-time subscription for all profile changes
       const channel = supabase
         .channel('admin-profile-changes')
         .on(
