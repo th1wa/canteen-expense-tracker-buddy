@@ -12,16 +12,16 @@ const ThemeToggle = () => {
       variant="outline"
       size="sm"
       onClick={toggleTheme}
-      className="flex items-center gap-2"
+      className="flex items-center gap-2 transition-all duration-200 hover:scale-105 hover:shadow-md active:scale-95"
     >
       {theme === 'light' ? (
         <>
-          <Moon className="w-4 h-4" />
+          <Moon className="w-4 h-4 transition-transform hover:rotate-12" />
           Dark
         </>
       ) : (
         <>
-          <Sun className="w-4 h-4" />
+          <Sun className="w-4 h-4 transition-transform hover:rotate-12" />
           Light
         </>
       )}

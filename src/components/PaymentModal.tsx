@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -127,11 +128,11 @@ const PaymentModal = ({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
-        className="sm:max-w-md max-w-[95vw] max-h-[95vh] overflow-y-auto"
+        className="sm:max-w-md max-w-[95vw] max-h-[95vh] overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-300"
         aria-describedby={dialogDescriptionId}
       >
-        <DialogHeader>
-          <DialogTitle className="text-lg sm:text-xl">Payment for {userName}</DialogTitle>
+        <DialogHeader className="animate-in slide-in-from-top-4 duration-300">
+          <DialogTitle className="text-lg sm:text-xl transition-colors">Payment for {userName}</DialogTitle>
         </DialogHeader>
         
         {/* Invisible element for accessibility */}
@@ -139,40 +140,40 @@ const PaymentModal = ({
           Enter and record a payment for this user. View payment history and remaining balance.
         </div>
         
-        <div className="space-y-4">
-          <div className="bg-muted p-3 sm:p-4 rounded-lg">
-            <div className="flex justify-between items-center mb-2">
+        <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-300 delay-100">
+          <div className="bg-muted p-3 sm:p-4 rounded-lg transition-all duration-300 hover:shadow-md border border-transparent hover:border-border">
+            <div className="flex justify-between items-center mb-2 transition-all duration-200">
               <span className="text-xs sm:text-sm text-muted-foreground">Total Amount:</span>
-              <span className="font-semibold text-sm sm:text-base">Rs. {totalAmount.toFixed(2)}</span>
+              <span className="font-semibold text-sm sm:text-base transition-colors">Rs. {totalAmount.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between items-center mb-2">
+            <div className="flex justify-between items-center mb-2 transition-all duration-200">
               <span className="text-xs sm:text-sm text-muted-foreground">Amount Paid:</span>
-              <span className="font-semibold text-green-600 text-sm sm:text-base">Rs. {totalPaid.toFixed(2)}</span>
+              <span className="font-semibold text-green-600 text-sm sm:text-base transition-colors">Rs. {totalPaid.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between items-center mb-3">
+            <div className="flex justify-between items-center mb-3 transition-all duration-200">
               <span className="text-xs sm:text-sm text-muted-foreground">Remaining Balance:</span>
-              <span className="font-semibold text-orange-600 text-sm sm:text-base">Rs. {remainingBalance.toFixed(2)}</span>
+              <span className="font-semibold text-orange-600 text-sm sm:text-base transition-colors">Rs. {remainingBalance.toFixed(2)}</span>
             </div>
             
             <div className="space-y-2">
-              <div className="flex justify-between text-xs">
+              <div className="flex justify-between text-xs transition-all duration-200">
                 <span>Payment Progress</span>
-                <span>{paymentProgress.toFixed(1)}%</span>
+                <span className="animate-in fade-in duration-500">{paymentProgress.toFixed(1)}%</span>
               </div>
-              <Progress value={paymentProgress} className="h-2" />
+              <Progress value={paymentProgress} className="h-2 transition-all duration-500" />
             </div>
             
             {isFullyPaid && (
-              <Badge className="w-full justify-center mt-3 bg-green-600">
+              <Badge className="w-full justify-center mt-3 bg-green-600 animate-in zoom-in-95 duration-500">
                 Bill Settled ✓
               </Badge>
             )}
           </div>
 
           {!isFullyPaid && canManagePayments && (
-            <form onSubmit={handlePayment} className="space-y-4">
-              <div>
-                <Label htmlFor="paymentAmount" className="text-sm sm:text-base">Payment Amount (Rs.)</Label>
+            <form onSubmit={handlePayment} className="space-y-4 animate-in slide-in-from-bottom-4 duration-300 delay-200">
+              <div className="space-y-2">
+                <Label htmlFor="paymentAmount" className="text-sm sm:text-base transition-colors">Payment Amount (Rs.)</Label>
                 <Input
                   id="paymentAmount"
                   type="number"
@@ -181,37 +182,48 @@ const PaymentModal = ({
                   onChange={(e) => setPaymentAmount(e.target.value)}
                   placeholder={`Max: ${remainingBalance.toFixed(2)}`}
                   max={remainingBalance}
-                  className="text-sm sm:text-base"
+                  className="text-sm sm:text-base transition-all duration-200 focus:scale-[1.02] focus:shadow-md"
                   required
                 />
               </div>
               
               <Button 
                 type="submit" 
-                className="w-full text-sm sm:text-base"
+                className="w-full text-sm sm:text-base transition-all duration-200 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Recording...' : 'Record Payment'}
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                    Recording...
+                  </span>
+                ) : (
+                  'Record Payment'
+                )}
               </Button>
             </form>
           )}
 
           {!canManagePayments && !isFullyPaid && (
-            <div className="text-center py-4">
-              <p className="text-sm text-muted-foreground">
+            <div className="text-center py-4 animate-in fade-in duration-300 delay-300">
+              <p className="text-sm text-muted-foreground transition-colors">
                 Only admin and canteen staff can record payments
               </p>
             </div>
           )}
 
           {payments.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="font-medium text-sm sm:text-base">Payment History</h4>
+            <div className="space-y-2 animate-in slide-in-from-bottom-4 duration-300 delay-300">
+              <h4 className="font-medium text-sm sm:text-base transition-colors">Payment History</h4>
               <div className="max-h-32 overflow-y-auto space-y-1">
-                {payments.map((payment) => (
-                  <div key={payment.id} className="flex justify-between items-center text-xs sm:text-sm bg-muted/50 p-2 rounded">
-                    <span>Rs. {payment.amount.toFixed(2)}</span>
-                    <span className="text-muted-foreground">
+                {payments.map((payment, index) => (
+                  <div 
+                    key={payment.id} 
+                    className="flex justify-between items-center text-xs sm:text-sm bg-muted/50 p-2 rounded transition-all duration-200 hover:bg-muted hover:scale-[1.01] hover:shadow-sm animate-in slide-in-from-left-4"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <span className="transition-colors">Rs. {payment.amount.toFixed(2)}</span>
+                    <span className="text-muted-foreground transition-colors">
                       {format(new Date(payment.payment_date), 'MMM dd, yyyy')}
                     </span>
                   </div>

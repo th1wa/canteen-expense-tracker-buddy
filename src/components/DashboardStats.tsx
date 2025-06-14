@@ -94,89 +94,96 @@ const DashboardStats = ({ refreshTrigger }: DashboardStatsProps) => {
   }, [refreshTrigger]);
 
   if (loading) {
-    return <div className="text-center py-8">Loading dashboard...</div>;
+    return (
+      <div className="text-center py-8">
+        <div className="flex items-center justify-center gap-2">
+          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <span className="animate-pulse">Loading dashboard...</span>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 hover:shadow-lg transition-all duration-300 hover:scale-105 animate-in fade-in-0 slide-in-from-left-4 duration-500">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-blue-700 flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
+              <Calendar className="w-4 h-4 transition-transform hover:rotate-12" />
               Today's Collection
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-900">Rs. {stats.todayTotal.toFixed(2)}</div>
-            <p className="text-xs text-blue-600 mt-1">
+            <div className="text-2xl font-bold text-blue-900 transition-all duration-300 hover:scale-105">Rs. {stats.todayTotal.toFixed(2)}</div>
+            <p className="text-xs text-blue-600 mt-1 transition-colors">
               {stats.todayCount} transaction{stats.todayCount !== 1 ? 's' : ''}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-50 to-green-100">
+        <Card className="bg-gradient-to-br from-green-50 to-green-100 hover:shadow-lg transition-all duration-300 hover:scale-105 animate-in fade-in-0 slide-in-from-left-4 duration-500 delay-100">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-green-700 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
+              <TrendingUp className="w-4 h-4 transition-transform hover:rotate-12" />
               This Week
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-900">Rs. {stats.weekTotal.toFixed(2)}</div>
-            <p className="text-xs text-green-600 mt-1">Weekly total</p>
+            <div className="text-2xl font-bold text-green-900 transition-all duration-300 hover:scale-105">Rs. {stats.weekTotal.toFixed(2)}</div>
+            <p className="text-xs text-green-600 mt-1 transition-colors">Weekly total</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100">
+        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 hover:shadow-lg transition-all duration-300 hover:scale-105 animate-in fade-in-0 slide-in-from-left-4 duration-500 delay-200">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-purple-700 flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
+              <Calendar className="w-4 h-4 transition-transform hover:rotate-12" />
               This Month
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">Rs. {stats.monthTotal.toFixed(2)}</div>
-            <p className="text-xs text-purple-600 mt-1">Monthly total</p>
+            <div className="text-2xl font-bold text-purple-900 transition-all duration-300 hover:scale-105">Rs. {stats.monthTotal.toFixed(2)}</div>
+            <p className="text-xs text-purple-600 mt-1 transition-colors">Monthly total</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-orange-50 to-orange-100">
+        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 hover:shadow-lg transition-all duration-300 hover:scale-105 animate-in fade-in-0 slide-in-from-left-4 duration-500 delay-300">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-orange-700 flex items-center gap-2">
-              <Users className="w-4 h-4" />
+              <Users className="w-4 h-4 transition-transform hover:rotate-12" />
               Total Users
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-900">{stats.totalUsers}</div>
-            <p className="text-xs text-orange-600 mt-1">Active users</p>
+            <div className="text-2xl font-bold text-orange-900 transition-all duration-300 hover:scale-105">{stats.totalUsers}</div>
+            <p className="text-xs text-orange-600 mt-1 transition-colors">Active users</p>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
+      <Card className="hover:shadow-lg transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4 duration-500 delay-400">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <DollarSign className="w-5 h-5" />
+            <DollarSign className="w-5 h-5 transition-transform hover:rotate-12" />
             Quick Summary
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-            <div>
-              <p className="text-sm text-gray-600">Average per transaction</p>
-              <p className="text-lg font-semibold">
+            <div className="transition-all duration-200 hover:scale-105">
+              <p className="text-sm text-gray-600 transition-colors">Average per transaction</p>
+              <p className="text-lg font-semibold transition-colors">
                 Rs. {stats.todayCount > 0 ? (stats.todayTotal / stats.todayCount).toFixed(2) : '0.00'}
               </p>
             </div>
-            <div>
-              <p className="text-sm text-gray-600">Today vs Yesterday</p>
-              <p className="text-lg font-semibold text-green-600">📈 Growing</p>
+            <div className="transition-all duration-200 hover:scale-105">
+              <p className="text-sm text-gray-600 transition-colors">Today vs Yesterday</p>
+              <p className="text-lg font-semibold text-green-600 transition-all duration-300">📈 Growing</p>
             </div>
-            <div>
-              <p className="text-sm text-gray-600">Most popular time</p>
-              <p className="text-lg font-semibold">Lunch hours</p>
+            <div className="transition-all duration-200 hover:scale-105">
+              <p className="text-sm text-gray-600 transition-colors">Most popular time</p>
+              <p className="text-lg font-semibold transition-colors">Lunch hours</p>
             </div>
           </div>
         </CardContent>

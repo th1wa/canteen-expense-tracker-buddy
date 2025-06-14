@@ -12,15 +12,15 @@ interface DashboardCardProps {
 
 export const DashboardCard = ({ title, description, icon: Icon, children }: DashboardCardProps) => {
   return (
-    <Card className="h-full">
+    <Card className="h-full hover:shadow-lg transition-all duration-300 hover:scale-[1.01] animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Icon className="w-5 h-5" />
+        <CardTitle className="flex items-center gap-2 transition-colors group">
+          <Icon className="w-5 h-5 transition-transform group-hover:rotate-12" />
           {title}
         </CardTitle>
-        <CardDescription>{description}</CardDescription>
+        <CardDescription className="transition-colors">{description}</CardDescription>
       </CardHeader>
-      <CardContent>{children}</CardContent>
+      <CardContent className="transition-all duration-200">{children}</CardContent>
     </Card>
   );
 };
