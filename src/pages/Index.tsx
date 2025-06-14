@@ -23,27 +23,58 @@ const Index = () => {
     setRefreshTrigger(prev => prev + 1);
   };
 
-  // Check permissions
-  const canManageExpenses = profile && (profile.role === 'admin' || profile.role === 'canteen');
-  const canAccessBackup = profile && profile.role === 'admin';
-  const canAccessSummary = profile && (profile.role === 'admin' || profile.role === 'hr');
-  const isBasicUser = profile && profile.role === 'user';
+  // Check permissions with proper null safety
+  const canManageExpenses = profile?.role === 'admin' || profile?.role === 'canteen';
+  const canAccessBackup = profile?.role === 'admin';
+  const canAccessSummary = profile?.role === 'admin' || profile?.role === 'hr';
+  const isBasicUser = profile?.role === 'user';
 
   // Set default tab based on permissions
   React.useEffect(() => {
+    if (!profile) return; // Wait for profile to load
+    
     if (isBasicUser) {
       setActiveTab('users'); // Basic users can only see their own data in users tab
-    } else if (canManageExpenses && !activeTab) {
+    } else if (canManageExpenses && activeTab === 'users') {
+      // Only change if current tab is users and user can manage expenses
       setActiveTab('add-expense');
     } else if (!canManageExpenses && activeTab === 'add-expense') {
       setActiveTab('users');
     }
-  }, [canManageExpenses, activeTab, isBasicUser]);
+  }, [canManageExpenses, isBasicUser, profile]);
 
   const renderTabContent = () => {
+    // Show loading state while profile is loading
+    if (!profile) {
+      return (
+        <DashboardCard
+          title="Loading..."
+          description="Please wait while we load your profile"
+          icon={Users}
+        >
+          <div className="text-center py-4 sm:py-6 md:py-8">
+            <div className="text-sm sm:text-base">Loading your dashboard...</div>
+          </div>
+        </DashboardCard>
+      );
+    }
+
     switch (activeTab) {
       case 'add-expense':
-        if (!canManageExpenses) return null;
+        if (!canManageExpenses) {
+          return (
+            <DashboardCard
+              title="Access Denied"
+              description="You don't have permission to add expenses"
+              icon={PlusCircle}
+            >
+              <div className="text-center py-4 sm:py-6 md:py-8">
+                <h2 className="text-lg sm:text-xl font-semibold text-destructive mb-2">Access Denied</h2>
+                <p className="text-sm sm:text-base text-muted-foreground">Only admin and canteen staff can add expenses.</p>
+              </div>
+            </DashboardCard>
+          );
+        }
         return (
           <DashboardCard
             title="Add New Expense"
@@ -77,6 +108,20 @@ const Index = () => {
         );
 
       case 'dashboard':
+        if (isBasicUser) {
+          return (
+            <DashboardCard
+              title="Access Denied"
+              description="You don't have permission to view analytics"
+              icon={TrendingUp}
+            >
+              <div className="text-center py-4 sm:py-6 md:py-8">
+                <h2 className="text-lg sm:text-xl font-semibold text-destructive mb-2">Access Denied</h2>
+                <p className="text-sm sm:text-base text-muted-foreground">Dashboard analytics are only available to staff members.</p>
+              </div>
+            </DashboardCard>
+          );
+        }
         return (
           <DashboardCard
             title="Dashboard & Analytics"
@@ -113,7 +158,20 @@ const Index = () => {
         );
 
       case 'backup':
-        if (!canAccessBackup) return null;
+        if (!canAccessBackup) {
+          return (
+            <DashboardCard
+              title="Access Denied"
+              description="You don't have permission to access backup settings"
+              icon={Settings}
+            >
+              <div className="text-center py-4 sm:py-6 md:py-8">
+                <h2 className="text-lg sm:text-xl font-semibold text-destructive mb-2">Access Denied</h2>
+                <p className="text-sm sm:text-base text-muted-foreground">Only admin users can access backup and data management.</p>
+              </div>
+            </DashboardCard>
+          );
+        }
         return (
           <DashboardCard
             title="Local Backup & Data Management"

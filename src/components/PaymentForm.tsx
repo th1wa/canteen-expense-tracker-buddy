@@ -21,23 +21,47 @@ const PaymentForm = ({ userName, remainingBalance, onPaymentAdded, onClose }: Pa
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
+  // Validate props
+  const validUserName = userName?.trim() || '';
+  const validRemainingBalance = Math.max(0, Number(remainingBalance) || 0);
+
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const amount = parseFloat(paymentAmount);
-    if (isNaN(amount) || amount <= 0) {
+    if (!validUserName) {
       toast({
-        title: "Invalid Amount",
-        description: "Please enter a valid payment amount",
+        title: "Invalid User",
+        description: "User name is required to record payment",
         variant: "destructive"
       });
       return;
     }
 
-    if (amount > remainingBalance) {
+    const amount = parseFloat(paymentAmount?.trim() || '0');
+    
+    if (isNaN(amount) || amount <= 0) {
+      toast({
+        title: "Invalid Amount",
+        description: "Please enter a valid payment amount greater than 0",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (amount > validRemainingBalance) {
       toast({
         title: "Payment Exceeds Balance",
-        description: `Payment amount cannot exceed remaining balance of Rs. ${remainingBalance.toFixed(2)}`,
+        description: `Payment amount cannot exceed remaining balance of Rs. ${validRemainingBalance.toFixed(2)}`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Additional validation for reasonable amounts
+    if (amount > 100000) {
+      toast({
+        title: "Amount Too Large",
+        description: "Payment amount seems unusually large. Please verify the amount.",
         variant: "destructive"
       });
       return;
@@ -46,42 +70,43 @@ const PaymentForm = ({ userName, remainingBalance, onPaymentAdded, onClose }: Pa
     setIsSubmitting(true);
 
     try {
+      const paymentData = {
+        user_name: validUserName,
+        amount: Number(amount.toFixed(2)), // Ensure proper precision
+        payment_date: format(new Date(), 'yyyy-MM-dd')
+      };
+
       const { error } = await supabase
         .from('payments')
-        .insert([
-          {
-            user_name: userName,
-            amount: amount,
-            payment_date: format(new Date(), 'yyyy-MM-dd')
-          }
-        ]);
+        .insert([paymentData]);
 
       if (error) {
         console.error('Supabase error:', error);
-        throw error;
+        throw new Error(error.message || 'Failed to record payment');
       }
 
       toast({
         title: "Payment Recorded",
-        description: `Rs. ${amount.toFixed(2)} payment recorded for ${userName}`,
+        description: `Rs. ${amount.toFixed(2)} payment recorded for ${validUserName}`,
       });
 
       setPaymentAmount('');
       onPaymentAdded();
       
-      if (amount >= remainingBalance) {
+      if (amount >= validRemainingBalance) {
         toast({
           title: "Bill Settled! 🎉",
-          description: `${userName}'s bill has been fully paid`,
+          description: `${validUserName}'s bill has been fully paid`,
         });
         onClose();
       }
 
     } catch (error) {
       console.error('Error recording payment:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
         title: "Error",
-        description: "Failed to record payment. Please try again.",
+        description: `Failed to record payment: ${errorMessage}`,
         variant: "destructive"
       });
     } finally {
@@ -89,12 +114,17 @@ const PaymentForm = ({ userName, remainingBalance, onPaymentAdded, onClose }: Pa
     }
   };
 
+  // Generate safe quick amount buttons
   const quickAmountButtons = [
-    Math.min(500, remainingBalance),
-    Math.min(1000, remainingBalance),
-    Math.min(2000, remainingBalance),
-    remainingBalance
-  ].filter((amount, index, arr) => amount > 0 && arr.indexOf(amount) === index);
+    Math.min(500, validRemainingBalance),
+    Math.min(1000, validRemainingBalance),
+    Math.min(2000, validRemainingBalance),
+    validRemainingBalance
+  ].filter((amount, index, arr) => 
+    amount > 0 && 
+    amount <= validRemainingBalance && 
+    arr.indexOf(amount) === index
+  ).sort((a, b) => a - b);
 
   return (
     <Card className="bg-gradient-to-br from-white to-blue-50 dark:from-slate-800 dark:to-blue-950 border-blue-200 dark:border-blue-800 shadow-lg">
@@ -105,7 +135,9 @@ const PaymentForm = ({ userName, remainingBalance, onPaymentAdded, onClose }: Pa
           </div>
           <div>
             <h3 className="font-bold text-lg text-slate-800 dark:text-slate-200">Record Payment</h3>
-            <p className="text-sm text-slate-600 dark:text-slate-400">Enter payment amount below</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Enter payment amount for {validUserName}
+            </p>
           </div>
         </div>
 
@@ -119,10 +151,11 @@ const PaymentForm = ({ userName, remainingBalance, onPaymentAdded, onClose }: Pa
                 id="paymentAmount"
                 type="number"
                 step="0.01"
+                min="0.01"
+                max={validRemainingBalance}
                 value={paymentAmount}
                 onChange={(e) => setPaymentAmount(e.target.value)}
-                placeholder={`Max: ${remainingBalance.toFixed(2)}`}
-                max={remainingBalance}
+                placeholder={`Max: ${validRemainingBalance.toFixed(2)}`}
                 className="pl-8 text-lg font-medium border-2 border-blue-200 dark:border-blue-700 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-slate-800"
                 required
                 disabled={isSubmitting}
@@ -155,7 +188,7 @@ const PaymentForm = ({ userName, remainingBalance, onPaymentAdded, onClose }: Pa
           <Button 
             type="submit" 
             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium py-3 text-base shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !validUserName || validRemainingBalance <= 0}
           >
             {isSubmitting ? (
               <span className="flex items-center gap-2">
