@@ -10,24 +10,35 @@ export const useUsersData = (refreshTrigger: number) => {
   const fetchUsersWithPayments = async () => {
     setLoading(true);
     try {
-      // Fetch expenses with user details
+      // Fetch expenses
       const { data: expenses, error: expensesError } = await supabase
         .from('expenses')
-        .select(`
-          *,
-          users!inner(user_name, first_name, last_name)
-        `)
+        .select('*')
         .order('user_name');
 
       if (expensesError) throw expensesError;
 
-      // Fetch payments using type assertion
+      // Fetch users separately
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select('*')
+        .order('user_name');
+
+      if (usersError) throw usersError;
+
+      // Fetch payments
       const { data: payments, error: paymentsError } = await supabase
-        .from('payments' as any)
+        .from('payments')
         .select('*')
         .order('user_name');
 
       if (paymentsError) throw paymentsError;
+
+      // Create a map of users for quick lookup
+      const usersMap = new Map();
+      usersData?.forEach(user => {
+        usersMap.set(user.user_name, user);
+      });
 
       // Group data by user
       const userMap = new Map<string, UserTotal>();
@@ -35,7 +46,7 @@ export const useUsersData = (refreshTrigger: number) => {
       // Process expenses
       expenses?.forEach(expense => {
         const userName = expense.user_name;
-        const userDetails = expense.users as any;
+        const userDetails = usersMap.get(userName);
         
         if (!userMap.has(userName)) {
           userMap.set(userName, {
