@@ -21,13 +21,18 @@ const UserCard = ({ user, canManagePayments, onPaymentClick }: UserCardProps) =>
     onPaymentClick(user);
   };
 
+  const getDisplayName = () => {
+    const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ');
+    return fullName ? `${user.user_name} (${fullName})` : user.user_name;
+  };
+
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardContent className="p-3 sm:p-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <User className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground flex-shrink-0" />
-            <h3 className="font-semibold text-base sm:text-lg truncate">{user.user_name}</h3>
+            <h3 className="font-semibold text-base sm:text-lg truncate">{getDisplayName()}</h3>
             {user.is_settled && (
               <Badge className="bg-green-600 text-xs sm:text-sm">Settled ✓</Badge>
             )}

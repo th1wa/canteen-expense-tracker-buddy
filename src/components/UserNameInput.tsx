@@ -11,30 +11,42 @@ interface UserNameInputProps {
   className?: string;
 }
 
+interface User {
+  user_name: string;
+  first_name: string | null;
+  last_name: string | null;
+}
+
 export const UserNameInput = ({ value, onChange, className }: UserNameInputProps) => {
-  const [userSuggestions, setUserSuggestions] = useState<string[]>([]);
+  const [userSuggestions, setUserSuggestions] = useState<User[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // Fetch existing user names for autocomplete
+  // Fetch users from the users table
   useEffect(() => {
-    const fetchUserNames = async () => {
+    const fetchUsers = async () => {
       const { data, error } = await supabase
-        .from('expenses')
-        .select('user_name')
+        .from('users')
+        .select('user_name, first_name, last_name')
         .order('user_name');
       
       if (!error && data) {
-        const uniqueNames = [...new Set(data.map(item => item.user_name))];
-        setUserSuggestions(uniqueNames);
+        setUserSuggestions(data);
       }
     };
     
-    fetchUserNames();
+    fetchUsers();
   }, []);
 
-  const filteredSuggestions = userSuggestions.filter(name =>
-    name.toLowerCase().includes(value.toLowerCase())
+  const filteredSuggestions = userSuggestions.filter(user =>
+    user.user_name.toLowerCase().includes(value.toLowerCase()) ||
+    user.first_name?.toLowerCase().includes(value.toLowerCase()) ||
+    user.last_name?.toLowerCase().includes(value.toLowerCase())
   );
+
+  const getDisplayName = (user: User) => {
+    const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ');
+    return fullName ? `${user.user_name} (${fullName})` : user.user_name;
+  };
 
   return (
     <div className={`relative ${className}`}>
@@ -53,16 +65,16 @@ export const UserNameInput = ({ value, onChange, className }: UserNameInputProps
       />
       {showSuggestions && value && filteredSuggestions.length > 0 && (
         <Card className="absolute z-10 w-full mt-1 max-h-40 overflow-y-auto">
-          {filteredSuggestions.slice(0, 5).map((suggestion, index) => (
+          {filteredSuggestions.slice(0, 5).map((user, index) => (
             <div
               key={index}
               className="p-2 sm:p-3 hover:bg-accent cursor-pointer text-sm sm:text-base"
               onClick={() => {
-                onChange(suggestion);
+                onChange(user.user_name);
                 setShowSuggestions(false);
               }}
             >
-              {suggestion}
+              {getDisplayName(user)}
             </div>
           ))}
         </Card>

@@ -10,10 +10,13 @@ export const useUsersData = (refreshTrigger: number) => {
   const fetchUsersWithPayments = async () => {
     setLoading(true);
     try {
-      // Fetch expenses
+      // Fetch expenses with user details
       const { data: expenses, error: expensesError } = await supabase
         .from('expenses')
-        .select('*')
+        .select(`
+          *,
+          users!inner(user_name, first_name, last_name)
+        `)
         .order('user_name');
 
       if (expensesError) throw expensesError;
@@ -32,9 +35,13 @@ export const useUsersData = (refreshTrigger: number) => {
       // Process expenses
       expenses?.forEach(expense => {
         const userName = expense.user_name;
+        const userDetails = expense.users as any;
+        
         if (!userMap.has(userName)) {
           userMap.set(userName, {
             user_name: userName,
+            first_name: userDetails?.first_name || null,
+            last_name: userDetails?.last_name || null,
             total_amount: 0,
             total_paid: 0,
             remaining_balance: 0,
