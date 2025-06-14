@@ -21,6 +21,12 @@ export interface SummaryHeaderProps {
   setSelectedMonth: (month: string) => void;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
+  sortBy?: string;
+  setSortBy?: (sort: string) => void;
+  sortOrder?: string;
+  setSortOrder?: (order: string) => void;
+  clearFilters?: () => void;
+  hasActiveFilters?: boolean;
 }
 
 export interface UserSummaryTableProps {

@@ -8,6 +8,9 @@ import { useUsersData } from "@/hooks/useUsersData";
 import { UserTotal } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Filter, FilterX, Users } from "lucide-react";
 
 interface UsersListProps {
   refreshTrigger: number;
@@ -16,6 +19,8 @@ interface UsersListProps {
 const UsersList = ({ refreshTrigger }: UsersListProps) => {
   const [filteredUsers, setFilteredUsers] = useState<UserTotal[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [balanceFilter, setBalanceFilter] = useState('');
+  const [settlementFilter, setSettlementFilter] = useState('');
   const [selectedUser, setSelectedUser] = useState<UserTotal | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const { profile } = useAuth();
@@ -28,37 +33,64 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
     profile?.role === 'admin' || profile?.role === 'canteen'
   , [profile?.role]);
 
-  // Memoize search filtering to prevent unnecessary recalculations
-  const searchFilteredUsers = useMemo(() => {
+  // Memoize search and filter logic
+  const processedUsers = useMemo(() => {
     if (!Array.isArray(users)) {
       return [];
     }
     
-    const searchTermLower = (searchTerm || '').trim().toLowerCase();
-    
-    if (!searchTermLower) {
-      return users;
-    }
-    
-    return users.filter(user => {
-      if (!user?.user_name) return false;
-      
-      const userName = user.user_name.toLowerCase();
-      const firstName = (user.first_name || '').toLowerCase();
-      const lastName = (user.last_name || '').toLowerCase();
-      const fullName = `${firstName} ${lastName}`.trim();
-      
-      return userName.includes(searchTermLower) || 
-             firstName.includes(searchTermLower) ||
-             lastName.includes(searchTermLower) ||
-             fullName.includes(searchTermLower);
-    });
-  }, [searchTerm, users]);
+    let filtered = users;
 
-  // Update filtered users when search results change
+    // Search filter
+    const searchTermLower = (searchTerm || '').trim().toLowerCase();
+    if (searchTermLower) {
+      filtered = filtered.filter(user => {
+        if (!user?.user_name) return false;
+        
+        const userName = user.user_name.toLowerCase();
+        const firstName = (user.first_name || '').toLowerCase();
+        const lastName = (user.last_name || '').toLowerCase();
+        const fullName = `${firstName} ${lastName}`.trim();
+        
+        return userName.includes(searchTermLower) || 
+               firstName.includes(searchTermLower) ||
+               lastName.includes(searchTermLower) ||
+               fullName.includes(searchTermLower);
+      });
+    }
+
+    // Balance filter
+    if (balanceFilter && balanceFilter !== 'all') {
+      filtered = filtered.filter(user => {
+        const balance = user.remaining_balance || 0;
+        switch (balanceFilter) {
+          case 'low': return balance <= 100;
+          case 'medium': return balance > 100 && balance <= 500;
+          case 'high': return balance > 500;
+          case 'zero': return balance <= 0.01;
+          default: return true;
+        }
+      });
+    }
+
+    // Settlement filter
+    if (settlementFilter && settlementFilter !== 'all') {
+      filtered = filtered.filter(user => {
+        switch (settlementFilter) {
+          case 'settled': return user.is_settled;
+          case 'pending': return !user.is_settled;
+          default: return true;
+        }
+      });
+    }
+
+    return filtered;
+  }, [searchTerm, balanceFilter, settlementFilter, users]);
+
+  // Update filtered users when processed users change
   useEffect(() => {
-    setFilteredUsers(searchFilteredUsers);
-  }, [searchFilteredUsers]);
+    setFilteredUsers(processedUsers);
+  }, [processedUsers]);
 
   // Handle payment click with validation
   const handlePaymentClick = useCallback((user: UserTotal) => {
@@ -105,10 +137,19 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
     setSearchTerm(term || '');
   }, []);
 
+  // Clear all filters
+  const clearAllFilters = useCallback(() => {
+    setSearchTerm('');
+    setBalanceFilter('');
+    setSettlementFilter('');
+  }, []);
+
   // Clear search handler
   const handleClearSearch = useCallback(() => {
     setSearchTerm('');
   }, []);
+
+  const hasActiveFilters = searchTerm || balanceFilter || settlementFilter;
 
   if (loading) {
     return (
@@ -136,23 +177,90 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
 
   return (
     <div className="space-y-4 w-full container-mobile">
-      <UserSearch 
-        searchTerm={searchTerm} 
-        onSearchChange={handleSearchChange} 
-      />
+      {/* Search and Filters */}
+      <div className="space-y-3">
+        <UserSearch 
+          searchTerm={searchTerm} 
+          onSearchChange={handleSearchChange} 
+        />
+
+        {/* Filter Controls */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-gray-500" />
+              <span className="text-sm font-medium">Filters</span>
+            </div>
+            {hasActiveFilters && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearAllFilters}
+                className="text-xs"
+              >
+                <FilterX className="w-3 h-3 mr-1" />
+                Clear All
+              </Button>
+            )}
+          </div>
+
+          <div className={`grid gap-3 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}`}>
+            {/* Balance Filter */}
+            <Select value={balanceFilter} onValueChange={setBalanceFilter}>
+              <SelectTrigger className="text-xs">
+                <SelectValue placeholder="All balances" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All balances</SelectItem>
+                <SelectItem value="zero">No balance (Rs. 0)</SelectItem>
+                <SelectItem value="low">Low (≤ Rs. 100)</SelectItem>
+                <SelectItem value="medium">Medium (Rs. 101-500)</SelectItem>
+                <SelectItem value="high">High (> Rs. 500)</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Settlement Filter */}
+            <Select value={settlementFilter} onValueChange={setSettlementFilter}>
+              <SelectTrigger className="text-xs">
+                <SelectValue placeholder="All statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="settled">Settled</SelectItem>
+                <SelectItem value="pending">Pending payment</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      {/* Results Summary */}
+      {hasActiveFilters && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Users className="w-4 h-4" />
+          <span>
+            Showing {filteredUsers.length} of {users.length} users
+          </span>
+        </div>
+      )}
 
       {filteredUsers.length === 0 ? (
         <div className="text-center py-8 sm:py-12 px-4 text-muted-foreground">
           <div className="max-w-sm mx-auto">
             <p className="text-responsive-sm mb-4">
-              {searchTerm ? 'No users found matching your search.' : 'No users found.'}
+              {hasActiveFilters 
+                ? 'No users found matching your filters.' 
+                : searchTerm 
+                ? 'No users found matching your search.' 
+                : 'No users found.'
+              }
             </p>
-            {searchTerm && (
+            {(searchTerm || hasActiveFilters) && (
               <button 
-                onClick={handleClearSearch}
+                onClick={hasActiveFilters ? clearAllFilters : handleClearSearch}
                 className="btn-mobile text-blue-600 hover:text-blue-800 underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
               >
-                Clear search
+                {hasActiveFilters ? 'Clear all filters' : 'Clear search'}
               </button>
             )}
           </div>

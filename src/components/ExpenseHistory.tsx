@@ -3,7 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Calendar, User, DollarSign } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, Calendar, User, DollarSign, Filter, FilterX } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,8 +29,12 @@ const ExpenseHistory = ({ refreshTrigger }: ExpenseHistoryProps) => {
   const [filteredExpenses, setFilteredExpenses] = useState<Expense[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('');
+  const [userFilter, setUserFilter] = useState('');
+  const [amountFilter, setAmountFilter] = useState('');
+  const [noteFilter, setNoteFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [uniqueUsers, setUniqueUsers] = useState<string[]>([]);
   const { profile } = useAuth();
   const { toast } = useToast();
 
@@ -69,6 +75,10 @@ const ExpenseHistory = ({ refreshTrigger }: ExpenseHistoryProps) => {
 
       setExpenses(validExpenses);
       setFilteredExpenses(validExpenses);
+      
+      // Extract unique users for filter dropdown
+      const users = [...new Set(validExpenses.map(expense => expense.user_name))].sort();
+      setUniqueUsers(users);
     } catch (error) {
       console.error('Error fetching expenses:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -112,8 +122,49 @@ const ExpenseHistory = ({ refreshTrigger }: ExpenseHistoryProps) => {
       );
     }
 
+    // Filter by user
+    if (userFilter && userFilter !== 'all') {
+      filtered = filtered.filter(expense =>
+        expense?.user_name === userFilter
+      );
+    }
+
+    // Filter by amount range
+    if (amountFilter && amountFilter !== 'all') {
+      filtered = filtered.filter(expense => {
+        const amount = Number(expense?.amount) || 0;
+        switch (amountFilter) {
+          case 'low': return amount <= 100;
+          case 'medium': return amount > 100 && amount <= 500;
+          case 'high': return amount > 500;
+          default: return true;
+        }
+      });
+    }
+
+    // Filter by note presence
+    if (noteFilter && noteFilter !== 'all') {
+      filtered = filtered.filter(expense => {
+        switch (noteFilter) {
+          case 'with-notes': return expense?.note && expense.note.trim() !== '';
+          case 'without-notes': return !expense?.note || expense.note.trim() === '';
+          default: return true;
+        }
+      });
+    }
+
     setFilteredExpenses(filtered);
-  }, [searchTerm, dateFilter, expenses]);
+  }, [searchTerm, dateFilter, userFilter, amountFilter, noteFilter, expenses]);
+
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setDateFilter('');
+    setUserFilter('');
+    setAmountFilter('');
+    setNoteFilter('');
+  };
+
+  const hasActiveFilters = searchTerm || dateFilter || userFilter || amountFilter || noteFilter;
 
   const totalAmount = filteredExpenses.reduce((sum, expense) => {
     const amount = Number(expense?.amount) || 0;
@@ -148,32 +199,97 @@ const ExpenseHistory = ({ refreshTrigger }: ExpenseHistoryProps) => {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex items-center space-x-2 flex-1">
-          <Search className="w-4 h-4 text-gray-500" />
-          <Input
-            placeholder="Search by user name or note..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value || '')}
-          />
+      {/* Filter Controls */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-gray-500" />
+            <span className="text-sm font-medium">Filters</span>
+          </div>
+          {hasActiveFilters && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearAllFilters}
+              className="text-xs"
+            >
+              <FilterX className="w-3 h-3 mr-1" />
+              Clear All
+            </Button>
+          )}
         </div>
-        <div className="flex items-center space-x-2">
-          <Calendar className="w-4 h-4 text-gray-500" />
-          <Input
-            type="date"
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value || '')}
-            className="w-auto"
-          />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+          {/* Search Filter */}
+          <div className="flex items-center space-x-2">
+            <Search className="w-4 h-4 text-gray-500 flex-shrink-0" />
+            <Input
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value || '')}
+              className="text-xs"
+            />
+          </div>
+
+          {/* Date Filter */}
+          <div className="flex items-center space-x-2">
+            <Calendar className="w-4 h-4 text-gray-500 flex-shrink-0" />
+            <Input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value || '')}
+              className="text-xs"
+            />
+          </div>
+
+          {/* User Filter */}
+          <Select value={userFilter} onValueChange={setUserFilter}>
+            <SelectTrigger className="text-xs">
+              <SelectValue placeholder="All users" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All users</SelectItem>
+              {uniqueUsers.map(user => (
+                <SelectItem key={user} value={user}>{user}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Amount Filter */}
+          <Select value={amountFilter} onValueChange={setAmountFilter}>
+            <SelectTrigger className="text-xs">
+              <SelectValue placeholder="All amounts" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All amounts</SelectItem>
+              <SelectItem value="low">≤ Rs. 100</SelectItem>
+              <SelectItem value="medium">Rs. 101-500</SelectItem>
+              <SelectItem value="high">> Rs. 500</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Note Filter */}
+          <Select value={noteFilter} onValueChange={setNoteFilter}>
+            <SelectTrigger className="text-xs">
+              <SelectValue placeholder="All notes" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All notes</SelectItem>
+              <SelectItem value="with-notes">With notes</SelectItem>
+              <SelectItem value="without-notes">Without notes</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
+      {/* Summary Card */}
       <Card className="bg-amber-50">
         <CardContent className="p-4">
           <div className="flex justify-between items-center">
             <div>
               <p className="text-sm text-amber-700">
                 {filteredExpenses.length} transaction{filteredExpenses.length !== 1 ? 's' : ''}
+                {hasActiveFilters && ` (filtered from ${expenses.length})`}
                 {dateFilter && ` on ${format(new Date(dateFilter), 'MMM dd, yyyy')}`}
               </p>
             </div>
@@ -186,9 +302,10 @@ const ExpenseHistory = ({ refreshTrigger }: ExpenseHistoryProps) => {
         </CardContent>
       </Card>
 
+      {/* Results */}
       {filteredExpenses.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
-          {searchTerm || dateFilter ? 'No expenses found matching your filters.' : 'No expenses recorded yet.'}
+          {hasActiveFilters ? 'No expenses found matching your filters.' : 'No expenses recorded yet.'}
         </div>
       ) : (
         <div className="space-y-3">

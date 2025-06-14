@@ -18,6 +18,8 @@ const UserExpenseSummary = () => {
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [selectedUserForExport, setSelectedUserForExport] = useState<string>('');
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState('asc');
   const { profile } = useAuth();
   const { toast } = useToast();
 
@@ -32,11 +34,47 @@ const UserExpenseSummary = () => {
   useEffect(() => {
     if (!summaryData) return;
     
-    const filtered = summaryData.filter(user =>
+    let filtered = summaryData.filter(user =>
       user?.user_name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let aValue: any, bValue: any;
+      
+      switch (sortBy) {
+        case 'name':
+          aValue = a.user_name || '';
+          bValue = b.user_name || '';
+          break;
+        case 'expenses':
+          aValue = a.total_expenses || 0;
+          bValue = b.total_expenses || 0;
+          break;
+        case 'paid':
+          aValue = a.total_paid || 0;
+          bValue = b.total_paid || 0;
+          break;
+        case 'remaining':
+          aValue = a.total_remainder || 0;
+          bValue = b.total_remainder || 0;
+          break;
+        default:
+          aValue = a.user_name || '';
+          bValue = b.user_name || '';
+      }
+
+      if (typeof aValue === 'string') {
+        const comparison = aValue.localeCompare(bValue);
+        return sortOrder === 'asc' ? comparison : -comparison;
+      } else {
+        const comparison = aValue - bValue;
+        return sortOrder === 'asc' ? comparison : -comparison;
+      }
+    });
+
     setFilteredData(filtered);
-  }, [searchTerm, summaryData]);
+  }, [searchTerm, summaryData, sortBy, sortOrder]);
 
   useEffect(() => {
     if (error) {
@@ -52,6 +90,14 @@ const UserExpenseSummary = () => {
     if (!userName) return;
     setExpandedUser(expandedUser === userName ? null : userName);
   };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSortBy('name');
+    setSortOrder('asc');
+  };
+
+  const hasActiveFilters = searchTerm || sortBy !== 'name' || sortOrder !== 'asc';
 
   const onExportSummary = async () => {
     if (!hasAccess) {
@@ -141,6 +187,12 @@ const UserExpenseSummary = () => {
         setSelectedMonth={setSelectedMonth}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        sortOrder={sortOrder}
+        setSortOrder={setSortOrder}
+        clearFilters={clearFilters}
+        hasActiveFilters={hasActiveFilters}
       />
 
       <div className="w-full">
