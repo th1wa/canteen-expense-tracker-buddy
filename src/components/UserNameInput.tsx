@@ -59,7 +59,7 @@ export const UserNameInput = ({ value, onChange, className }: UserNameInputProps
           setShowSuggestions(true);
         }}
         onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-        placeholder="Enter user name (e.g., Kamal)"
+        placeholder="Enter user name"
         className="form-responsive w-full"
         required
       />
