@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Calendar, Users, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format, startOfDay, startOfWeek, startOfMonth, endOfDay } from "date-fns";
@@ -16,7 +15,6 @@ interface Stats {
   weekTotal: number;
   monthTotal: number;
   totalUsers: number;
-  topUser: { name: string; amount: number } | null;
 }
 
 const DashboardStats = ({ refreshTrigger }: DashboardStatsProps) => {
@@ -25,8 +23,7 @@ const DashboardStats = ({ refreshTrigger }: DashboardStatsProps) => {
     todayCount: 0,
     weekTotal: 0,
     monthTotal: 0,
-    totalUsers: 0,
-    topUser: null
+    totalUsers: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -52,8 +49,7 @@ const DashboardStats = ({ refreshTrigger }: DashboardStatsProps) => {
           todayCount: 0,
           weekTotal: 0,
           monthTotal: 0,
-          totalUsers: 0,
-          topUser: null
+          totalUsers: 0
         });
         return;
       }
@@ -77,16 +73,13 @@ const DashboardStats = ({ refreshTrigger }: DashboardStatsProps) => {
       });
 
       const totalUsers = Object.keys(userTotals).length;
-      const topUserEntry = Object.entries(userTotals).sort(([,a], [,b]) => b - a)[0];
-      const topUser = topUserEntry ? { name: topUserEntry[0], amount: topUserEntry[1] } : null;
 
       setStats({
         todayTotal,
         todayCount: todayExpenses.length,
         weekTotal,
         monthTotal,
-        totalUsers,
-        topUser
+        totalUsers
       });
 
     } catch (error) {
@@ -161,30 +154,6 @@ const DashboardStats = ({ refreshTrigger }: DashboardStatsProps) => {
           </CardContent>
         </Card>
       </div>
-
-      {stats.topUser && (
-        <Card className="bg-gradient-to-r from-amber-50 to-yellow-50">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold text-amber-800 flex items-center gap-2">
-              🏆 Top Spender
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-bold text-amber-900">{stats.topUser.name}</h3>
-                <p className="text-amber-700">Highest total spending</p>
-              </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-amber-600">
-                  Rs. {stats.topUser.amount.toFixed(2)}
-                </p>
-                <Badge className="bg-amber-200 text-amber-800">Champion!</Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       <Card>
         <CardHeader>
