@@ -3,7 +3,7 @@ import React from 'react';
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { IoCash, IoTrendingUp, IoTarget, IoCheckmarkCircle } from "react-icons/io5";
+import { IoCash, IoTrendingUp, IoBullseye, IoCheckmarkCircle } from "react-icons/io5";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface PaymentSummaryProps {
@@ -56,7 +56,7 @@ const PaymentSummary = ({
           {/* Remaining Balance */}
           <div className="text-center bg-orange-50 dark:bg-orange-950/30 rounded-xl border border-orange-200 dark:border-orange-800 spacing-responsive-sm">
             <div className="flex items-center justify-center mb-2">
-              <IoTarget className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 dark:text-orange-400" />
+              <IoBullseye className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 dark:text-orange-400" />
             </div>
             <p className="text-xs text-orange-600 dark:text-orange-400 font-medium uppercase tracking-wide">Remaining</p>
             <p className="text-responsive-lg font-bold text-orange-700 dark:text-orange-300">
