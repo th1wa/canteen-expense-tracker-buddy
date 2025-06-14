@@ -160,7 +160,7 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
         <div className={`grid gap-3 sm:gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3'}`}>
           {filteredUsers.map((user) => (
             <UserCard
-              key={`user-${user.user_name}`}
+              key={`user-${user.user_name}-${user.total_amount}`}
               user={user}
               canManagePayments={!!canManagePayments}
               onPaymentClick={handlePaymentClick}
@@ -175,7 +175,7 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
           onClose={handleModalClose}
           userName={selectedUser.user_name}
           totalAmount={selectedUser.total_amount}
-          payments={selectedUser.payments}
+          payments={selectedUser.payments || []}
           onPaymentAdded={handlePaymentAdded}
         />
       )}

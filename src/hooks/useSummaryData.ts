@@ -78,13 +78,15 @@ export const useSummaryData = (selectedMonth: string, hasAccess: boolean) => {
         
         // Type-safe record processing
         const typedRecord: ExpenseSummary = {
-          user_name: record.user_name,
-          expense_date: record.expense_date || '',
+          user_name: String(record.user_name || ''),
+          expense_date: String(record.expense_date || ''),
           expense_amount: Number(record.expense_amount) || 0,
           payment_made: Boolean(record.payment_made),
-          payment_date: record.payment_date || null,
+          payment_date: record.payment_date ? String(record.payment_date) : null,
           remainder_amount: Number(record.remainder_amount) || 0
         };
+        
+        if (!typedRecord.user_name) return;
         
         if (!userMap.has(typedRecord.user_name)) {
           userMap.set(typedRecord.user_name, {
@@ -115,12 +117,6 @@ export const useSummaryData = (selectedMonth: string, hasAccess: boolean) => {
       console.error('Error fetching summary data:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred while fetching summary';
       setError(errorMessage);
-      
-      toast({
-        title: "Error",
-        description: `Failed to fetch summary data: ${errorMessage}`,
-        variant: "destructive"
-      });
       
       setSummaryData([]);
     } finally {

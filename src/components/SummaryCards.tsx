@@ -19,6 +19,12 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({
 }) => {
   const isMobile = useIsMobile();
 
+  // Ensure all values are valid numbers
+  const safeTotalUsers = Number(totalUsers) || 0;
+  const safeTotalExpenses = Number(totalExpenses) || 0;
+  const safeTotalPaid = Number(totalPaid) || 0;
+  const safeTotalRemaining = Number(totalRemaining) || 0;
+
   return (
     <div className={`grid gap-3 sm:gap-4 ${isMobile ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-4'}`}>
       <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800">
@@ -30,7 +36,7 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({
             <div className="min-w-0 flex-1">
               <p className="text-xs text-blue-600 dark:text-blue-400 font-medium uppercase tracking-wide">Total Users</p>
               <p className={`font-bold text-blue-700 dark:text-blue-300 truncate ${isMobile ? 'text-lg' : 'text-lg sm:text-xl'}`}>
-                {totalUsers}
+                {safeTotalUsers}
               </p>
             </div>
           </div>
@@ -46,7 +52,7 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({
             <div className="min-w-0 flex-1">
               <p className="text-xs text-orange-600 dark:text-orange-400 font-medium uppercase tracking-wide">Total Expenses</p>
               <p className={`font-bold text-orange-700 dark:text-orange-300 truncate ${isMobile ? 'text-sm' : 'text-sm sm:text-lg'}`}>
-                Rs. {totalExpenses.toFixed(2)}
+                Rs. {safeTotalExpenses.toFixed(2)}
               </p>
             </div>
           </div>
@@ -62,7 +68,7 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({
             <div className="min-w-0 flex-1">
               <p className="text-xs text-green-600 dark:text-green-400 font-medium uppercase tracking-wide">Total Paid</p>
               <p className={`font-bold text-green-700 dark:text-green-300 truncate ${isMobile ? 'text-sm' : 'text-sm sm:text-lg'}`}>
-                Rs. {totalPaid.toFixed(2)}
+                Rs. {safeTotalPaid.toFixed(2)}
               </p>
             </div>
           </div>
@@ -78,7 +84,7 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({
             <div className="min-w-0 flex-1">
               <p className="text-xs text-red-600 dark:text-red-400 font-medium uppercase tracking-wide">Total Remaining</p>
               <p className={`font-bold text-red-700 dark:text-red-300 truncate ${isMobile ? 'text-sm' : 'text-sm sm:text-lg'}`}>
-                Rs. {totalRemaining.toFixed(2)}
+                Rs. {safeTotalRemaining.toFixed(2)}
               </p>
             </div>
           </div>

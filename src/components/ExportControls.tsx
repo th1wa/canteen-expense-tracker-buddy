@@ -32,6 +32,9 @@ const ExportControls: React.FC<ExportControlsProps> = ({
 }) => {
   const isMobile = useIsMobile();
 
+  // Validate filteredData to prevent runtime errors
+  const validFilteredData = Array.isArray(filteredData) ? filteredData : [];
+
   return (
     <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border-blue-200 dark:border-blue-800">
       <CardHeader className="spacing-responsive-sm">
@@ -66,7 +69,7 @@ const ExportControls: React.FC<ExportControlsProps> = ({
                   <SelectValue placeholder="Select user..." />
                 </SelectTrigger>
                 <SelectContent className="bg-white dark:bg-gray-800 border shadow-lg z-50">
-                  {filteredData.map((user) => (
+                  {validFilteredData.map((user) => (
                     <SelectItem key={user.user_name} value={user.user_name}>
                       {user.user_name}
                     </SelectItem>

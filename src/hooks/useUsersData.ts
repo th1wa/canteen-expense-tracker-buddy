@@ -88,9 +88,9 @@ export const useUsersData = (refreshTrigger: number) => {
       }
 
       // Safely handle null/undefined data
-      const safeExpenses = expenses || [];
-      const safeUsersData = usersData || [];
-      const safePayments = payments || [];
+      const safeExpenses = Array.isArray(expenses) ? expenses : [];
+      const safeUsersData = Array.isArray(usersData) ? usersData : [];
+      const safePayments = Array.isArray(payments) ? payments : [];
 
       // Create a map of users for quick lookup
       const usersMap = new Map();
@@ -145,7 +145,7 @@ export const useUsersData = (refreshTrigger: number) => {
           const amount = Number(payment.amount) || 0;
           user.total_paid += amount;
           user.payments.push({
-            id: payment.id || `payment-${Date.now()}`,
+            id: payment.id || `payment-${Date.now()}-${Math.random()}`,
             amount: amount,
             payment_date: payment.payment_date || new Date().toISOString().split('T')[0],
             created_at: payment.created_at || new Date().toISOString()
@@ -157,7 +157,7 @@ export const useUsersData = (refreshTrigger: number) => {
       const usersArray = Array.from(userMap.values()).map(user => {
         user.remaining_balance = Math.max(0, user.total_amount - user.total_paid);
         user.payment_progress = user.total_amount > 0 ? Math.min((user.total_paid / user.total_amount) * 100, 100) : 0;
-        user.is_settled = user.remaining_balance <= 0;
+        user.is_settled = user.remaining_balance <= 0.01; // Allow for small rounding differences
         user.payments.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         return user;
       });
@@ -175,12 +175,6 @@ export const useUsersData = (refreshTrigger: number) => {
       console.error('Error fetching users with payments:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred while fetching data';
       setError(errorMessage);
-      
-      toast({
-        title: "Error",
-        description: `Failed to load users: ${errorMessage}`,
-        variant: "destructive"
-      });
       
       // Set empty array on error to prevent UI issues
       setUsers([]);

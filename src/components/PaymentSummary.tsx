@@ -23,6 +23,12 @@ const PaymentSummary = ({
 }: PaymentSummaryProps) => {
   const isMobile = useIsMobile();
 
+  // Ensure all numeric values are valid
+  const safeTotal = Number(totalAmount) || 0;
+  const safePaid = Number(totalPaid) || 0;
+  const safeRemaining = Number(remainingBalance) || 0;
+  const safeProgress = Number(paymentProgress) || 0;
+
   return (
     <Card className="relative overflow-hidden bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 border-0 shadow-lg">
       <div className="absolute top-0 right-0 w-16 h-16 sm:w-24 sm:h-24 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full -translate-y-6 sm:-translate-y-8 translate-x-6 sm:translate-x-8"></div>
@@ -38,7 +44,7 @@ const PaymentSummary = ({
             </div>
             <p className="text-xs text-blue-600 dark:text-blue-400 font-medium uppercase tracking-wide">Total Amount</p>
             <p className="text-responsive-lg font-bold text-blue-700 dark:text-blue-300">
-              Rs. {totalAmount.toFixed(2)}
+              Rs. {safeTotal.toFixed(2)}
             </p>
           </div>
 
@@ -49,7 +55,7 @@ const PaymentSummary = ({
             </div>
             <p className="text-xs text-green-600 dark:text-green-400 font-medium uppercase tracking-wide">Amount Paid</p>
             <p className="text-responsive-lg font-bold text-green-700 dark:text-green-300">
-              Rs. {totalPaid.toFixed(2)}
+              Rs. {safePaid.toFixed(2)}
             </p>
           </div>
 
@@ -60,7 +66,7 @@ const PaymentSummary = ({
             </div>
             <p className="text-xs text-orange-600 dark:text-orange-400 font-medium uppercase tracking-wide">Remaining</p>
             <p className="text-responsive-lg font-bold text-orange-700 dark:text-orange-300">
-              Rs. {remainingBalance.toFixed(2)}
+              Rs. {safeRemaining.toFixed(2)}
             </p>
           </div>
         </div>
@@ -71,13 +77,13 @@ const PaymentSummary = ({
               Payment Progress
             </span>
             <span className="text-responsive-sm font-bold text-slate-800 dark:text-slate-200">
-              {paymentProgress.toFixed(1)}%
+              {safeProgress.toFixed(1)}%
             </span>
           </div>
           <div className="relative bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden h-3">
             <div 
               className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-500 ease-out"
-              style={{ width: `${paymentProgress}%` }}
+              style={{ width: `${Math.min(100, Math.max(0, safeProgress))}%` }}
             ></div>
           </div>
         </div>

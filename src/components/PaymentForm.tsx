@@ -21,7 +21,7 @@ const PaymentForm = ({ userName, remainingBalance, onPaymentAdded, onClose }: Pa
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  // Validate props
+  // Validate props with better type safety
   const validUserName = userName?.trim() || '';
   const validRemainingBalance = Math.max(0, Number(remainingBalance) || 0);
 
@@ -48,7 +48,7 @@ const PaymentForm = ({ userName, remainingBalance, onPaymentAdded, onClose }: Pa
       return;
     }
 
-    if (amount > validRemainingBalance) {
+    if (amount > validRemainingBalance + 0.01) { // Allow for small rounding differences
       toast({
         title: "Payment Exceeds Balance",
         description: `Payment amount cannot exceed remaining balance of Rs. ${validRemainingBalance.toFixed(2)}`,
@@ -93,7 +93,7 @@ const PaymentForm = ({ userName, remainingBalance, onPaymentAdded, onClose }: Pa
       setPaymentAmount('');
       onPaymentAdded();
       
-      if (amount >= validRemainingBalance) {
+      if (amount >= validRemainingBalance - 0.01) { // Allow for small rounding differences
         toast({
           title: "Bill Settled! 🎉",
           description: `${validUserName}'s bill has been fully paid`,
