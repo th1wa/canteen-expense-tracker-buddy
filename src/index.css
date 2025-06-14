@@ -94,89 +94,6 @@
   }
 }
 
-/* Enhanced mobile responsiveness for all devices */
-@media (max-width: 480px) {
-  /* Extra small phones */
-  .container {
-    @apply px-2;
-  }
-  
-  .grid-cols-4 {
-    @apply grid-cols-1;
-  }
-  
-  .grid-cols-3 {
-    @apply grid-cols-1;
-  }
-  
-  .grid-cols-2 {
-    @apply grid-cols-1;
-  }
-  
-  .text-xl {
-    @apply text-lg;
-  }
-  
-  .text-2xl {
-    @apply text-xl;
-  }
-  
-  .text-3xl {
-    @apply text-2xl;
-  }
-}
-
-@media (max-width: 640px) {
-  /* Small phones */
-  .grid-cols-4 {
-    @apply grid-cols-2;
-  }
-  
-  .grid-cols-3 {
-    @apply grid-cols-1;
-  }
-  
-  .hidden-mobile {
-    @apply hidden;
-  }
-}
-
-@media (min-width: 641px) and (max-width: 768px) {
-  /* Large phones/small tablets */
-  .grid-cols-4 {
-    @apply grid-cols-2;
-  }
-  
-  .grid-cols-3 {
-    @apply grid-cols-2;
-  }
-}
-
-@media (min-width: 769px) and (max-width: 1024px) {
-  /* Tablets */
-  .grid-cols-4 {
-    @apply grid-cols-3;
-  }
-  
-  .grid-cols-3 {
-    @apply grid-cols-2;
-  }
-}
-
-@media (min-width: 1025px) and (max-width: 1440px) {
-  /* Small desktops */
-  .container {
-    @apply max-w-6xl;
-  }
-}
-
-@media (min-width: 1441px) {
-  /* Large desktops */
-  .container {
-    @apply max-w-7xl;
-  }
-}
-
 /* Smooth transitions for theme changes */
 * {
   transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
@@ -200,7 +117,7 @@
   background: hsl(var(--accent-foreground));
 }
 
-/* Responsive text utilities */
+/* Responsive utilities using @layer utilities */
 @layer utilities {
   .text-responsive-xs {
     @apply text-xs sm:text-sm md:text-base;
@@ -233,25 +150,24 @@
   .gap-responsive {
     @apply gap-2 sm:gap-4 md:gap-6 lg:gap-8;
   }
-}
 
-/* Touch-friendly button sizes */
-.btn-touch {
-  @apply min-h-[44px] min-w-[44px];
-}
+  /* Touch-friendly button sizes */
+  .btn-touch {
+    @apply min-h-[44px] min-w-[44px];
+  }
 
-/* Responsive form elements */
-.form-responsive {
-  @apply text-sm sm:text-base;
-  @apply px-3 py-2 sm:px-4 sm:py-3;
-}
+  /* Responsive form elements */
+  .form-responsive {
+    @apply text-sm sm:text-base px-3 py-2 sm:px-4 sm:py-3;
+  }
 
-/* Responsive card padding */
-.card-responsive {
-  @apply p-3 sm:p-4 md:p-6 lg:p-8;
-}
+  /* Responsive card padding */
+  .card-responsive {
+    @apply p-3 sm:p-4 md:p-6 lg:p-8;
+  }
 
-/* Responsive grid gaps */
-.grid-responsive {
-  @apply gap-2 sm:gap-3 md:gap-4 lg:gap-6;
+  /* Responsive grid gaps */
+  .grid-responsive {
+    @apply gap-2 sm:gap-3 md:gap-4 lg:gap-6;
+  }
 }
