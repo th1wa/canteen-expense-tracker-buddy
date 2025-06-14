@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { UserTotal } from "@/types/user";
@@ -12,15 +13,26 @@ export const useUsersData = (refreshTrigger: number) => {
   const { profile } = useAuth();
 
   const fetchUsersWithPayments = async () => {
-    setLoading(true);
+    // Reset error state at the start of each fetch
     setError(null);
     
-    try {
-      // Check if user is authenticated and has profile
-      if (!profile) {
-        throw new Error('User not authenticated');
-      }
+    // Don't fetch if profile is not loaded yet
+    if (profile === undefined) {
+      setLoading(true);
+      return;
+    }
 
+    // If profile is null (user not authenticated), set empty state
+    if (profile === null) {
+      setUsers([]);
+      setLoading(false);
+      setError('User not authenticated');
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
       // For basic users, only fetch their own data
       const isBasicUser = profile.role === 'user';
       
@@ -38,7 +50,7 @@ export const useUsersData = (refreshTrigger: number) => {
 
       if (expensesError) {
         console.error('Expenses error:', expensesError);
-        throw new Error(expensesError.message || 'Failed to fetch expenses');
+        throw new Error(`Failed to fetch expenses: ${expensesError.message}`);
       }
 
       // Fetch users with similar filtering
@@ -55,7 +67,7 @@ export const useUsersData = (refreshTrigger: number) => {
 
       if (usersError) {
         console.error('Users error:', usersError);
-        throw new Error(usersError.message || 'Failed to fetch users');
+        throw new Error(`Failed to fetch users: ${usersError.message}`);
       }
 
       // Fetch payments with similar filtering
@@ -72,12 +84,17 @@ export const useUsersData = (refreshTrigger: number) => {
 
       if (paymentsError) {
         console.error('Payments error:', paymentsError);
-        throw new Error(paymentsError.message || 'Failed to fetch payments');
+        throw new Error(`Failed to fetch payments: ${paymentsError.message}`);
       }
+
+      // Safely handle null/undefined data
+      const safeExpenses = expenses || [];
+      const safeUsersData = usersData || [];
+      const safePayments = payments || [];
 
       // Create a map of users for quick lookup
       const usersMap = new Map();
-      usersData?.forEach(user => {
+      safeUsersData.forEach(user => {
         if (user?.user_name) {
           usersMap.set(user.user_name, user);
         }
@@ -87,9 +104,9 @@ export const useUsersData = (refreshTrigger: number) => {
       const userMap = new Map<string, UserTotal>();
 
       // Process expenses
-      expenses?.forEach(expense => {
-        if (!expense?.user_name) {
-          console.warn('Expense missing user_name:', expense);
+      safeExpenses.forEach(expense => {
+        if (!expense?.user_name || expense.amount == null) {
+          console.warn('Invalid expense data:', expense);
           return;
         }
         
@@ -116,9 +133,9 @@ export const useUsersData = (refreshTrigger: number) => {
       });
 
       // Process payments
-      payments?.forEach((payment: any) => {
-        if (!payment?.user_name) {
-          console.warn('Payment missing user_name:', payment);
+      safePayments.forEach((payment: any) => {
+        if (!payment?.user_name || payment.amount == null) {
+          console.warn('Invalid payment data:', payment);
           return;
         }
         
@@ -128,10 +145,10 @@ export const useUsersData = (refreshTrigger: number) => {
           const amount = Number(payment.amount) || 0;
           user.total_paid += amount;
           user.payments.push({
-            id: payment.id,
+            id: payment.id || `payment-${Date.now()}`,
             amount: amount,
-            payment_date: payment.payment_date,
-            created_at: payment.created_at
+            payment_date: payment.payment_date || new Date().toISOString().split('T')[0],
+            created_at: payment.created_at || new Date().toISOString()
           });
         }
       });
@@ -139,7 +156,7 @@ export const useUsersData = (refreshTrigger: number) => {
       // Calculate remaining balances and progress
       const usersArray = Array.from(userMap.values()).map(user => {
         user.remaining_balance = Math.max(0, user.total_amount - user.total_paid);
-        user.payment_progress = user.total_amount > 0 ? (user.total_paid / user.total_amount) * 100 : 0;
+        user.payment_progress = user.total_amount > 0 ? Math.min((user.total_paid / user.total_amount) * 100, 100) : 0;
         user.is_settled = user.remaining_balance <= 0;
         user.payments.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         return user;
@@ -156,7 +173,7 @@ export const useUsersData = (refreshTrigger: number) => {
       setUsers(usersArray);
     } catch (error) {
       console.error('Error fetching users with payments:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred while fetching data';
       setError(errorMessage);
       
       toast({
@@ -164,6 +181,9 @@ export const useUsersData = (refreshTrigger: number) => {
         description: `Failed to load users: ${errorMessage}`,
         variant: "destructive"
       });
+      
+      // Set empty array on error to prevent UI issues
+      setUsers([]);
     } finally {
       setLoading(false);
     }

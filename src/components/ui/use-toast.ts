@@ -1,8 +1,6 @@
 
-import { useToast } from "@/hooks/use-toast";
+// This file should not re-export useToast as it creates circular imports
+// The useToast hook is already available from @/hooks/use-toast
+// This file can be removed or kept minimal for backward compatibility
 
-// Re-export the useToast hook for backward compatibility
-export { useToast };
-
-// Note: The toast function is part of the useToast hook, not a separate export
-// Use const { toast } = useToast() in components instead
+export { useToast } from "@/hooks/use-toast";

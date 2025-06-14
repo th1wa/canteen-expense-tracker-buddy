@@ -27,25 +27,28 @@ export const useSummaryData = (selectedMonth: string, hasAccess: boolean) => {
   const { toast } = useToast();
 
   const fetchSummaryData = async () => {
+    // Reset error state
+    setError(null);
+    
     if (!hasAccess) {
       setLoading(false);
+      setSummaryData([]);
       return;
     }
     
     setLoading(true);
-    setError(null);
     
     try {
       // Validate selectedMonth format
       if (!selectedMonth || !/^\d{4}-\d{2}$/.test(selectedMonth)) {
-        throw new Error('Invalid month format');
+        throw new Error('Invalid month format. Expected YYYY-MM');
       }
 
       const monthDate = new Date(selectedMonth + '-01');
       
       // Validate date
       if (isNaN(monthDate.getTime())) {
-        throw new Error('Invalid date');
+        throw new Error('Invalid date provided');
       }
       
       const { data, error: rpcError } = await supabase.rpc('get_user_expense_summary', {
@@ -54,10 +57,12 @@ export const useSummaryData = (selectedMonth: string, hasAccess: boolean) => {
 
       if (rpcError) {
         console.error('RPC Error:', rpcError);
-        throw new Error(rpcError.message || 'Failed to fetch summary data');
+        throw new Error(`Database error: ${rpcError.message}`);
       }
 
-      if (!data) {
+      // Handle null or undefined data
+      if (!data || !Array.isArray(data)) {
+        console.warn('No data returned from summary function');
         setSummaryData([]);
         return;
       }
@@ -65,15 +70,25 @@ export const useSummaryData = (selectedMonth: string, hasAccess: boolean) => {
       // Group data by user with better error handling
       const userMap = new Map<string, UserSummary>();
       
-      data.forEach((record: ExpenseSummary) => {
-        if (!record?.user_name) {
-          console.warn('Record missing user_name:', record);
+      data.forEach((record: any) => {
+        if (!record || typeof record !== 'object' || !record.user_name) {
+          console.warn('Invalid record in summary data:', record);
           return;
         }
         
-        if (!userMap.has(record.user_name)) {
-          userMap.set(record.user_name, {
-            user_name: record.user_name,
+        // Type-safe record processing
+        const typedRecord: ExpenseSummary = {
+          user_name: record.user_name,
+          expense_date: record.expense_date || '',
+          expense_amount: Number(record.expense_amount) || 0,
+          payment_made: Boolean(record.payment_made),
+          payment_date: record.payment_date || null,
+          remainder_amount: Number(record.remainder_amount) || 0
+        };
+        
+        if (!userMap.has(typedRecord.user_name)) {
+          userMap.set(typedRecord.user_name, {
+            user_name: typedRecord.user_name,
             total_expenses: 0,
             total_paid: 0,
             total_remainder: 0,
@@ -81,24 +96,24 @@ export const useSummaryData = (selectedMonth: string, hasAccess: boolean) => {
           });
         }
         
-        const userSummary = userMap.get(record.user_name)!;
-        userSummary.daily_records.push(record);
+        const userSummary = userMap.get(typedRecord.user_name)!;
+        userSummary.daily_records.push(typedRecord);
         
-        const expenseAmount = Number(record.expense_amount) || 0;
-        const remainderAmount = Number(record.remainder_amount) || 0;
-        
-        userSummary.total_expenses += expenseAmount;
-        if (record.payment_made) {
-          userSummary.total_paid += expenseAmount;
+        userSummary.total_expenses += typedRecord.expense_amount;
+        if (typedRecord.payment_made) {
+          userSummary.total_paid += typedRecord.expense_amount;
         }
-        userSummary.total_remainder += remainderAmount;
+        userSummary.total_remainder += typedRecord.remainder_amount;
       });
 
-      const summaryArray = Array.from(userMap.values());
+      const summaryArray = Array.from(userMap.values()).sort((a, b) => 
+        a.user_name.localeCompare(b.user_name)
+      );
+      
       setSummaryData(summaryArray);
     } catch (error) {
       console.error('Error fetching summary data:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred while fetching summary';
       setError(errorMessage);
       
       toast({
@@ -106,6 +121,7 @@ export const useSummaryData = (selectedMonth: string, hasAccess: boolean) => {
         description: `Failed to fetch summary data: ${errorMessage}`,
         variant: "destructive"
       });
+      
       setSummaryData([]);
     } finally {
       setLoading(false);

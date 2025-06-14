@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import PaymentModal from "@/components/PaymentModal";
 import UserSearch from "@/components/UserSearch";
 import UserCard from "@/components/UserCard";
@@ -24,21 +24,38 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
   // Check if user can manage payments (admin or canteen)
   const canManagePayments = profile?.role === 'admin' || profile?.role === 'canteen';
 
+  // Memoize search filtering to prevent unnecessary recalculations
   useEffect(() => {
     if (!Array.isArray(users)) {
       setFilteredUsers([]);
       return;
     }
     
-    const searchTermLower = (searchTerm || '').toLowerCase();
+    const searchTermLower = (searchTerm || '').trim().toLowerCase();
+    
+    if (!searchTermLower) {
+      setFilteredUsers(users);
+      return;
+    }
+    
     const filtered = users.filter(user => {
       if (!user?.user_name) return false;
-      return user.user_name.toLowerCase().includes(searchTermLower);
+      
+      const userName = user.user_name.toLowerCase();
+      const firstName = (user.first_name || '').toLowerCase();
+      const lastName = (user.last_name || '').toLowerCase();
+      const fullName = `${firstName} ${lastName}`.trim();
+      
+      return userName.includes(searchTermLower) || 
+             firstName.includes(searchTermLower) ||
+             lastName.includes(searchTermLower) ||
+             fullName.includes(searchTermLower);
     });
     
     setFilteredUsers(filtered);
   }, [searchTerm, users]);
 
+  // Handle error display with toast (only show once per error)
   useEffect(() => {
     if (error) {
       toast({
@@ -49,7 +66,7 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
     }
   }, [error, toast]);
 
-  const handlePaymentClick = (user: UserTotal) => {
+  const handlePaymentClick = useCallback((user: UserTotal) => {
     if (!canManagePayments || !user) {
       toast({
         title: "Access Denied",
@@ -59,23 +76,36 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
       return;
     }
     
+    // Validate user data before opening modal
+    if (!user.user_name || user.total_amount < 0 || user.remaining_balance < 0) {
+      toast({
+        title: "Invalid User Data",
+        description: "This user has invalid payment data. Please contact an administrator.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setSelectedUser(user);
     setIsPaymentModalOpen(true);
-  };
+  }, [canManagePayments, toast]);
 
-  const handlePaymentAdded = () => {
+  const handlePaymentAdded = useCallback(() => {
     refetch();
-    // Optional: Show success message
     toast({
       title: "Success",
       description: "Payment has been recorded successfully.",
     });
-  };
+  }, [refetch, toast]);
 
-  const handleModalClose = () => {
+  const handleModalClose = useCallback(() => {
     setIsPaymentModalOpen(false);
     setSelectedUser(null);
-  };
+  }, []);
+
+  const handleSearchChange = useCallback((term: string) => {
+    setSearchTerm(term || '');
+  }, []);
 
   if (loading) {
     return (
@@ -88,12 +118,12 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
   if (error) {
     return (
       <div className="text-center py-4 sm:py-6 md:py-8">
-        <div className="text-sm sm:text-base text-destructive">
+        <div className="text-sm sm:text-base text-destructive mb-2">
           Error: {error}
         </div>
         <button 
           onClick={refetch}
-          className="mt-2 text-sm text-blue-600 hover:text-blue-800 underline"
+          className="mt-2 text-sm text-blue-600 hover:text-blue-800 underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
         >
           Try again
         </button>
@@ -105,7 +135,7 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
     <div className="space-y-3 sm:space-y-4 w-full">
       <UserSearch 
         searchTerm={searchTerm} 
-        onSearchChange={(term) => setSearchTerm(term || '')} 
+        onSearchChange={handleSearchChange} 
       />
 
       {filteredUsers.length === 0 ? (
@@ -113,12 +143,20 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
           <p className="text-sm sm:text-base">
             {searchTerm ? 'No users found matching your search.' : 'No users found.'}
           </p>
+          {searchTerm && (
+            <button 
+              onClick={() => setSearchTerm('')}
+              className="mt-2 text-sm text-blue-600 hover:text-blue-800 underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
+            >
+              Clear search
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid gap-3 sm:gap-4 grid-cols-1">
           {filteredUsers.map((user) => (
             <UserCard
-              key={user.user_name}
+              key={`user-${user.user_name}`}
               user={user}
               canManagePayments={!!canManagePayments}
               onPaymentClick={handlePaymentClick}
