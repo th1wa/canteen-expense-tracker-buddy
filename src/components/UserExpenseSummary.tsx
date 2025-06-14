@@ -97,7 +97,7 @@ const UserExpenseSummary = () => {
     setSortOrder('asc');
   };
 
-  const hasActiveFilters = searchTerm || sortBy !== 'name' || sortOrder !== 'asc';
+  const hasActiveFilters = Boolean(searchTerm || sortBy !== 'name' || sortOrder !== 'asc');
 
   const onExportSummary = async () => {
     if (!hasAccess) {

@@ -5,10 +5,15 @@ import { UserTotal } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
-export const useUsersData = (refreshTrigger: number) => {
+export const useUsersData = (refreshTrigger: number, hasAccess: boolean = true) => {
   const [users, setUsers] = useState<UserTotal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [totalStats, setTotalStats] = useState<{
+    totalExpenses: number;
+    totalPaid: number;
+    totalOutstanding: number;
+  } | null>(null);
   const { toast } = useToast();
   const { profile } = useAuth();
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -38,6 +43,16 @@ export const useUsersData = (refreshTrigger: number) => {
         setUsers([]);
         setLoading(false);
         setError('User not authenticated');
+      }
+      return;
+    }
+
+    // If user doesn't have access, return empty state
+    if (!hasAccess) {
+      if (isMountedRef.current) {
+        setUsers([]);
+        setTotalStats(null);
+        setLoading(false);
       }
       return;
     }
@@ -191,8 +206,16 @@ export const useUsersData = (refreshTrigger: number) => {
         return b.remaining_balance - a.remaining_balance;
       });
 
+      // Calculate total stats
+      const stats = {
+        totalExpenses: usersArray.reduce((sum, user) => sum + user.total_amount, 0),
+        totalPaid: usersArray.reduce((sum, user) => sum + user.total_paid, 0),
+        totalOutstanding: usersArray.reduce((sum, user) => sum + user.remaining_balance, 0)
+      };
+
       if (isMountedRef.current) {
         setUsers(usersArray);
+        setTotalStats(stats);
       }
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
@@ -205,13 +228,14 @@ export const useUsersData = (refreshTrigger: number) => {
       if (isMountedRef.current) {
         setError(errorMessage);
         setUsers([]);
+        setTotalStats(null);
       }
     } finally {
       if (isMountedRef.current) {
         setLoading(false);
       }
     }
-  }, [profile]);
+  }, [profile, hasAccess]);
 
   useEffect(() => {
     fetchUsersWithPayments();
@@ -234,5 +258,5 @@ export const useUsersData = (refreshTrigger: number) => {
     };
   }, []);
 
-  return { users, loading, error, refetch: fetchUsersWithPayments };
+  return { users, loading, error, totalStats, refetch: fetchUsersWithPayments };
 };

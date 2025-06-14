@@ -9,9 +9,9 @@ import { Search, Filter, FilterX, DollarSign, Calendar, User } from "lucide-reac
 import { useUsersData } from "@/hooks/useUsersData";
 import { useAuth } from "@/contexts/AuthContext";
 import UserCard from "./UserCard";
-import UserExpenseModal from "./UserExpenseModal";
 import PaymentModal from "./PaymentModal";
 import { format } from "date-fns";
+import { UserTotal } from "@/types/user";
 
 interface UsersListProps {
   refreshTrigger: number;
@@ -21,10 +21,9 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [balanceFilter, setBalanceFilter] = useState('');
   const [settlementFilter, setSettlementFilter] = useState('');
-  const [selectedUser, setSelectedUser] = useState<string | null>(null);
-  const [showExpenseModal, setShowExpenseModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserTotal | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<UserTotal[]>([]);
   
   const { profile } = useAuth();
   const hasAccess = profile?.role === 'admin' || profile?.role === 'hr';
@@ -35,13 +34,13 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
     if (!users) return;
 
     let filtered = users.filter(user =>
-      user?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      user?.user_name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     // Filter by balance range
     if (balanceFilter && balanceFilter !== 'all') {
       filtered = filtered.filter(user => {
-        const balance = user?.balance || 0;
+        const balance = user?.remaining_balance || 0;
         switch (balanceFilter) {
           case 'positive': return balance > 0;
           case 'zero': return balance === 0;
@@ -56,7 +55,7 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
     // Filter by settlement status
     if (settlementFilter && settlementFilter !== 'all') {
       filtered = filtered.filter(user => {
-        const balance = user?.balance || 0;
+        const balance = user?.remaining_balance || 0;
         switch (settlementFilter) {
           case 'settled': return balance === 0;
           case 'pending': return balance > 0;
@@ -76,14 +75,14 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
 
   const hasActiveFilters = searchTerm || balanceFilter || settlementFilter;
 
-  const handleOpenExpenseModal = (userName: string) => {
-    setSelectedUser(userName);
-    setShowExpenseModal(true);
+  const handlePaymentClick = (user: UserTotal) => {
+    setSelectedUser(user);
+    setShowPaymentModal(true);
   };
 
-  const handleOpenPaymentModal = (userName: string) => {
-    setSelectedUser(userName);
-    setShowPaymentModal(true);
+  const handlePaymentAdded = () => {
+    // Refresh the data when a payment is added
+    window.location.reload();
   };
 
   if (!profile) {
@@ -117,6 +116,9 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
       </div>
     );
   }
+
+  // Check if user can manage payments (admin or canteen)
+  const canManagePayments = profile?.role === 'admin' || profile?.role === 'canteen';
 
   return (
     <div className="space-y-4">
@@ -219,27 +221,26 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredUsers.map((user) => (
             <UserCard
-              key={user.name}
+              key={user.user_name}
               user={user}
-              onOpenExpenseModal={handleOpenExpenseModal}
-              onOpenPaymentModal={handleOpenPaymentModal}
+              canManagePayments={canManagePayments}
+              onPaymentClick={handlePaymentClick}
             />
           ))}
         </div>
       )}
 
-      {/* Modals */}
-      <UserExpenseModal
-        isOpen={showExpenseModal}
-        onClose={() => setShowExpenseModal(false)}
-        userName={selectedUser || ''}
-      />
-
-      <PaymentModal
-        isOpen={showPaymentModal}
-        onClose={() => setShowPaymentModal(false)}
-        userName={selectedUser || ''}
-      />
+      {/* Payment Modal */}
+      {selectedUser && (
+        <PaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          userName={selectedUser.user_name}
+          totalAmount={selectedUser.total_amount}
+          payments={selectedUser.payments}
+          onPaymentAdded={handlePaymentAdded}
+        />
+      )}
     </div>
   );
 };
