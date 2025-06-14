@@ -114,18 +114,6 @@ const PaymentForm = ({ userName, remainingBalance, onPaymentAdded, onClose }: Pa
     }
   };
 
-  // Generate safe quick amount buttons
-  const quickAmountButtons = [
-    Math.min(500, validRemainingBalance),
-    Math.min(1000, validRemainingBalance),
-    Math.min(2000, validRemainingBalance),
-    validRemainingBalance
-  ].filter((amount, index, arr) => 
-    amount > 0 && 
-    amount <= validRemainingBalance && 
-    arr.indexOf(amount) === index
-  ).sort((a, b) => a - b);
-
   return (
     <Card className="bg-gradient-to-br from-white to-blue-50 dark:from-slate-800 dark:to-blue-950 border-blue-200 dark:border-blue-800 shadow-lg">
       <CardContent className="p-6">
@@ -163,27 +151,6 @@ const PaymentForm = ({ userName, remainingBalance, onPaymentAdded, onClose }: Pa
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium">₹</span>
             </div>
           </div>
-
-          {quickAmountButtons.length > 0 && (
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">Quick Amounts</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {quickAmountButtons.map((amount) => (
-                  <Button
-                    key={amount}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPaymentAmount(amount.toString())}
-                    className="text-xs border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950 hover:border-blue-400 dark:hover:border-blue-500"
-                    disabled={isSubmitting}
-                  >
-                    ₹{amount}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
           
           <Button 
             type="submit" 
