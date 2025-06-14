@@ -73,7 +73,7 @@ const PaymentHistory = ({ payments }: PaymentHistoryProps) => {
           ))}
         </div>
 
-        <style jsx>{`
+        <style>{`
           @keyframes slideInLeft {
             from {
               opacity: 0;

@@ -139,7 +139,7 @@ const TodayExpenseHistory = ({ refreshTrigger }: TodayExpenseHistoryProps) => {
           </div>
         )}
 
-        <style jsx>{`
+        <style>{`
           @keyframes fadeInUp {
             from {
               opacity: 0;
