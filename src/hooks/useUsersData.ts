@@ -2,49 +2,98 @@
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { UserTotal } from "@/types/user";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const useUsersData = (refreshTrigger: number) => {
   const [users, setUsers] = useState<UserTotal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+  const { profile } = useAuth();
 
   const fetchUsersWithPayments = async () => {
     setLoading(true);
+    setError(null);
+    
     try {
-      // Fetch expenses
-      const { data: expenses, error: expensesError } = await supabase
+      // Check if user is authenticated and has profile
+      if (!profile) {
+        throw new Error('User not authenticated');
+      }
+
+      // For basic users, only fetch their own data
+      const isBasicUser = profile.role === 'user';
+      
+      // Fetch expenses with user filtering if needed
+      const expensesQuery = supabase
         .from('expenses')
         .select('*')
         .order('user_name');
+      
+      if (isBasicUser && profile.user_name) {
+        expensesQuery.eq('user_name', profile.user_name);
+      }
 
-      if (expensesError) throw expensesError;
+      const { data: expenses, error: expensesError } = await expensesQuery;
 
-      // Fetch users separately
-      const { data: usersData, error: usersError } = await supabase
+      if (expensesError) {
+        console.error('Expenses error:', expensesError);
+        throw new Error(expensesError.message || 'Failed to fetch expenses');
+      }
+
+      // Fetch users with similar filtering
+      const usersQuery = supabase
         .from('users')
         .select('*')
         .order('user_name');
+      
+      if (isBasicUser && profile.user_name) {
+        usersQuery.eq('user_name', profile.user_name);
+      }
 
-      if (usersError) throw usersError;
+      const { data: usersData, error: usersError } = await usersQuery;
 
-      // Fetch payments
-      const { data: payments, error: paymentsError } = await supabase
+      if (usersError) {
+        console.error('Users error:', usersError);
+        throw new Error(usersError.message || 'Failed to fetch users');
+      }
+
+      // Fetch payments with similar filtering
+      const paymentsQuery = supabase
         .from('payments')
         .select('*')
         .order('user_name');
+      
+      if (isBasicUser && profile.user_name) {
+        paymentsQuery.eq('user_name', profile.user_name);
+      }
 
-      if (paymentsError) throw paymentsError;
+      const { data: payments, error: paymentsError } = await paymentsQuery;
+
+      if (paymentsError) {
+        console.error('Payments error:', paymentsError);
+        throw new Error(paymentsError.message || 'Failed to fetch payments');
+      }
 
       // Create a map of users for quick lookup
       const usersMap = new Map();
       usersData?.forEach(user => {
-        usersMap.set(user.user_name, user);
+        if (user?.user_name) {
+          usersMap.set(user.user_name, user);
+        }
       });
 
-      // Group data by user
+      // Group data by user with better error handling
       const userMap = new Map<string, UserTotal>();
 
       // Process expenses
       expenses?.forEach(expense => {
+        if (!expense?.user_name) {
+          console.warn('Expense missing user_name:', expense);
+          return;
+        }
+        
         const userName = expense.user_name;
         const userDetails = usersMap.get(userName);
         
@@ -61,19 +110,27 @@ export const useUsersData = (refreshTrigger: number) => {
             payments: []
           });
         }
+        
         const user = userMap.get(userName)!;
-        user.total_amount += parseFloat(expense.amount.toString());
+        const amount = Number(expense.amount) || 0;
+        user.total_amount += amount;
       });
 
       // Process payments
       payments?.forEach((payment: any) => {
+        if (!payment?.user_name) {
+          console.warn('Payment missing user_name:', payment);
+          return;
+        }
+        
         const userName = payment.user_name;
         if (userMap.has(userName)) {
           const user = userMap.get(userName)!;
-          user.total_paid += parseFloat(payment.amount.toString());
+          const amount = Number(payment.amount) || 0;
+          user.total_paid += amount;
           user.payments.push({
             id: payment.id,
-            amount: parseFloat(payment.amount.toString()),
+            amount: amount,
             payment_date: payment.payment_date,
             created_at: payment.created_at
           });
@@ -100,6 +157,14 @@ export const useUsersData = (refreshTrigger: number) => {
       setUsers(usersArray);
     } catch (error) {
       console.error('Error fetching users with payments:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setError(errorMessage);
+      
+      toast({
+        title: "Error",
+        description: `Failed to load users: ${errorMessage}`,
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -107,7 +172,7 @@ export const useUsersData = (refreshTrigger: number) => {
 
   useEffect(() => {
     fetchUsersWithPayments();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, profile]);
 
-  return { users, loading, refetch: fetchUsersWithPayments };
+  return { users, loading, error, refetch: fetchUsersWithPayments };
 };

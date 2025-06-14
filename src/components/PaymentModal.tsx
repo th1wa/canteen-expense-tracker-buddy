@@ -34,13 +34,24 @@ const PaymentModal = ({
   const { profile } = useAuth();
   const isMobile = useIsMobile();
 
-  const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
-  const remainingBalance = totalAmount - totalPaid;
-  const paymentProgress = Math.min((totalPaid / totalAmount) * 100, 100);
+  // Validate props with proper error handling
+  const validTotalAmount = Math.max(0, Number(totalAmount) || 0);
+  const validPayments = Array.isArray(payments) ? payments.filter(p => p && typeof p === 'object') : [];
+  const validUserName = userName?.trim() || 'Unknown User';
+
+  const totalPaid = validPayments.reduce((sum, payment) => {
+    const amount = Number(payment?.amount) || 0;
+    return sum + amount;
+  }, 0);
+  
+  const remainingBalance = Math.max(0, validTotalAmount - totalPaid);
+  const paymentProgress = validTotalAmount > 0 ? Math.min((totalPaid / validTotalAmount) * 100, 100) : 0;
   const isFullyPaid = remainingBalance <= 0;
 
   // Check if user can manage payments (admin or canteen)
-  const canManagePayments = profile && (profile.role === 'admin' || profile.role === 'canteen');
+  const canManagePayments = profile?.role === 'admin' || profile?.role === 'canteen';
+
+  if (!isOpen) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -62,7 +73,7 @@ const PaymentModal = ({
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-full flex items-center justify-center text-sm sm:text-base">
                 💳
               </div>
-              <span className="truncate">Payment for {userName}</span>
+              <span className="truncate">Payment for {validUserName}</span>
             </DialogTitle>
             <DialogDescription className="text-blue-100 mt-1 text-sm">
               Manage payments and view payment history for this user
@@ -76,7 +87,7 @@ const PaymentModal = ({
           scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600
         `}>
           <PaymentSummary
-            totalAmount={totalAmount}
+            totalAmount={validTotalAmount}
             totalPaid={totalPaid}
             remainingBalance={remainingBalance}
             paymentProgress={paymentProgress}
@@ -85,7 +96,7 @@ const PaymentModal = ({
 
           {!isFullyPaid && canManagePayments && (
             <PaymentForm
-              userName={userName}
+              userName={validUserName}
               remainingBalance={remainingBalance}
               onPaymentAdded={onPaymentAdded}
               onClose={onClose}
@@ -101,7 +112,7 @@ const PaymentModal = ({
             </div>
           )}
 
-          <PaymentHistory payments={payments} />
+          <PaymentHistory payments={validPayments} />
         </div>
       </DialogContent>
     </Dialog>

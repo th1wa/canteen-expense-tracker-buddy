@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSummaryData } from "@/hooks/useSummaryData";
 import { useExportData } from "@/hooks/useExportData";
+import { useToast } from "@/hooks/use-toast";
 import ExportControls from "./ExportControls";
 import SummaryCards from "./SummaryCards";
 import UserSummaryTable from "./UserSummaryTable";
@@ -26,45 +27,115 @@ const UserExpenseSummary = () => {
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [selectedUserForExport, setSelectedUserForExport] = useState<string>('');
   const { profile } = useAuth();
+  const { toast } = useToast();
 
-  // Check if user has admin or hr role
-  const hasAccess = profile && (profile.role === 'admin' || profile.role === 'hr');
+  // Check if user has admin or hr role with proper null checking
+  const hasAccess = profile?.role === 'admin' || profile?.role === 'hr';
 
   // Custom hooks
-  const { summaryData, loading } = useSummaryData(selectedMonth, hasAccess);
+  const { summaryData, loading, error } = useSummaryData(selectedMonth, hasAccess);
   const { isExporting, handleExportSummary, handleExportUserDetail } = useExportData();
 
   useEffect(() => {
+    if (!summaryData) return;
+    
     const filtered = summaryData.filter(user =>
-      user.user_name.toLowerCase().includes(searchTerm.toLowerCase())
+      user?.user_name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredData(filtered);
   }, [searchTerm, summaryData]);
 
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load summary data. Please try again.",
+        variant: "destructive"
+      });
+    }
+  }, [error, toast]);
+
   const handleToggleExpand = (userName: string) => {
+    if (!userName) return;
     setExpandedUser(expandedUser === userName ? null : userName);
   };
 
-  const onExportSummary = () => {
-    if (!hasAccess) return;
-    handleExportSummary(selectedMonth);
+  const onExportSummary = async () => {
+    if (!hasAccess) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to export data.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      await handleExportSummary(selectedMonth);
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to export summary. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const onExportUserDetail = (userName: string) => {
-    if (!hasAccess) return;
-    handleExportUserDetail(userName, selectedMonth);
+  const onExportUserDetail = async (userName: string) => {
+    if (!hasAccess) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to export data.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!userName?.trim()) {
+      toast({
+        title: "Invalid Selection",
+        description: "Please select a valid user to export.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      await handleExportUserDetail(userName, selectedMonth);
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to export user data. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  // Calculate totals
+  // Calculate totals with proper null checking
   const grandTotals = filteredData.reduce(
-    (acc, user) => ({
-      totalUsers: acc.totalUsers + 1,
-      totalExpenses: acc.totalExpenses + user.total_expenses,
-      totalPaid: acc.totalPaid + user.total_paid,
-      totalRemaining: acc.totalRemaining + user.total_remainder
-    }),
+    (acc, user) => {
+      if (!user) return acc;
+      
+      return {
+        totalUsers: acc.totalUsers + 1,
+        totalExpenses: acc.totalExpenses + (Number(user.total_expenses) || 0),
+        totalPaid: acc.totalPaid + (Number(user.total_paid) || 0),
+        totalRemaining: acc.totalRemaining + (Number(user.total_remainder) || 0)
+      };
+    },
     { totalUsers: 0, totalExpenses: 0, totalPaid: 0, totalRemaining: 0 }
   );
+
+  if (!profile) {
+    return (
+      <div className="text-center py-6 sm:py-8 md:py-12 px-4">
+        <div className="max-w-md mx-auto">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-destructive mb-3 sm:mb-4">Loading...</h2>
+          <p className="text-sm sm:text-base text-muted-foreground">Please wait while we load your profile.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!hasAccess) {
     return (
@@ -127,7 +198,7 @@ const UserExpenseSummary = () => {
               <Input
                 placeholder="Search users..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => setSearchTerm(e.target.value || '')}
                 className="w-full sm:w-48"
               />
             </div>

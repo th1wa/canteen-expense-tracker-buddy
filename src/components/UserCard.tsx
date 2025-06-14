@@ -18,22 +18,37 @@ const UserCard = ({ user, canManagePayments, onPaymentClick }: UserCardProps) =>
   const isMobile = useIsMobile();
 
   const handlePaymentClick = () => {
-    if (!canManagePayments) {
+    if (!canManagePayments || !user) {
       return;
     }
     onPaymentClick(user);
   };
 
   const getDisplayName = () => {
-    const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ');
+    if (!user?.user_name) return 'Unknown User';
+    
+    const firstName = user.first_name?.trim() || '';
+    const lastName = user.last_name?.trim() || '';
+    const fullName = [firstName, lastName].filter(Boolean).join(' ');
+    
     return fullName ? `${user.user_name} (${fullName})` : user.user_name;
   };
 
-  // Ensure numeric values are properly handled
-  const totalAmount = Number(user.total_amount) || 0;
-  const totalPaid = Number(user.total_paid) || 0;
-  const remainingBalance = Number(user.remaining_balance) || 0;
-  const paymentProgress = Math.min(Number(user.payment_progress) || 0, 100);
+  // Ensure numeric values are properly handled with validation
+  const totalAmount = Math.max(0, Number(user?.total_amount) || 0);
+  const totalPaid = Math.max(0, Number(user?.total_paid) || 0);
+  const remainingBalance = Math.max(0, Number(user?.remaining_balance) || 0);
+  const paymentProgress = Math.min(Math.max(0, Number(user?.payment_progress) || 0), 100);
+
+  if (!user) {
+    return (
+      <Card className="w-full opacity-50">
+        <CardContent className="p-4 text-center text-muted-foreground">
+          Invalid user data
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className={`
