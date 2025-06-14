@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { UserCheck, Bell } from "lucide-react";
+import { UserCheck } from "lucide-react";
 import UserApprovalModal from "./UserApprovalModal";
 import { useUserApprovals } from "@/hooks/useUserApprovals";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const UserApprovalNotification = () => {
   const [showModal, setShowModal] = useState(false);
   const { profile } = useAuth();
-  const { pendingUsers, updateUserRole } = useUserApprovals();
+  const { pendingUsers, updateUserRole, loading } = useUserApprovals();
 
   // Only show for admin users
   if (profile?.role !== 'admin') {
@@ -18,7 +18,7 @@ const UserApprovalNotification = () => {
   }
 
   // Count users that might need attention (basic users)
-  const basicUsers = pendingUsers.filter(user => user.role === 'user');
+  const basicUsers = Array.isArray(pendingUsers) ? pendingUsers.filter(user => user?.role === 'user') : [];
 
   return (
     <>
@@ -28,6 +28,7 @@ const UserApprovalNotification = () => {
           size="sm"
           onClick={() => setShowModal(true)}
           className="flex items-center gap-2"
+          disabled={loading}
         >
           <UserCheck className="w-4 h-4" />
           User Management

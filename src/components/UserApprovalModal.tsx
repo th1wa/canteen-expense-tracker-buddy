@@ -32,38 +32,56 @@ const UserApprovalModal = ({ isOpen, onClose, pendingUsers, onUpdateRole }: User
   const { toast } = useToast();
 
   const handleRoleUpdate = async (userId: string, newRole: 'admin' | 'hr' | 'canteen' | 'user') => {
-    setUpdatingUsers(prev => new Set(prev).add(userId));
-    
-    const result = await onUpdateRole(userId, newRole);
-    
-    if (result.success) {
+    if (!userId || !newRole) {
       toast({
-        title: "Role updated successfully",
-        description: `User role has been updated to ${newRole}`,
-      });
-    } else {
-      toast({
-        title: "Failed to update role",
-        description: "There was an error updating the user role",
+        title: "Invalid input",
+        description: "Please provide valid user ID and role",
         variant: "destructive",
       });
+      return;
     }
+
+    setUpdatingUsers(prev => new Set(prev).add(userId));
     
-    setUpdatingUsers(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(userId);
-      return newSet;
-    });
+    try {
+      const result = await onUpdateRole(userId, newRole);
+      
+      if (result.success) {
+        toast({
+          title: "Role updated successfully",
+          description: `User role has been updated to ${newRole}`,
+        });
+      } else {
+        throw new Error(result.error?.message || 'Failed to update role');
+      }
+    } catch (error) {
+      console.error('Error updating role:', error);
+      toast({
+        title: "Failed to update role",
+        description: error instanceof Error ? error.message : "There was an error updating the user role",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingUsers(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(userId);
+        return newSet;
+      });
+    }
   };
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'admin': return 'bg-red-100 text-red-800';
-      case 'hr': return 'bg-blue-100 text-blue-800';
-      case 'canteen': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'admin': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      case 'hr': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+      case 'canteen': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
     }
   };
+
+  const validPendingUsers = Array.isArray(pendingUsers) ? pendingUsers.filter(user => 
+    user && user.id && user.username && user.created_at && user.role
+  ) : [];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -79,13 +97,13 @@ const UserApprovalModal = ({ isOpen, onClose, pendingUsers, onUpdateRole }: User
         </DialogHeader>
 
         <div className="space-y-4">
-          {pendingUsers.length === 0 ? (
+          {validPendingUsers.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Shield className="w-12 h-12 mx-auto mb-2 opacity-50" />
               <p>No users requiring role management</p>
             </div>
           ) : (
-            pendingUsers.map((user) => (
+            validPendingUsers.map((user) => (
               <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
@@ -96,7 +114,13 @@ const UserApprovalModal = ({ isOpen, onClose, pendingUsers, onUpdateRole }: User
                   </div>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Clock className="w-3 h-3" />
-                    Registered: {new Date(user.created_at).toLocaleDateString()}
+                    <span>
+                      Registered: {
+                        user.created_at ? 
+                        new Date(user.created_at).toLocaleDateString() : 
+                        'Unknown date'
+                      }
+                    </span>
                   </div>
                 </div>
                 

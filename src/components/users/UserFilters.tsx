@@ -26,6 +26,19 @@ const UserFilters = ({
   hasActiveFilters,
   onClearFilters
 }: UserFiltersProps) => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value || '');
+  };
+
+  const handleBalanceFilterChange = (value: string) => {
+    setBalanceFilter(value === 'all' ? '' : value);
+  };
+
+  const handleSettlementFilterChange = (value: string) => {
+    setSettlementFilter(value === 'all' ? '' : value);
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -53,13 +66,16 @@ const UserFilters = ({
           <Input
             placeholder="Search users..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearchChange}
             className="text-xs"
           />
         </div>
 
         {/* Balance Filter */}
-        <Select value={balanceFilter || ''} onValueChange={(value) => setBalanceFilter(value === 'all' ? '' : value)}>
+        <Select 
+          value={balanceFilter || 'all'} 
+          onValueChange={handleBalanceFilterChange}
+        >
           <SelectTrigger className="text-xs">
             <SelectValue placeholder="All balances" />
           </SelectTrigger>
@@ -74,7 +90,10 @@ const UserFilters = ({
         </Select>
 
         {/* Settlement Filter */}
-        <Select value={settlementFilter || ''} onValueChange={(value) => setSettlementFilter(value === 'all' ? '' : value)}>
+        <Select 
+          value={settlementFilter || 'all'} 
+          onValueChange={handleSettlementFilterChange}
+        >
           <SelectTrigger className="text-xs">
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
