@@ -103,7 +103,7 @@ const TodayExpenseHistory = ({ refreshTrigger }: TodayExpenseHistoryProps) => {
             {expenses.map((expense, index) => (
               <Card 
                 key={expense.id} 
-                className="hover:shadow-sm transition-shadow opacity-0 animate-in slide-in-from-left-2 duration-300"
+                className="hover:shadow-sm transition-all duration-300 opacity-0 animate-fadeInUp"
                 style={{ 
                   animationDelay: `${index * 100}ms`,
                   animationFillMode: 'forwards'
@@ -138,6 +138,23 @@ const TodayExpenseHistory = ({ refreshTrigger }: TodayExpenseHistoryProps) => {
             ))}
           </div>
         )}
+
+        <style jsx>{`
+          @keyframes fadeInUp {
+            from {
+              opacity: 0;
+              transform: translateY(20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          
+          .animate-fadeInUp {
+            animation: fadeInUp 0.5s ease-out forwards;
+          }
+        `}</style>
       </CardContent>
     </Card>
   );

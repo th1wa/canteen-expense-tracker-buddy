@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import PaymentSummary from "@/components/PaymentSummary";
 import PaymentForm from "@/components/PaymentForm";
@@ -44,8 +44,8 @@ const PaymentModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg max-w-[95vw] max-h-[95vh] overflow-hidden p-0 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-950 border-0 shadow-2xl [&>button]:hidden">
-        {/* Custom Header with single close button */}
+      <DialogContent className="sm:max-w-lg max-w-[95vw] max-h-[95vh] overflow-hidden p-0 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-950 border-0 shadow-2xl">
+        {/* Custom Header */}
         <div className="relative px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
           <DialogHeader>
             <DialogTitle className="text-xl sm:text-2xl font-bold flex items-center gap-3">
@@ -54,6 +54,9 @@ const PaymentModal = ({
               </div>
               Payment for {userName}
             </DialogTitle>
+            <DialogDescription className="text-blue-100 mt-1">
+              Manage payments and view payment history for this user
+            </DialogDescription>
           </DialogHeader>
           <Button
             variant="ghost"

@@ -46,10 +46,10 @@ const PaymentHistory = ({ payments }: PaymentHistoryProps) => {
           {payments.map((payment, index) => (
             <div 
               key={payment.id} 
-              className="flex items-center justify-between p-3 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 hover:shadow-md transition-all duration-200 hover:scale-[1.02]"
+              className="flex items-center justify-between p-3 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 hover:shadow-md transition-all duration-200 hover:scale-[1.02] opacity-0 animate-slideInLeft"
               style={{ 
                 animationDelay: `${index * 100}ms`,
-                animation: 'slideInFromLeft 0.5s ease-out forwards'
+                animationFillMode: 'forwards'
               }}
             >
               <div className="flex items-center gap-3">
@@ -72,6 +72,23 @@ const PaymentHistory = ({ payments }: PaymentHistoryProps) => {
             </div>
           ))}
         </div>
+
+        <style jsx>{`
+          @keyframes slideInLeft {
+            from {
+              opacity: 0;
+              transform: translateX(-20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateX(0);
+            }
+          }
+          
+          .animate-slideInLeft {
+            animation: slideInLeft 0.5s ease-out forwards;
+          }
+        `}</style>
       </CardContent>
     </Card>
   );
