@@ -5,8 +5,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import PaymentSummary from "@/components/PaymentSummary";
 import PaymentForm from "@/components/PaymentForm";
 import PaymentHistory from "@/components/PaymentHistory";
-import { X } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Payment {
@@ -59,7 +57,7 @@ const PaymentModal = ({
           <DialogHeader>
             <DialogTitle className={`
               ${isMobile ? 'text-lg' : 'text-xl sm:text-2xl'} 
-              font-bold flex items-center gap-2 sm:gap-3 pr-8
+              font-bold flex items-center gap-2 sm:gap-3
             `}>
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-full flex items-center justify-center text-sm sm:text-base">
                 💳
@@ -70,19 +68,6 @@ const PaymentModal = ({
               Manage payments and view payment history for this user
             </DialogDescription>
           </DialogHeader>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className={`
-              absolute right-2 sm:right-4 top-2 sm:top-4 text-white 
-              hover:bg-white/20 rounded-full p-1 sm:p-2
-              ${isMobile ? 'w-8 h-8' : 'w-8 h-8'}
-              touch-manipulation
-            `}
-          >
-            <X className="h-4 w-4" />
-          </Button>
         </div>
         
         <div className={`
