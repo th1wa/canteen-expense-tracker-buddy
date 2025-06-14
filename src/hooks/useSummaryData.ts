@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+
+import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { ExpenseSummary, UserSummary } from '@/types/summary';
 
@@ -6,7 +7,6 @@ export const useSummaryData = (selectedMonth: string, hasAccess: boolean) => {
   const [summaryData, setSummaryData] = useState<UserSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (!hasAccess) {
@@ -22,13 +22,6 @@ export const useSummaryData = (selectedMonth: string, hasAccess: boolean) => {
     }
 
     const fetchSummaryData = async () => {
-      // Cancel previous request
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-
-      abortControllerRef.current = new AbortController();
-      
       try {
         setLoading(true);
         setError(null);
@@ -44,10 +37,6 @@ export const useSummaryData = (selectedMonth: string, hasAccess: boolean) => {
           .rpc('get_user_expense_summary', { 
             selected_month: monthDate.toISOString().split('T')[0] 
           });
-
-        if (abortControllerRef.current?.signal.aborted) {
-          return;
-        }
 
         if (fetchError) {
           console.error('Error fetching summary data:', fetchError);
@@ -102,28 +91,16 @@ export const useSummaryData = (selectedMonth: string, hasAccess: boolean) => {
         setSummaryData(result);
         
       } catch (err) {
-        if (abortControllerRef.current?.signal.aborted) {
-          return;
-        }
-        
         console.error('Error in fetchSummaryData:', err);
         const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
         setError(errorMessage);
         setSummaryData([]);
       } finally {
-        if (!abortControllerRef.current?.signal.aborted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     };
 
     fetchSummaryData();
-
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
   }, [selectedMonth, hasAccess]);
 
   return { summaryData, loading, error };
