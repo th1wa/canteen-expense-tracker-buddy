@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -127,30 +126,35 @@ const UserExpenseSummary = () => {
         selectedMonth: selectedMonth
       });
 
-      const response = await supabase.functions.invoke('excel-export', {
-        body: {
-          type: 'summary',
-          selectedMonth: selectedMonth
-        },
+      const response = await fetch(`https://wshugmfkkbpwpxfakqgk.supabase.co/functions/v1/excel-export`, {
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({
+          type: 'summary',
+          selectedMonth: selectedMonth
+        })
       });
 
-      console.log('Excel export response:', response);
+      console.log('Excel export response status:', response.status);
 
-      if (response.error) {
-        console.error('Function error:', response.error);
-        throw new Error(response.error.message || 'Export failed');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Function error response:', errorText);
+        throw new Error(`Export failed: ${response.status} - ${errorText}`);
       }
 
-      if (!response.data) {
+      const csvContent = await response.text();
+      console.log('CSV content received, length:', csvContent.length);
+
+      if (!csvContent || csvContent.trim() === '') {
         throw new Error('No data received from export function');
       }
 
       // Create download link
-      const blob = new Blob([response.data], { type: 'text/csv' });
+      const blob = new Blob([csvContent], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -193,32 +197,36 @@ const UserExpenseSummary = () => {
         throw new Error('No active session');
       }
 
-      const response = await supabase.functions.invoke('excel-export', {
-        body: {
-          type: 'user-detail',
-          userName: userName,
-          selectedMonth: selectedMonth
-        },
+      const response = await fetch(`https://wshugmfkkbpwpxfakqgk.supabase.co/functions/v1/excel-export`, {
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json'
-        }
+        },
+        body: JSON.stringify({
+          type: 'user-detail',
+          userName: userName,
+          selectedMonth: selectedMonth
+        })
       });
 
-      if (response.error) {
-        throw new Error(response.error.message || 'Export failed');
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Export failed: ${response.status} - ${errorText}`);
       }
 
-      if (!response.data) {
+      const csvContent = await response.text();
+
+      if (!csvContent || csvContent.trim() === '') {
         throw new Error('No data received from export function');
       }
 
       // Create download link
-      const blob = new Blob([response.data], { type: 'text/csv' });
+      const blob = new Blob([csvContent], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `canteen_user_report_${userName.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.download = `canteen_user_report_${userName.replace(/[^a-zA-Z0-9]/g, '_')}_${selectedMonth}.csv`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
