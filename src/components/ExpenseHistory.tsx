@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -264,17 +263,16 @@ const ExpenseHistory = ({ refreshTrigger }: ExpenseHistoryProps) => {
               <SelectItem value="all">All amounts</SelectItem>
               <SelectItem value="low">≤ Rs. 100</SelectItem>
               <SelectItem value="medium">Rs. 101-500</SelectItem>
-              <SelectItem value="high">> Rs. 500</SelectItem>
+              <SelectItem value="high">{'>'} Rs. 500</SelectItem>
             </SelectContent>
           </Select>
 
           {/* Note Filter */}
           <Select value={noteFilter} onValueChange={setNoteFilter}>
             <SelectTrigger className="text-xs">
-              <SelectValue placeholder="All notes" />
+              <SelectValue placeholder="Note filter" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All notes</SelectItem>
               <SelectItem value="with-notes">With notes</SelectItem>
               <SelectItem value="without-notes">Without notes</SelectItem>
             </SelectContent>

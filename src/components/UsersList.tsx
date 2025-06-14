@@ -1,293 +1,245 @@
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import PaymentModal from "@/components/PaymentModal";
-import UserSearch from "@/components/UserSearch";
-import UserCard from "@/components/UserCard";
-import { useAuth } from "@/contexts/AuthContext";
-import { useUsersData } from "@/hooks/useUsersData";
-import { UserTotal } from "@/types/user";
-import { useToast } from "@/hooks/use-toast";
-import { useIsMobile } from "@/hooks/use-mobile";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Filter, FilterX, Users } from "lucide-react";
+import { Search, Filter, FilterX, DollarSign, Calendar, User } from "lucide-react";
+import { useUsersData } from "@/hooks/useUsersData";
+import { useAuth } from "@/contexts/AuthContext";
+import UserCard from "./UserCard";
+import UserExpenseModal from "./UserExpenseModal";
+import PaymentModal from "./PaymentModal";
+import { format } from "date-fns";
 
 interface UsersListProps {
   refreshTrigger: number;
 }
 
 const UsersList = ({ refreshTrigger }: UsersListProps) => {
-  const [filteredUsers, setFilteredUsers] = useState<UserTotal[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [balanceFilter, setBalanceFilter] = useState('');
   const [settlementFilter, setSettlementFilter] = useState('');
-  const [selectedUser, setSelectedUser] = useState<UserTotal | null>(null);
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [showExpenseModal, setShowExpenseModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
+  
   const { profile } = useAuth();
-  const { users, loading, error, refetch } = useUsersData(refreshTrigger);
-  const { toast } = useToast();
-  const isMobile = useIsMobile();
+  const hasAccess = profile?.role === 'admin' || profile?.role === 'hr';
+  
+  const { users, loading, error, totalStats } = useUsersData(refreshTrigger, hasAccess);
 
-  // Memoize permission check to prevent unnecessary recalculations
-  const canManagePayments = useMemo(() => 
-    profile?.role === 'admin' || profile?.role === 'canteen'
-  , [profile?.role]);
+  useEffect(() => {
+    if (!users) return;
 
-  // Memoize search and filter logic
-  const processedUsers = useMemo(() => {
-    if (!Array.isArray(users)) {
-      return [];
-    }
-    
-    let filtered = users;
+    let filtered = users.filter(user =>
+      user?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
-    // Search filter
-    const searchTermLower = (searchTerm || '').trim().toLowerCase();
-    if (searchTermLower) {
-      filtered = filtered.filter(user => {
-        if (!user?.user_name) return false;
-        
-        const userName = user.user_name.toLowerCase();
-        const firstName = (user.first_name || '').toLowerCase();
-        const lastName = (user.last_name || '').toLowerCase();
-        const fullName = `${firstName} ${lastName}`.trim();
-        
-        return userName.includes(searchTermLower) || 
-               firstName.includes(searchTermLower) ||
-               lastName.includes(searchTermLower) ||
-               fullName.includes(searchTermLower);
-      });
-    }
-
-    // Balance filter
+    // Filter by balance range
     if (balanceFilter && balanceFilter !== 'all') {
       filtered = filtered.filter(user => {
-        const balance = user.remaining_balance || 0;
+        const balance = user?.balance || 0;
         switch (balanceFilter) {
-          case 'low': return balance <= 100;
-          case 'medium': return balance > 100 && balance <= 500;
-          case 'high': return balance > 500;
-          case 'zero': return balance <= 0.01;
+          case 'positive': return balance > 0;
+          case 'zero': return balance === 0;
+          case 'low': return balance > 0 && balance <= 500;
+          case 'medium': return balance > 500 && balance <= 2000;
+          case 'high': return balance > 2000;
           default: return true;
         }
       });
     }
 
-    // Settlement filter
+    // Filter by settlement status
     if (settlementFilter && settlementFilter !== 'all') {
       filtered = filtered.filter(user => {
+        const balance = user?.balance || 0;
         switch (settlementFilter) {
-          case 'settled': return user.is_settled;
-          case 'pending': return !user.is_settled;
+          case 'settled': return balance === 0;
+          case 'pending': return balance > 0;
           default: return true;
         }
       });
     }
 
-    return filtered;
+    setFilteredUsers(filtered);
   }, [searchTerm, balanceFilter, settlementFilter, users]);
 
-  // Update filtered users when processed users change
-  useEffect(() => {
-    setFilteredUsers(processedUsers);
-  }, [processedUsers]);
-
-  // Handle payment click with validation
-  const handlePaymentClick = useCallback((user: UserTotal) => {
-    if (!canManagePayments || !user) {
-      toast({
-        title: "Access Denied",
-        description: "You don't have permission to manage payments.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // Validate user data before opening modal
-    if (!user.user_name || user.total_amount < 0 || user.remaining_balance < 0) {
-      toast({
-        title: "Invalid User Data",
-        description: "This user has invalid payment data. Please contact an administrator.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setSelectedUser(user);
-    setIsPaymentModalOpen(true);
-  }, [canManagePayments, toast]);
-
-  // Handle payment added with success feedback
-  const handlePaymentAdded = useCallback(() => {
-    refetch();
-    toast({
-      title: "Success",
-      description: "Payment has been recorded successfully.",
-    });
-  }, [refetch, toast]);
-
-  // Handle modal close
-  const handleModalClose = useCallback(() => {
-    setIsPaymentModalOpen(false);
-    setSelectedUser(null);
-  }, []);
-
-  // Handle search change
-  const handleSearchChange = useCallback((term: string) => {
-    setSearchTerm(term || '');
-  }, []);
-
-  // Clear all filters
-  const clearAllFilters = useCallback(() => {
+  const clearAllFilters = () => {
     setSearchTerm('');
     setBalanceFilter('');
     setSettlementFilter('');
-  }, []);
-
-  // Clear search handler
-  const handleClearSearch = useCallback(() => {
-    setSearchTerm('');
-  }, []);
+  };
 
   const hasActiveFilters = searchTerm || balanceFilter || settlementFilter;
 
+  const handleOpenExpenseModal = (userName: string) => {
+    setSelectedUser(userName);
+    setShowExpenseModal(true);
+  };
+
+  const handleOpenPaymentModal = (userName: string) => {
+    setSelectedUser(userName);
+    setShowPaymentModal(true);
+  };
+
+  if (!profile) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-sm text-muted-foreground">Please log in to view users.</div>
+      </div>
+    );
+  }
+
+  if (!hasAccess) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-sm text-muted-foreground">You don't have permission to view all users.</div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
-      <div className="text-center py-6 sm:py-8 px-4 container-mobile">
-        <div className="text-responsive-sm">Loading users...</div>
+      <div className="text-center py-8">
+        <div className="text-sm text-muted-foreground">Loading users...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center py-6 sm:py-8 px-4 container-mobile">
-        <div className="text-responsive-sm text-destructive mb-3">
-          Error: {error}
-        </div>
-        <button 
-          onClick={refetch}
-          className="btn-mobile mt-2 text-blue-600 hover:text-blue-800 underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
-        >
-          Try again
-        </button>
+      <div className="text-center py-8">
+        <div className="text-destructive mb-2">Error: {error}</div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 w-full container-mobile">
-      {/* Search and Filters */}
+    <div className="space-y-4">
+      {/* Filter Controls */}
       <div className="space-y-3">
-        <UserSearch 
-          searchTerm={searchTerm} 
-          onSearchChange={handleSearchChange} 
-        />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-gray-500" />
+            <span className="text-sm font-medium">Filters</span>
+          </div>
+          {hasActiveFilters && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearAllFilters}
+              className="text-xs"
+            >
+              <FilterX className="w-3 h-3 mr-1" />
+              Clear All
+            </Button>
+          )}
+        </div>
 
-        {/* Filter Controls */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-500" />
-              <span className="text-sm font-medium">Filters</span>
-            </div>
-            {hasActiveFilters && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={clearAllFilters}
-                className="text-xs"
-              >
-                <FilterX className="w-3 h-3 mr-1" />
-                Clear All
-              </Button>
-            )}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* Search Filter */}
+          <div className="flex items-center space-x-2">
+            <Search className="w-4 h-4 text-gray-500 flex-shrink-0" />
+            <Input
+              placeholder="Search users..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value || '')}
+              className="text-xs"
+            />
           </div>
 
-          <div className={`grid gap-3 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}`}>
-            {/* Balance Filter */}
-            <Select value={balanceFilter} onValueChange={setBalanceFilter}>
-              <SelectTrigger className="text-xs">
-                <SelectValue placeholder="All balances" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All balances</SelectItem>
-                <SelectItem value="zero">No balance (Rs. 0)</SelectItem>
-                <SelectItem value="low">Low (≤ Rs. 100)</SelectItem>
-                <SelectItem value="medium">Medium (Rs. 101-500)</SelectItem>
-                <SelectItem value="high">High (> Rs. 500)</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Balance Filter */}
+          <Select value={balanceFilter} onValueChange={setBalanceFilter}>
+            <SelectTrigger className="text-xs">
+              <SelectValue placeholder="All balances" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All balances</SelectItem>
+              <SelectItem value="positive">Has balance</SelectItem>
+              <SelectItem value="zero">Zero balance</SelectItem>
+              <SelectItem value="low">Rs. 1-500</SelectItem>
+              <SelectItem value="medium">Rs. 501-2000</SelectItem>
+              <SelectItem value="high">{'>'} Rs. 2000</SelectItem>
+            </SelectContent>
+          </Select>
 
-            {/* Settlement Filter */}
-            <Select value={settlementFilter} onValueChange={setSettlementFilter}>
-              <SelectTrigger className="text-xs">
-                <SelectValue placeholder="All statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="settled">Settled</SelectItem>
-                <SelectItem value="pending">Pending payment</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Settlement Filter */}
+          <Select value={settlementFilter} onValueChange={setSettlementFilter}>
+            <SelectTrigger className="text-xs">
+              <SelectValue placeholder="All statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              <SelectItem value="settled">Fully settled</SelectItem>
+              <SelectItem value="pending">Has pending balance</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      {/* Results Summary */}
-      {hasActiveFilters && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Users className="w-4 h-4" />
-          <span>
-            Showing {filteredUsers.length} of {users.length} users
-          </span>
-        </div>
+      {/* Summary Stats */}
+      {totalStats && (
+        <Card className="bg-blue-50">
+          <CardContent className="p-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div>
+                <p className="text-xs text-blue-600 font-medium">Total Users</p>
+                <p className="text-lg font-bold text-blue-700">{filteredUsers.length}</p>
+                {hasActiveFilters && (
+                  <p className="text-xs text-blue-500">of {users?.length || 0}</p>
+                )}
+              </div>
+              <div>
+                <p className="text-xs text-orange-600 font-medium">Total Expenses</p>
+                <p className="text-lg font-bold text-orange-700">Rs. {totalStats.totalExpenses.toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-green-600 font-medium">Total Paid</p>
+                <p className="text-lg font-bold text-green-700">Rs. {totalStats.totalPaid.toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-red-600 font-medium">Total Outstanding</p>
+                <p className="text-lg font-bold text-red-700">Rs. {totalStats.totalOutstanding.toFixed(2)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
+      {/* Users Grid */}
       {filteredUsers.length === 0 ? (
-        <div className="text-center py-8 sm:py-12 px-4 text-muted-foreground">
-          <div className="max-w-sm mx-auto">
-            <p className="text-responsive-sm mb-4">
-              {hasActiveFilters 
-                ? 'No users found matching your filters.' 
-                : searchTerm 
-                ? 'No users found matching your search.' 
-                : 'No users found.'
-              }
-            </p>
-            {(searchTerm || hasActiveFilters) && (
-              <button 
-                onClick={hasActiveFilters ? clearAllFilters : handleClearSearch}
-                className="btn-mobile text-blue-600 hover:text-blue-800 underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
-              >
-                {hasActiveFilters ? 'Clear all filters' : 'Clear search'}
-              </button>
-            )}
-          </div>
+        <div className="text-center py-8 text-gray-500">
+          {hasActiveFilters ? 'No users found matching your filters.' : 'No users found.'}
         </div>
       ) : (
-        <div className={`grid gap-3 sm:gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3'}`}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredUsers.map((user) => (
             <UserCard
-              key={`user-${user.user_name}-${user.total_amount}`}
+              key={user.name}
               user={user}
-              canManagePayments={!!canManagePayments}
-              onPaymentClick={handlePaymentClick}
+              onOpenExpenseModal={handleOpenExpenseModal}
+              onOpenPaymentModal={handleOpenPaymentModal}
             />
           ))}
         </div>
       )}
 
-      {selectedUser && (
-        <PaymentModal
-          isOpen={isPaymentModalOpen}
-          onClose={handleModalClose}
-          userName={selectedUser.user_name}
-          totalAmount={selectedUser.total_amount}
-          payments={selectedUser.payments || []}
-          onPaymentAdded={handlePaymentAdded}
-        />
-      )}
+      {/* Modals */}
+      <UserExpenseModal
+        isOpen={showExpenseModal}
+        onClose={() => setShowExpenseModal(false)}
+        userName={selectedUser || ''}
+      />
+
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        userName={selectedUser || ''}
+      />
     </div>
   );
 };
