@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -25,14 +25,26 @@ export const useSummaryData = (selectedMonth: string, hasAccess: boolean) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const isMountedRef = useRef(true);
 
-  const fetchSummaryData = async () => {
+  const fetchSummaryData = useCallback(async () => {
+    // Cancel any pending request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+    
     // Reset error state
     setError(null);
     
     if (!hasAccess) {
-      setLoading(false);
-      setSummaryData([]);
+      if (isMountedRef.current) {
+        setLoading(false);
+        setSummaryData([]);
+      }
       return;
     }
     
@@ -66,12 +78,18 @@ export const useSummaryData = (selectedMonth: string, hasAccess: boolean) => {
       
       const { data, error: rpcError } = await supabase.rpc('get_user_expense_summary', {
         selected_month: monthDate.toISOString().split('T')[0]
+      }, {
+        signal: abortControllerRef.current.signal
       });
 
       if (rpcError) {
+        if (rpcError.message?.includes('abort')) return;
         console.error('RPC Error:', rpcError);
         throw new Error(`Database error: ${rpcError.message}`);
       }
+
+      // Only proceed if component is still mounted
+      if (!isMountedRef.current) return;
 
       // Enhanced data validation
       if (data === null || data === undefined) {
@@ -152,29 +170,57 @@ export const useSummaryData = (selectedMonth: string, hasAccess: boolean) => {
         .sort((a, b) => a.user_name.localeCompare(b.user_name));
       
       console.log(`Successfully processed ${summaryArray.length} users with ${data.length} total records`);
-      setSummaryData(summaryArray);
+      
+      if (isMountedRef.current) {
+        setSummaryData(summaryArray);
+      }
       
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return; // Request was cancelled, don't update state
+      }
+      
       console.error('Error fetching summary data:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred while fetching summary';
-      setError(errorMessage);
       
-      // Show toast for user feedback
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive"
-      });
-      
-      setSummaryData([]);
+      if (isMountedRef.current) {
+        setError(errorMessage);
+        setSummaryData([]);
+        
+        // Show toast for user feedback
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive"
+        });
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
-  };
+  }, [selectedMonth, hasAccess, toast]);
 
   useEffect(() => {
     fetchSummaryData();
-  }, [selectedMonth, hasAccess]);
+    
+    // Cleanup function
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [fetchSummaryData]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   return { summaryData, loading, error, refetch: fetchSummaryData };
 };

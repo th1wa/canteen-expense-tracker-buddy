@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { UserTotal } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
@@ -11,9 +11,19 @@ export const useUsersData = (refreshTrigger: number) => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const { profile } = useAuth();
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const isMountedRef = useRef(true);
 
-  const fetchUsersWithPayments = async () => {
-    // Reset error state at the start of each fetch
+  const fetchUsersWithPayments = useCallback(async () => {
+    // Cancel any pending request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+    
+    // Reset error state
     setError(null);
     
     // Don't fetch if profile is not loaded yet
@@ -24,9 +34,11 @@ export const useUsersData = (refreshTrigger: number) => {
 
     // If profile is null (user not authenticated), set empty state
     if (profile === null) {
-      setUsers([]);
-      setLoading(false);
-      setError('User not authenticated');
+      if (isMountedRef.current) {
+        setUsers([]);
+        setLoading(false);
+        setError('User not authenticated');
+      }
       return;
     }
 
@@ -40,7 +52,8 @@ export const useUsersData = (refreshTrigger: number) => {
       const expensesQuery = supabase
         .from('expenses')
         .select('*')
-        .order('user_name');
+        .order('user_name')
+        .abortSignal(abortControllerRef.current.signal);
       
       if (isBasicUser && profile.username) {
         expensesQuery.eq('user_name', profile.username);
@@ -49,6 +62,7 @@ export const useUsersData = (refreshTrigger: number) => {
       const { data: expenses, error: expensesError } = await expensesQuery;
 
       if (expensesError) {
+        if (expensesError.name === 'AbortError') return;
         console.error('Expenses error:', expensesError);
         throw new Error(`Failed to fetch expenses: ${expensesError.message}`);
       }
@@ -57,7 +71,8 @@ export const useUsersData = (refreshTrigger: number) => {
       const usersQuery = supabase
         .from('users')
         .select('*')
-        .order('user_name');
+        .order('user_name')
+        .abortSignal(abortControllerRef.current.signal);
       
       if (isBasicUser && profile.username) {
         usersQuery.eq('user_name', profile.username);
@@ -66,6 +81,7 @@ export const useUsersData = (refreshTrigger: number) => {
       const { data: usersData, error: usersError } = await usersQuery;
 
       if (usersError) {
+        if (usersError.name === 'AbortError') return;
         console.error('Users error:', usersError);
         throw new Error(`Failed to fetch users: ${usersError.message}`);
       }
@@ -74,7 +90,8 @@ export const useUsersData = (refreshTrigger: number) => {
       const paymentsQuery = supabase
         .from('payments')
         .select('*')
-        .order('user_name');
+        .order('user_name')
+        .abortSignal(abortControllerRef.current.signal);
       
       if (isBasicUser && profile.username) {
         paymentsQuery.eq('user_name', profile.username);
@@ -83,9 +100,13 @@ export const useUsersData = (refreshTrigger: number) => {
       const { data: payments, error: paymentsError } = await paymentsQuery;
 
       if (paymentsError) {
+        if (paymentsError.name === 'AbortError') return;
         console.error('Payments error:', paymentsError);
         throw new Error(`Failed to fetch payments: ${paymentsError.message}`);
       }
+
+      // Only update state if component is still mounted
+      if (!isMountedRef.current) return;
 
       // Safely handle null/undefined data
       const safeExpenses = Array.isArray(expenses) ? expenses : [];
@@ -170,22 +191,48 @@ export const useUsersData = (refreshTrigger: number) => {
         return b.remaining_balance - a.remaining_balance;
       });
 
-      setUsers(usersArray);
+      if (isMountedRef.current) {
+        setUsers(usersArray);
+      }
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return; // Request was cancelled, don't update state
+      }
+      
       console.error('Error fetching users with payments:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred while fetching data';
-      setError(errorMessage);
       
-      // Set empty array on error to prevent UI issues
-      setUsers([]);
+      if (isMountedRef.current) {
+        setError(errorMessage);
+        setUsers([]);
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
-  };
+  }, [profile]);
 
   useEffect(() => {
     fetchUsersWithPayments();
-  }, [refreshTrigger, profile]);
+    
+    // Cleanup function
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [fetchUsersWithPayments, refreshTrigger]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   return { users, loading, error, refetch: fetchUsersWithPayments };
 };

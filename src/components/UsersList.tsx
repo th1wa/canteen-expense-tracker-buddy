@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import PaymentModal from "@/components/PaymentModal";
 import UserSearch from "@/components/UserSearch";
 import UserCard from "@/components/UserCard";
@@ -23,24 +23,24 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
-  // Check if user can manage payments (admin or canteen)
-  const canManagePayments = profile?.role === 'admin' || profile?.role === 'canteen';
+  // Memoize permission check to prevent unnecessary recalculations
+  const canManagePayments = useMemo(() => 
+    profile?.role === 'admin' || profile?.role === 'canteen'
+  , [profile?.role]);
 
   // Memoize search filtering to prevent unnecessary recalculations
-  useEffect(() => {
+  const searchFilteredUsers = useMemo(() => {
     if (!Array.isArray(users)) {
-      setFilteredUsers([]);
-      return;
+      return [];
     }
     
     const searchTermLower = (searchTerm || '').trim().toLowerCase();
     
     if (!searchTermLower) {
-      setFilteredUsers(users);
-      return;
+      return users;
     }
     
-    const filtered = users.filter(user => {
+    return users.filter(user => {
       if (!user?.user_name) return false;
       
       const userName = user.user_name.toLowerCase();
@@ -53,21 +53,14 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
              lastName.includes(searchTermLower) ||
              fullName.includes(searchTermLower);
     });
-    
-    setFilteredUsers(filtered);
   }, [searchTerm, users]);
 
-  // Handle error display with toast (only show once per error)
+  // Update filtered users when search results change
   useEffect(() => {
-    if (error) {
-      toast({
-        title: "Error",
-        description: error,
-        variant: "destructive"
-      });
-    }
-  }, [error, toast]);
+    setFilteredUsers(searchFilteredUsers);
+  }, [searchFilteredUsers]);
 
+  // Handle payment click with validation
   const handlePaymentClick = useCallback((user: UserTotal) => {
     if (!canManagePayments || !user) {
       toast({
@@ -92,6 +85,7 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
     setIsPaymentModalOpen(true);
   }, [canManagePayments, toast]);
 
+  // Handle payment added with success feedback
   const handlePaymentAdded = useCallback(() => {
     refetch();
     toast({
@@ -100,13 +94,20 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
     });
   }, [refetch, toast]);
 
+  // Handle modal close
   const handleModalClose = useCallback(() => {
     setIsPaymentModalOpen(false);
     setSelectedUser(null);
   }, []);
 
+  // Handle search change
   const handleSearchChange = useCallback((term: string) => {
     setSearchTerm(term || '');
+  }, []);
+
+  // Clear search handler
+  const handleClearSearch = useCallback(() => {
+    setSearchTerm('');
   }, []);
 
   if (loading) {
@@ -148,7 +149,7 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
             </p>
             {searchTerm && (
               <button 
-                onClick={() => setSearchTerm('')}
+                onClick={handleClearSearch}
                 className="btn-mobile text-blue-600 hover:text-blue-800 underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
               >
                 Clear search
