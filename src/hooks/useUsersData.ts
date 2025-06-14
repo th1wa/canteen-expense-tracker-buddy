@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { UserTotal } from "@/types/user";
@@ -31,8 +30,8 @@ export const useUsersData = (refreshTrigger: number) => {
         .select('*')
         .order('user_name');
       
-      if (isBasicUser && profile.user_name) {
-        expensesQuery.eq('user_name', profile.user_name);
+      if (isBasicUser && profile.username) {
+        expensesQuery.eq('user_name', profile.username);
       }
 
       const { data: expenses, error: expensesError } = await expensesQuery;
@@ -48,8 +47,8 @@ export const useUsersData = (refreshTrigger: number) => {
         .select('*')
         .order('user_name');
       
-      if (isBasicUser && profile.user_name) {
-        usersQuery.eq('user_name', profile.user_name);
+      if (isBasicUser && profile.username) {
+        usersQuery.eq('user_name', profile.username);
       }
 
       const { data: usersData, error: usersError } = await usersQuery;
@@ -65,8 +64,8 @@ export const useUsersData = (refreshTrigger: number) => {
         .select('*')
         .order('user_name');
       
-      if (isBasicUser && profile.user_name) {
-        paymentsQuery.eq('user_name', profile.user_name);
+      if (isBasicUser && profile.username) {
+        paymentsQuery.eq('user_name', profile.username);
       }
 
       const { data: payments, error: paymentsError } = await paymentsQuery;
