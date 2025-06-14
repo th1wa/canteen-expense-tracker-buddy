@@ -4,6 +4,7 @@ import { UserTotal } from "@/types/user";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchExpenses, fetchUsers, fetchPayments } from "@/utils/supabaseQueries";
 import { createUserMap, calculateUserStats } from "@/utils/userDataProcessing";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useUsersData = (refreshTrigger: number, hasAccess: boolean = true) => {
   const [users, setUsers] = useState<UserTotal[]>([]);
@@ -63,12 +64,22 @@ export const useUsersData = (refreshTrigger: number, hasAccess: boolean = true) 
       // For basic users, only fetch their own data
       const isBasicUser = profile.role === 'user';
       
+      // Check if request was aborted before making API calls
+      if (abortControllerRef.current.signal.aborted) {
+        return;
+      }
+      
       // Fetch all data in parallel
       const [expensesResult, usersResult, paymentsResult] = await Promise.all([
         fetchExpenses(isBasicUser, profile.username, abortControllerRef.current.signal),
         fetchUsers(isBasicUser, profile.username, abortControllerRef.current.signal),
         fetchPayments(isBasicUser, profile.username, abortControllerRef.current.signal)
       ]);
+
+      // Check if request was aborted after API calls
+      if (abortControllerRef.current.signal.aborted) {
+        return;
+      }
 
       // Check for errors
       if (expensesResult.error) {
@@ -89,8 +100,8 @@ export const useUsersData = (refreshTrigger: number, hasAccess: boolean = true) 
         throw new Error(`Failed to fetch payments: ${paymentsResult.error.message}`);
       }
 
-      // Only update state if component is still mounted
-      if (!isMountedRef.current) return;
+      // Only update state if component is still mounted and request not aborted
+      if (!isMountedRef.current || abortControllerRef.current.signal.aborted) return;
 
       // Safely handle null/undefined data
       const safeExpenses = Array.isArray(expensesResult.data) ? expensesResult.data : [];
@@ -101,7 +112,7 @@ export const useUsersData = (refreshTrigger: number, hasAccess: boolean = true) 
       const userMap = createUserMap(safeUsersData, safeExpenses, safePayments);
       const { usersArray, stats } = calculateUserStats(userMap);
 
-      if (isMountedRef.current) {
+      if (isMountedRef.current && !abortControllerRef.current.signal.aborted) {
         setUsers(usersArray);
         setTotalStats(stats);
       }
@@ -113,13 +124,13 @@ export const useUsersData = (refreshTrigger: number, hasAccess: boolean = true) 
       console.error('Error fetching users with payments:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred while fetching data';
       
-      if (isMountedRef.current) {
+      if (isMountedRef.current && !abortControllerRef.current.signal.aborted) {
         setError(errorMessage);
         setUsers([]);
         setTotalStats(null);
       }
     } finally {
-      if (isMountedRef.current) {
+      if (isMountedRef.current && !abortControllerRef.current.signal.aborted) {
         setLoading(false);
       }
     }
@@ -135,6 +146,36 @@ export const useUsersData = (refreshTrigger: number, hasAccess: boolean = true) 
       }
     };
   }, [fetchUsersWithPayments, refreshTrigger]);
+
+  // Set up real-time listener for profile changes that might affect user data
+  useEffect(() => {
+    if (!hasAccess || !profile) return;
+
+    console.log('Setting up real-time listener for profile changes in useUsersData');
+
+    const channel = supabase
+      .channel('users-data-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles'
+        },
+        (payload) => {
+          console.log('Profile update detected in useUsersData:', payload);
+          // Small delay to ensure database consistency
+          setTimeout(() => {
+            fetchUsersWithPayments();
+          }, 200);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [hasAccess, profile, fetchUsersWithPayments]);
 
   // Cleanup on unmount
   useEffect(() => {

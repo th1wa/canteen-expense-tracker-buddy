@@ -67,9 +67,14 @@ export const useUserApprovals = () => {
         throw error;
       }
       
-      // If the updated user is the current user, refresh their profile
+      console.log('Role updated successfully for user:', userId, 'to role:', newRole);
+      
+      // If the updated user is the current user, refresh their profile immediately
       if (userId === profile?.id) {
-        await refreshProfile();
+        console.log('Current user role updated, refreshing profile');
+        setTimeout(async () => {
+          await refreshProfile();
+        }, 100);
       }
       
       // Refresh the list
@@ -85,35 +90,20 @@ export const useUserApprovals = () => {
     if (profile?.role === 'admin') {
       fetchPendingUsers();
       
-      // Set up real-time subscription for profile changes
+      // Set up real-time subscription for all profile changes
       const channel = supabase
-        .channel('profile-changes')
+        .channel('admin-profile-changes')
         .on(
           'postgres_changes',
           {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'profiles'
-          },
-          () => {
-            console.log('New user registered, refreshing list');
-            fetchPendingUsers();
-          }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
+            event: '*',
             schema: 'public',
             table: 'profiles'
           },
           (payload) => {
-            console.log('User profile updated:', payload);
+            console.log('Profile change detected:', payload);
+            // Refresh the users list when any profile changes
             fetchPendingUsers();
-            // If the updated user is the current user, refresh their profile
-            if (payload.new?.id === profile?.id) {
-              refreshProfile();
-            }
           }
         )
         .subscribe();
@@ -122,33 +112,7 @@ export const useUserApprovals = () => {
         supabase.removeChannel(channel);
       };
     }
-  }, [profile, refreshProfile]);
-
-  // Also listen for role changes that affect the current user
-  useEffect(() => {
-    if (profile?.id) {
-      const userChannel = supabase
-        .channel(`user-${profile.id}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'profiles',
-            filter: `id=eq.${profile.id}`
-          },
-          (payload) => {
-            console.log('Current user profile updated:', payload);
-            refreshProfile();
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(userChannel);
-      };
-    }
-  }, [profile?.id, refreshProfile]);
+  }, [profile?.role]);
 
   return {
     pendingUsers,

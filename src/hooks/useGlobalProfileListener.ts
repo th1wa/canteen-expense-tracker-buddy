@@ -22,10 +22,12 @@ export const useGlobalProfileListener = () => {
           table: 'profiles',
           filter: `id=eq.${profile.id}`
         },
-        (payload) => {
+        async (payload) => {
           console.log('Real-time profile update received:', payload);
-          // Refresh the profile to get the latest data
-          refreshProfile();
+          // Small delay to ensure the database transaction is complete
+          setTimeout(async () => {
+            await refreshProfile();
+          }, 100);
         }
       )
       .subscribe();
