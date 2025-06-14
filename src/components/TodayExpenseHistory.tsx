@@ -100,8 +100,15 @@ const TodayExpenseHistory = ({ refreshTrigger }: TodayExpenseHistoryProps) => {
           </div>
         ) : (
           <div className="space-y-3 max-h-64 overflow-y-auto">
-            {expenses.map((expense) => (
-              <Card key={expense.id} className="hover:shadow-sm transition-shadow">
+            {expenses.map((expense, index) => (
+              <Card 
+                key={expense.id} 
+                className="hover:shadow-sm transition-shadow opacity-0 animate-in slide-in-from-left-2 duration-300"
+                style={{ 
+                  animationDelay: `${index * 100}ms`,
+                  animationFillMode: 'forwards'
+                }}
+              >
                 <CardContent className="p-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
