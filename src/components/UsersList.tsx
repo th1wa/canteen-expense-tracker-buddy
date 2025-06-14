@@ -42,19 +42,25 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
   };
 
   if (loading) {
-    return <div className="text-center py-8">Loading users...</div>;
+    return (
+      <div className="text-center py-4 sm:py-6 md:py-8">
+        <div className="text-sm sm:text-base">Loading users...</div>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4 w-full">
       <UserSearch searchTerm={searchTerm} onSearchChange={setSearchTerm} />
 
       {filteredUsers.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">
-          {searchTerm ? 'No users found matching your search.' : 'No users found.'}
+        <div className="text-center py-4 sm:py-6 md:py-8 text-muted-foreground">
+          <p className="text-sm sm:text-base">
+            {searchTerm ? 'No users found matching your search.' : 'No users found.'}
+          </p>
         </div>
       ) : (
-        <div className="grid gap-3 sm:gap-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1">
           {filteredUsers.map((user) => (
             <UserCard
               key={user.user_name}

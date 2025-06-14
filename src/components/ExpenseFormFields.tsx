@@ -29,9 +29,9 @@ export const ExpenseFormFields = ({
   onNoteChange
 }: ExpenseFormFieldsProps) => {
   return (
-    <>
-      <div className="sm:col-span-2 lg:col-span-1">
-        <Label htmlFor="amount" className="text-sm sm:text-base">Amount (Rs.)</Label>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+      <div className="w-full">
+        <Label htmlFor="amount" className="text-xs sm:text-sm md:text-base">Amount (Rs.)</Label>
         <Input
           id="amount"
           type="number"
@@ -39,38 +39,38 @@ export const ExpenseFormFields = ({
           value={amount}
           onChange={(e) => onAmountChange(e.target.value)}
           placeholder="200.00"
-          className="text-sm sm:text-base"
+          className="form-responsive w-full"
           required
         />
       </div>
 
-      <div className="sm:col-span-1">
-        <Label htmlFor="expenseDate" className="text-sm sm:text-base">Date</Label>
+      <div className="w-full">
+        <Label htmlFor="expenseDate" className="text-xs sm:text-sm md:text-base">Date</Label>
         <Input
           id="expenseDate"
           type="date"
           value={expenseDate}
           onChange={(e) => onExpenseDateChange(e.target.value)}
-          className="text-sm sm:text-base"
+          className="form-responsive w-full"
           required
         />
       </div>
 
-      <div className="sm:col-span-1">
-        <Label htmlFor="note" className="text-sm sm:text-base">Meal Type</Label>
+      <div className="w-full sm:col-span-2 lg:col-span-1">
+        <Label htmlFor="note" className="text-xs sm:text-sm md:text-base">Meal Type</Label>
         <Select value={note} onValueChange={onNoteChange}>
-          <SelectTrigger className="text-sm sm:text-base">
+          <SelectTrigger className="form-responsive w-full">
             <SelectValue placeholder="Select meal type" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="z-50 bg-background">
             {mealOptions.map((option) => (
-              <SelectItem key={option.value} value={option.label}>
+              <SelectItem key={option.value} value={option.label} className="cursor-pointer">
                 {option.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
-    </>
+    </div>
   );
 };

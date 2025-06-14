@@ -95,9 +95,9 @@ const Index = () => {
               description="You don't have permission to view this section"
               icon={FileBarChart}
             >
-              <div className="text-center py-8">
-                <h2 className="text-xl font-semibold text-destructive mb-2">Access Denied</h2>
-                <p className="text-muted-foreground">Only HR and Admin users can access summary reports.</p>
+              <div className="text-center py-4 sm:py-6 md:py-8">
+                <h2 className="text-lg sm:text-xl font-semibold text-destructive mb-2">Access Denied</h2>
+                <p className="text-sm sm:text-base text-muted-foreground">Only HR and Admin users can access summary reports.</p>
               </div>
             </DashboardCard>
           );
@@ -131,8 +131,8 @@ const Index = () => {
             description="Select an option from the sidebar to get started"
             icon={Users}
           >
-            <div className="text-center py-8 text-muted-foreground">
-              <p>Choose a section from the sidebar to view content</p>
+            <div className="text-center py-4 sm:py-6 md:py-8 text-muted-foreground">
+              <p className="text-sm sm:text-base">Choose a section from the sidebar to view content</p>
             </div>
           </DashboardCard>
         );
@@ -145,8 +145,8 @@ const Index = () => {
         <AppSidebar activeTab={activeTab} onTabChange={setActiveTab} />
         <SidebarInset className="flex-1">
           <DashboardHeader />
-          <main className="flex-1 p-4 sm:p-6 lg:p-8">
-            <div className="max-w-7xl mx-auto">
+          <main className="flex-1 p-2 sm:p-4 md:p-6 lg:p-8">
+            <div className="max-w-full sm:max-w-7xl mx-auto">
               <BasicUserBanner />
               {renderTabContent()}
             </div>

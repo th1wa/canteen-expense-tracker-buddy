@@ -10,13 +10,13 @@ interface UserSearchProps {
 
 const UserSearch = ({ searchTerm, onSearchChange }: UserSearchProps) => {
   return (
-    <div className="flex items-center space-x-2">
-      <Search className="w-4 h-4 text-muted-foreground" />
+    <div className="flex items-center space-x-2 w-full">
+      <Search className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground flex-shrink-0" />
       <Input
         placeholder="Search users..."
         value={searchTerm}
         onChange={(e) => onSearchChange(e.target.value)}
-        className="max-w-sm text-sm sm:text-base"
+        className="form-responsive w-full max-w-full sm:max-w-sm"
       />
     </div>
   );

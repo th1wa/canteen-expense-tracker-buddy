@@ -49,8 +49,8 @@ export const UserNameInput = ({ value, onChange, className }: UserNameInputProps
   };
 
   return (
-    <div className={`relative ${className}`}>
-      <Label htmlFor="userName" className="text-sm sm:text-base">User Name</Label>
+    <div className={`relative w-full ${className}`}>
+      <Label htmlFor="userName" className="text-xs sm:text-sm md:text-base">User Name</Label>
       <Input
         id="userName"
         value={value}
@@ -60,15 +60,15 @@ export const UserNameInput = ({ value, onChange, className }: UserNameInputProps
         }}
         onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
         placeholder="Enter user name (e.g., Kamal)"
-        className="text-sm sm:text-base"
+        className="form-responsive w-full"
         required
       />
       {showSuggestions && value && filteredSuggestions.length > 0 && (
-        <Card className="absolute z-10 w-full mt-1 max-h-40 overflow-y-auto">
+        <Card className="absolute z-50 w-full mt-1 max-h-32 sm:max-h-40 overflow-y-auto bg-background shadow-lg border">
           {filteredSuggestions.slice(0, 5).map((user, index) => (
             <div
               key={index}
-              className="p-2 sm:p-3 hover:bg-accent cursor-pointer text-sm sm:text-base"
+              className="p-2 sm:p-3 hover:bg-accent cursor-pointer text-xs sm:text-sm md:text-base transition-colors"
               onClick={() => {
                 onChange(user.user_name);
                 setShowSuggestions(false);

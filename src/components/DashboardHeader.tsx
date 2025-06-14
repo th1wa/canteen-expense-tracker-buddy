@@ -10,24 +10,29 @@ export function DashboardHeader() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center justify-between px-4">
-        <div className="flex items-center gap-3">
-          <SidebarTrigger className="md:hidden" />
-          <div className="hidden md:block">
-            <h1 className="text-xl font-bold text-orange-800 dark:text-orange-200">
+      <div className="container flex h-12 sm:h-14 items-center justify-between px-2 sm:px-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <SidebarTrigger className="md:hidden btn-touch" />
+          <div className="hidden sm:block">
+            <h1 className="text-lg sm:text-xl font-bold text-orange-800 dark:text-orange-200">
+              Dashboard
+            </h1>
+          </div>
+          <div className="block sm:hidden">
+            <h1 className="text-base font-bold text-orange-800 dark:text-orange-200">
               Dashboard
             </h1>
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
           {profile && (
-            <div className="flex items-center gap-2 text-sm">
-              <span className="hidden sm:inline text-muted-foreground">Logged in as:</span>
-              <Badge variant="outline">
+            <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <span className="hidden lg:inline text-muted-foreground">Logged in as:</span>
+              <Badge variant="outline" className="text-xs sm:text-sm">
                 {profile.role.charAt(0).toUpperCase() + profile.role.slice(1)}
               </Badge>
-              <span className="hidden lg:inline text-muted-foreground">
+              <span className="hidden xl:inline text-muted-foreground text-xs sm:text-sm">
                 ({profile.username})
               </span>
             </div>
