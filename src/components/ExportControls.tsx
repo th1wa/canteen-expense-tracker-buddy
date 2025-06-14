@@ -30,32 +30,37 @@ const ExportControls: React.FC<ExportControlsProps> = ({
   onExportUserDetail
 }) => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <FileSpreadsheet className="w-5 h-5" />
+    <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border-blue-200 dark:border-blue-800">
+      <CardHeader className="pb-3 sm:pb-4">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <FileSpreadsheet className="w-4 h-4 sm:w-5 sm:h-5" />
           Export Reports
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-          <div className="flex-1">
+      <CardContent className="pt-0">
+        <div className="space-y-4 sm:space-y-6">
+          {/* Full Summary Export */}
+          <div className="space-y-2 sm:space-y-3">
             <Button
               onClick={onExportSummary}
               disabled={isExporting}
-              className="flex items-center gap-2"
+              className="w-full sm:w-auto flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+              size="sm"
             >
               <Download className="w-4 h-4" />
               {isExporting ? 'Exporting...' : 'Export Full Summary Report'}
             </Button>
-            <p className="text-sm text-muted-foreground mt-1">Download complete summary of all users</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Download complete summary of all users
+            </p>
           </div>
           
-          <div className="flex-1">
-            <div className="flex gap-2">
+          {/* User Detail Export */}
+          <div className="space-y-2 sm:space-y-3">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <Select value={selectedUserForExport} onValueChange={setSelectedUserForExport}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Select user for detailed report" />
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="Select user..." />
                 </SelectTrigger>
                 <SelectContent>
                   {filteredData.map((user) => (
@@ -69,13 +74,16 @@ const ExportControls: React.FC<ExportControlsProps> = ({
                 onClick={() => onExportUserDetail(selectedUserForExport)}
                 disabled={isExporting || !selectedUserForExport}
                 variant="outline"
-                className="flex items-center gap-2"
+                className="w-full sm:w-auto flex items-center gap-2 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950"
+                size="sm"
               >
                 <User className="w-4 h-4" />
                 Export User Report
               </Button>
             </div>
-            <p className="text-sm text-muted-foreground mt-1">Download detailed report for specific user</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Download detailed report for specific user
+            </p>
           </div>
         </div>
       </CardContent>
