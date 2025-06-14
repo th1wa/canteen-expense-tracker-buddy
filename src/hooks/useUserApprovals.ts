@@ -14,7 +14,7 @@ interface PendingUser {
 export const useUserApprovals = () => {
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
   const [loading, setLoading] = useState(false);
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
 
   const fetchPendingUsers = async () => {
     if (profile?.role !== 'admin') return;
@@ -67,6 +67,11 @@ export const useUserApprovals = () => {
         throw error;
       }
       
+      // If the updated user is the current user, refresh their profile
+      if (userId === profile?.id) {
+        await refreshProfile();
+      }
+      
       // Refresh the list
       await fetchPendingUsers();
       return { success: true };
@@ -80,7 +85,7 @@ export const useUserApprovals = () => {
     if (profile?.role === 'admin') {
       fetchPendingUsers();
       
-      // Set up real-time subscription for new users
+      // Set up real-time subscription for profile changes
       const channel = supabase
         .channel('profile-changes')
         .on(
@@ -91,6 +96,7 @@ export const useUserApprovals = () => {
             table: 'profiles'
           },
           () => {
+            console.log('New user registered, refreshing list');
             fetchPendingUsers();
           }
         )
@@ -101,8 +107,13 @@ export const useUserApprovals = () => {
             schema: 'public',
             table: 'profiles'
           },
-          () => {
+          (payload) => {
+            console.log('User profile updated:', payload);
             fetchPendingUsers();
+            // If the updated user is the current user, refresh their profile
+            if (payload.new?.id === profile?.id) {
+              refreshProfile();
+            }
           }
         )
         .subscribe();
@@ -111,7 +122,33 @@ export const useUserApprovals = () => {
         supabase.removeChannel(channel);
       };
     }
-  }, [profile]);
+  }, [profile, refreshProfile]);
+
+  // Also listen for role changes that affect the current user
+  useEffect(() => {
+    if (profile?.id) {
+      const userChannel = supabase
+        .channel(`user-${profile.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'profiles',
+            filter: `id=eq.${profile.id}`
+          },
+          (payload) => {
+            console.log('Current user profile updated:', payload);
+            refreshProfile();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(userChannel);
+      };
+    }
+  }, [profile?.id, refreshProfile]);
 
   return {
     pendingUsers,

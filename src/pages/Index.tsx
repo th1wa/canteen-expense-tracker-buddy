@@ -7,11 +7,15 @@ import BasicUserBanner from "@/components/BasicUserBanner";
 import TabContent from "@/components/TabContent";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTabManagement } from "@/hooks/useTabManagement";
+import { useGlobalProfileListener } from "@/hooks/useGlobalProfileListener";
 
 const Index = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const { profile } = useAuth();
   const { activeTab, setActiveTab } = useTabManagement(profile);
+
+  // Set up global real-time listener for profile changes
+  useGlobalProfileListener();
 
   const handleExpenseAdded = () => {
     setRefreshTrigger(prev => prev + 1);

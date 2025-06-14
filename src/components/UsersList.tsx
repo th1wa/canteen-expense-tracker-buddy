@@ -7,6 +7,7 @@ import { UserTotal } from "@/types/user";
 import UserFilters from "./users/UserFilters";
 import UserStats from "./users/UserStats";
 import UsersGrid from "./users/UsersGrid";
+import { supabase } from "@/integrations/supabase/client";
 
 interface UsersListProps {
   refreshTrigger: number;
@@ -19,11 +20,39 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
   const [selectedUser, setSelectedUser] = useState<UserTotal | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [filteredUsers, setFilteredUsers] = useState<UserTotal[]>([]);
+  const [localRefreshTrigger, setLocalRefreshTrigger] = useState(0);
   
   const { profile } = useAuth();
   const hasAccess = profile?.role === 'admin' || profile?.role === 'hr';
   
-  const { users, loading, error, totalStats } = useUsersData(refreshTrigger, hasAccess);
+  const { users, loading, error, totalStats } = useUsersData(refreshTrigger + localRefreshTrigger, hasAccess);
+
+  // Set up real-time listener for profile changes that might affect user data
+  useEffect(() => {
+    if (!hasAccess) return;
+
+    console.log('Setting up real-time listener for profile changes in UsersList');
+
+    const channel = supabase
+      .channel('users-list-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles'
+        },
+        (payload) => {
+          console.log('Profile update detected in UsersList:', payload);
+          setLocalRefreshTrigger(prev => prev + 1);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [hasAccess]);
 
   useEffect(() => {
     if (!users) return;
@@ -77,7 +106,7 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
 
   const handlePaymentAdded = () => {
     // Refresh the data when a payment is added
-    window.location.reload();
+    setLocalRefreshTrigger(prev => prev + 1);
   };
 
   if (!profile) {
