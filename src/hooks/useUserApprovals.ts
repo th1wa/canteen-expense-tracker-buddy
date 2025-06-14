@@ -7,6 +7,7 @@ interface PendingUser {
   id: string;
   username: string;
   created_at: string;
+  updated_at: string;
   role: string;
 }
 
@@ -36,6 +37,7 @@ export const useUserApprovals = () => {
                typeof user.id === 'string' && 
                typeof user.username === 'string' && 
                typeof user.created_at === 'string' && 
+               typeof user.updated_at === 'string' && 
                typeof user.role === 'string';
       });
       
