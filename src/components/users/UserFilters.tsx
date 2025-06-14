@@ -53,13 +53,13 @@ const UserFilters = ({
           <Input
             placeholder="Search users..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value || '')}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="text-xs"
           />
         </div>
 
         {/* Balance Filter */}
-        <Select value={balanceFilter} onValueChange={setBalanceFilter}>
+        <Select value={balanceFilter || ''} onValueChange={(value) => setBalanceFilter(value === 'all' ? '' : value)}>
           <SelectTrigger className="text-xs">
             <SelectValue placeholder="All balances" />
           </SelectTrigger>
@@ -74,7 +74,7 @@ const UserFilters = ({
         </Select>
 
         {/* Settlement Filter */}
-        <Select value={settlementFilter} onValueChange={setSettlementFilter}>
+        <Select value={settlementFilter || ''} onValueChange={(value) => setSettlementFilter(value === 'all' ? '' : value)}>
           <SelectTrigger className="text-xs">
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>

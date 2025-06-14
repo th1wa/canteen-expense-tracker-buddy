@@ -1,7 +1,6 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { UserTotal } from "@/types/user";
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchExpenses, fetchUsers, fetchPayments } from "@/utils/supabaseQueries";
 import { createUserMap, calculateUserStats } from "@/utils/userDataProcessing";
@@ -15,7 +14,7 @@ export const useUsersData = (refreshTrigger: number, hasAccess: boolean = true) 
     totalPaid: number;
     totalOutstanding: number;
   } | null>(null);
-  const { toast } = useToast();
+  
   const { profile } = useAuth();
   const abortControllerRef = useRef<AbortController | null>(null);
   const isMountedRef = useRef(true);
