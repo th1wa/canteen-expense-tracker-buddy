@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { IoPeople, IoTrendingUp, IoCash, IoWarning } from "react-icons/io5";
+import { Users, TrendingUp, DollarSign, AlertCircle } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface SummaryCardsProps {
@@ -25,7 +25,7 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({
         <CardContent className="spacing-responsive-sm">
           <div className="flex items-center gap-2">
             <div className={`${isMobile ? 'w-8 h-8' : 'w-8 h-8 sm:w-10 sm:h-10'} bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0`}>
-              <IoPeople className={`${isMobile ? 'w-4 h-4' : 'w-4 h-4 sm:w-5 sm:h-5'} text-white`} />
+              <Users className={`${isMobile ? 'w-4 h-4' : 'w-4 h-4 sm:w-5 sm:h-5'} text-white`} />
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-xs text-blue-600 dark:text-blue-400 font-medium uppercase tracking-wide">Total Users</p>
@@ -41,7 +41,7 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({
         <CardContent className="spacing-responsive-sm">
           <div className="flex items-center gap-2">
             <div className={`${isMobile ? 'w-8 h-8' : 'w-8 h-8 sm:w-10 sm:h-10'} bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center flex-shrink-0`}>
-              <IoTrendingUp className={`${isMobile ? 'w-4 h-4' : 'w-4 h-4 sm:w-5 sm:h-5'} text-white`} />
+              <TrendingUp className={`${isMobile ? 'w-4 h-4' : 'w-4 h-4 sm:w-5 sm:h-5'} text-white`} />
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-xs text-orange-600 dark:text-orange-400 font-medium uppercase tracking-wide">Total Expenses</p>
@@ -57,7 +57,7 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({
         <CardContent className="spacing-responsive-sm">
           <div className="flex items-center gap-2">
             <div className={`${isMobile ? 'w-8 h-8' : 'w-8 h-8 sm:w-10 sm:h-10'} bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center flex-shrink-0`}>
-              <IoCash className={`${isMobile ? 'w-4 h-4' : 'w-4 h-4 sm:w-5 sm:h-5'} text-white`} />
+              <DollarSign className={`${isMobile ? 'w-4 h-4' : 'w-4 h-4 sm:w-5 sm:h-5'} text-white`} />
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-xs text-green-600 dark:text-green-400 font-medium uppercase tracking-wide">Total Paid</p>
@@ -73,7 +73,7 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({
         <CardContent className="spacing-responsive-sm">
           <div className="flex items-center gap-2">
             <div className={`${isMobile ? 'w-8 h-8' : 'w-8 h-8 sm:w-10 sm:h-10'} bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center flex-shrink-0`}>
-              <IoWarning className={`${isMobile ? 'w-4 h-4' : 'w-4 h-4 sm:w-5 sm:h-5'} text-white`} />
+              <AlertCircle className={`${isMobile ? 'w-4 h-4' : 'w-4 h-4 sm:w-5 sm:h-5'} text-white`} />
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-xs text-red-600 dark:text-red-400 font-medium uppercase tracking-wide">Total Remaining</p>

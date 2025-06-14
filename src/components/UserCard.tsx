@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { IoPerson, IoCash, IoCard } from "react-icons/io5";
+import { User, DollarSign, CreditCard } from "lucide-react";
 import { UserTotal } from "@/types/user";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -64,7 +64,7 @@ const UserCard = ({ user, canManagePayments, onPaymentClick }: UserCardProps) =>
         {/* Header Section */}
         <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-            <IoPerson className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground flex-shrink-0 transition-colors group-hover:text-primary" />
+            <User className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground flex-shrink-0 transition-colors group-hover:text-primary" />
             <h3 className={`
               font-semibold transition-colors group-hover:text-primary
               ${isMobile ? 'text-sm leading-tight' : 'text-sm sm:text-base md:text-lg'}
@@ -95,7 +95,7 @@ const UserCard = ({ user, canManagePayments, onPaymentClick }: UserCardProps) =>
                 }
               `}
             >
-              <IoCard className="w-3 h-3 sm:w-4 sm:h-4 transition-transform group-hover:rotate-12" />
+              <CreditCard className="w-3 h-3 sm:w-4 sm:h-4 transition-transform group-hover:rotate-12" />
               Pay
             </Button>
           )}
@@ -112,7 +112,7 @@ const UserCard = ({ user, canManagePayments, onPaymentClick }: UserCardProps) =>
               font-semibold flex items-center gap-1 transition-colors
               ${isMobile ? 'text-base' : 'text-sm sm:text-base md:text-lg'}
             `}>
-              <IoCash className="w-3 h-3 sm:w-4 sm:h-4 transition-transform hover:scale-110" />
+              <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 transition-transform hover:scale-110" />
               Rs. {totalAmount.toFixed(2)}
             </p>
           </div>
