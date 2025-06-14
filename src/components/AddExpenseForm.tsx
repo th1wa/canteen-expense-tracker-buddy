@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserNameInput } from "./UserNameInput";
 import { ExpenseFormFields } from "./ExpenseFormFields";
+import TodayExpenseHistory from "./TodayExpenseHistory";
 
 interface AddExpenseFormProps {
   onExpenseAdded: () => void;
@@ -18,6 +19,7 @@ const AddExpenseForm = ({ onExpenseAdded }: AddExpenseFormProps) => {
   const [expenseDate, setExpenseDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [note, setNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [refreshHistoryTrigger, setRefreshHistoryTrigger] = useState(0);
   const { toast } = useToast();
   const { profile } = useAuth();
 
@@ -82,8 +84,9 @@ const AddExpenseForm = ({ onExpenseAdded }: AddExpenseFormProps) => {
       setExpenseDate(format(new Date(), 'yyyy-MM-dd'));
       setNote('');
       
-      // Trigger refresh in parent
+      // Trigger refresh in parent and history
       onExpenseAdded();
+      setRefreshHistoryTrigger(prev => prev + 1);
 
     } catch (error) {
       console.error('Error adding expense:', error);
@@ -107,32 +110,36 @@ const AddExpenseForm = ({ onExpenseAdded }: AddExpenseFormProps) => {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-        <UserNameInput
-          value={userName}
-          onChange={setUserName}
-          className="sm:col-span-2 lg:col-span-1"
-        />
+    <div className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <UserNameInput
+            value={userName}
+            onChange={setUserName}
+            className="sm:col-span-2 lg:col-span-1"
+          />
 
-        <ExpenseFormFields
-          amount={amount}
-          onAmountChange={setAmount}
-          expenseDate={expenseDate}
-          onExpenseDateChange={setExpenseDate}
-          note={note}
-          onNoteChange={setNote}
-        />
-      </div>
+          <ExpenseFormFields
+            amount={amount}
+            onAmountChange={setAmount}
+            expenseDate={expenseDate}
+            onExpenseDateChange={setExpenseDate}
+            note={note}
+            onNoteChange={setNote}
+          />
+        </div>
 
-      <Button 
-        type="submit" 
-        className="w-full bg-orange-600 hover:bg-orange-700 text-sm sm:text-base py-2 sm:py-3"
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? 'Saving...' : 'Save Expense'}
-      </Button>
-    </form>
+        <Button 
+          type="submit" 
+          className="w-full bg-orange-600 hover:bg-orange-700 text-sm sm:text-base py-2 sm:py-3"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Saving...' : 'Save Expense'}
+        </Button>
+      </form>
+
+      <TodayExpenseHistory refreshTrigger={refreshHistoryTrigger} />
+    </div>
   );
 };
 
