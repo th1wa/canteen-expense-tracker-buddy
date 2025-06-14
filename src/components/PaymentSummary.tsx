@@ -58,12 +58,11 @@ const PaymentSummary = ({
             <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Payment Progress</span>
             <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{paymentProgress.toFixed(1)}%</span>
           </div>
-          <div className="relative">
-            <Progress 
-              value={paymentProgress} 
-              className="h-3 bg-slate-200 dark:bg-slate-700" 
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full h-3" style={{width: `${paymentProgress}%`}}></div>
+          <div className="relative h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${paymentProgress}%` }}
+            ></div>
           </div>
         </div>
         
