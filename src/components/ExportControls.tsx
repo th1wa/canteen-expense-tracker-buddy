@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, FileSpreadsheet, User } from "lucide-react";
+import { IoDownload, IoDocument, IoPerson } from "react-icons/io5";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface UserSummary {
@@ -36,7 +36,7 @@ const ExportControls: React.FC<ExportControlsProps> = ({
     <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border-blue-200 dark:border-blue-800">
       <CardHeader className="spacing-responsive-sm">
         <CardTitle className={`flex items-center gap-2 ${isMobile ? 'text-base' : 'text-base sm:text-lg'}`}>
-          <FileSpreadsheet className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+          <IoDocument className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
           Export Reports
         </CardTitle>
       </CardHeader>
@@ -50,7 +50,7 @@ const ExportControls: React.FC<ExportControlsProps> = ({
               className={`btn-mobile w-full flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 ${isMobile ? 'text-sm' : 'text-sm sm:text-base'}`}
               size="sm"
             >
-              <Download className="w-4 h-4 flex-shrink-0" />
+              <IoDownload className="w-4 h-4 flex-shrink-0" />
               <span className="truncate">{isExporting ? 'Exporting...' : 'Export Full Summary Report'}</span>
             </Button>
             <p className="text-xs text-muted-foreground">
@@ -80,7 +80,7 @@ const ExportControls: React.FC<ExportControlsProps> = ({
                 className={`btn-mobile flex items-center gap-2 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950 ${isMobile ? 'w-full text-sm' : 'w-full sm:w-auto text-sm sm:text-base'}`}
                 size="sm"
               >
-                <User className="w-4 h-4 flex-shrink-0" />
+                <IoPerson className="w-4 h-4 flex-shrink-0" />
                 <span className="truncate">Export User Report</span>
               </Button>
             </div>

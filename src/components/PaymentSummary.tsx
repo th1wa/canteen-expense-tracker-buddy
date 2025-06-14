@@ -3,7 +3,7 @@ import React from 'react';
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { DollarSign, TrendingUp, Target, CheckCircle } from "lucide-react";
+import { IoCash, IoTrendingUp, IoTarget, IoCheckmarkCircle } from "react-icons/io5";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface PaymentSummaryProps {
@@ -34,7 +34,7 @@ const PaymentSummary = ({
           {/* Total Amount */}
           <div className="text-center bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-200 dark:border-blue-800 spacing-responsive-sm">
             <div className="flex items-center justify-center mb-2">
-              <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
+              <IoCash className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
             </div>
             <p className="text-xs text-blue-600 dark:text-blue-400 font-medium uppercase tracking-wide">Total Amount</p>
             <p className="text-responsive-lg font-bold text-blue-700 dark:text-blue-300">
@@ -45,7 +45,7 @@ const PaymentSummary = ({
           {/* Amount Paid */}
           <div className="text-center bg-green-50 dark:bg-green-950/30 rounded-xl border border-green-200 dark:border-green-800 spacing-responsive-sm">
             <div className="flex items-center justify-center mb-2">
-              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400" />
+              <IoTrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400" />
             </div>
             <p className="text-xs text-green-600 dark:text-green-400 font-medium uppercase tracking-wide">Amount Paid</p>
             <p className="text-responsive-lg font-bold text-green-700 dark:text-green-300">
@@ -56,7 +56,7 @@ const PaymentSummary = ({
           {/* Remaining Balance */}
           <div className="text-center bg-orange-50 dark:bg-orange-950/30 rounded-xl border border-orange-200 dark:border-orange-800 spacing-responsive-sm">
             <div className="flex items-center justify-center mb-2">
-              <Target className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 dark:text-orange-400" />
+              <IoTarget className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 dark:text-orange-400" />
             </div>
             <p className="text-xs text-orange-600 dark:text-orange-400 font-medium uppercase tracking-wide">Remaining</p>
             <p className="text-responsive-lg font-bold text-orange-700 dark:text-orange-300">
@@ -85,7 +85,7 @@ const PaymentSummary = ({
         {isFullyPaid && (
           <div className="mt-4 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl text-white text-center spacing-responsive-sm">
             <div className="flex items-center justify-center gap-2">
-              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+              <IoCheckmarkCircle className="w-4 h-4 sm:w-5 sm:h-5" />
               <span className="text-responsive-sm font-bold">
                 Bill Fully Settled!
               </span>
