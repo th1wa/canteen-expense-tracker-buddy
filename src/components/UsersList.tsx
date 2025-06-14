@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUsersData } from "@/hooks/useUsersData";
 import { UserTotal } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface UsersListProps {
   refreshTrigger: number;
@@ -20,6 +21,7 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
   const { profile } = useAuth();
   const { users, loading, error, refetch } = useUsersData(refreshTrigger);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   // Check if user can manage payments (admin or canteen)
   const canManagePayments = profile?.role === 'admin' || profile?.role === 'canteen';
@@ -109,21 +111,21 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
 
   if (loading) {
     return (
-      <div className="text-center py-4 sm:py-6 md:py-8">
-        <div className="text-sm sm:text-base">Loading users...</div>
+      <div className="text-center py-6 sm:py-8 px-4 container-mobile">
+        <div className="text-responsive-sm">Loading users...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center py-4 sm:py-6 md:py-8">
-        <div className="text-sm sm:text-base text-destructive mb-2">
+      <div className="text-center py-6 sm:py-8 px-4 container-mobile">
+        <div className="text-responsive-sm text-destructive mb-3">
           Error: {error}
         </div>
         <button 
           onClick={refetch}
-          className="mt-2 text-sm text-blue-600 hover:text-blue-800 underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
+          className="btn-mobile mt-2 text-blue-600 hover:text-blue-800 underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
         >
           Try again
         </button>
@@ -132,28 +134,30 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
   }
 
   return (
-    <div className="space-y-3 sm:space-y-4 w-full">
+    <div className="space-y-4 w-full container-mobile">
       <UserSearch 
         searchTerm={searchTerm} 
         onSearchChange={handleSearchChange} 
       />
 
       {filteredUsers.length === 0 ? (
-        <div className="text-center py-4 sm:py-6 md:py-8 text-muted-foreground">
-          <p className="text-sm sm:text-base">
-            {searchTerm ? 'No users found matching your search.' : 'No users found.'}
-          </p>
-          {searchTerm && (
-            <button 
-              onClick={() => setSearchTerm('')}
-              className="mt-2 text-sm text-blue-600 hover:text-blue-800 underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
-            >
-              Clear search
-            </button>
-          )}
+        <div className="text-center py-8 sm:py-12 px-4 text-muted-foreground">
+          <div className="max-w-sm mx-auto">
+            <p className="text-responsive-sm mb-4">
+              {searchTerm ? 'No users found matching your search.' : 'No users found.'}
+            </p>
+            {searchTerm && (
+              <button 
+                onClick={() => setSearchTerm('')}
+                className="btn-mobile text-blue-600 hover:text-blue-800 underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
+              >
+                Clear search
+              </button>
+            )}
+          </div>
         </div>
       ) : (
-        <div className="grid gap-3 sm:gap-4 grid-cols-1">
+        <div className={`grid gap-3 sm:gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3'}`}>
           {filteredUsers.map((user) => (
             <UserCard
               key={`user-${user.user_name}`}

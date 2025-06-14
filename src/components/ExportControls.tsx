@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Download, FileSpreadsheet, User } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface UserSummary {
   user_name: string;
@@ -29,40 +30,42 @@ const ExportControls: React.FC<ExportControlsProps> = ({
   onExportSummary,
   onExportUserDetail
 }) => {
+  const isMobile = useIsMobile();
+
   return (
     <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border-blue-200 dark:border-blue-800">
-      <CardHeader className="pb-3 sm:pb-4">
-        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-          <FileSpreadsheet className="w-4 h-4 sm:w-5 sm:h-5" />
+      <CardHeader className="spacing-responsive-sm">
+        <CardTitle className={`flex items-center gap-2 ${isMobile ? 'text-base' : 'text-base sm:text-lg'}`}>
+          <FileSpreadsheet className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
           Export Reports
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-0">
-        <div className="space-y-4 sm:space-y-6">
+      <CardContent className="pt-0 spacing-responsive-sm">
+        <div className="space-y-4">
           {/* Full Summary Export */}
-          <div className="space-y-2 sm:space-y-3">
+          <div className="space-y-2">
             <Button
               onClick={onExportSummary}
               disabled={isExporting}
-              className="w-full sm:w-auto flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+              className={`btn-mobile w-full flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 ${isMobile ? 'text-sm' : 'text-sm sm:text-base'}`}
               size="sm"
             >
-              <Download className="w-4 h-4" />
-              {isExporting ? 'Exporting...' : 'Export Full Summary Report'}
+              <Download className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate">{isExporting ? 'Exporting...' : 'Export Full Summary Report'}</span>
             </Button>
-            <p className="text-xs sm:text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Download complete summary of all users
             </p>
           </div>
           
           {/* User Detail Export */}
-          <div className="space-y-2 sm:space-y-3">
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          <div className="space-y-2">
+            <div className={`flex gap-2 ${isMobile ? 'flex-col' : 'flex-col sm:flex-row'}`}>
               <Select value={selectedUserForExport} onValueChange={setSelectedUserForExport}>
-                <SelectTrigger className="w-full sm:w-48">
+                <SelectTrigger className={`form-mobile ${isMobile ? 'w-full' : 'w-full sm:w-48'}`}>
                   <SelectValue placeholder="Select user..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white dark:bg-gray-800 border shadow-lg z-50">
                   {filteredData.map((user) => (
                     <SelectItem key={user.user_name} value={user.user_name}>
                       {user.user_name}
@@ -74,14 +77,14 @@ const ExportControls: React.FC<ExportControlsProps> = ({
                 onClick={() => onExportUserDetail(selectedUserForExport)}
                 disabled={isExporting || !selectedUserForExport}
                 variant="outline"
-                className="w-full sm:w-auto flex items-center gap-2 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950"
+                className={`btn-mobile flex items-center gap-2 border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950 ${isMobile ? 'w-full text-sm' : 'w-full sm:w-auto text-sm sm:text-base'}`}
                 size="sm"
               >
-                <User className="w-4 h-4" />
-                Export User Report
+                <User className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate">Export User Report</span>
               </Button>
             </div>
-            <p className="text-xs sm:text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Download detailed report for specific user
             </p>
           </div>

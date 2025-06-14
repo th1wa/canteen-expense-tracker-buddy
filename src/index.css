@@ -101,7 +101,7 @@
 
 /* Custom scrollbar for dark mode */
 .dark ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 .dark ::-webkit-scrollbar-track {
@@ -117,18 +117,37 @@
   background: hsl(var(--accent-foreground));
 }
 
-/* Responsive utilities using @layer utilities */
+/* Light mode scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--accent-foreground));
+}
+
+/* Mobile-first responsive utilities */
 @layer utilities {
+  /* Typography responsive utilities */
   .text-responsive-xs {
-    @apply text-xs sm:text-sm md:text-base;
+    @apply text-xs sm:text-sm;
   }
   
   .text-responsive-sm {
-    @apply text-sm sm:text-base md:text-lg;
+    @apply text-sm sm:text-base;
   }
   
   .text-responsive-base {
-    @apply text-base sm:text-lg md:text-xl;
+    @apply text-base sm:text-lg;
   }
   
   .text-responsive-lg {
@@ -139,35 +158,160 @@
     @apply text-xl sm:text-2xl md:text-3xl;
   }
   
+  .text-responsive-2xl {
+    @apply text-xl sm:text-2xl md:text-3xl lg:text-4xl;
+  }
+  
+  /* Spacing responsive utilities */
+  .spacing-responsive-sm {
+    @apply p-2 sm:p-3 md:p-4;
+  }
+  
   .spacing-responsive {
-    @apply p-2 sm:p-4 md:p-6 lg:p-8;
+    @apply p-3 sm:p-4 md:p-6;
+  }
+  
+  .spacing-responsive-lg {
+    @apply p-4 sm:p-6 md:p-8;
+  }
+  
+  .margin-responsive-sm {
+    @apply m-2 sm:m-3 md:m-4;
   }
   
   .margin-responsive {
-    @apply m-2 sm:m-4 md:m-6 lg:m-8;
+    @apply m-3 sm:m-4 md:m-6;
+  }
+  
+  .gap-responsive-sm {
+    @apply gap-2 sm:gap-3;
   }
   
   .gap-responsive {
-    @apply gap-2 sm:gap-4 md:gap-6 lg:gap-8;
+    @apply gap-3 sm:gap-4 md:gap-6;
+  }
+  
+  .gap-responsive-lg {
+    @apply gap-4 sm:gap-6 md:gap-8;
   }
 
-  /* Touch-friendly button sizes */
-  .btn-touch {
-    @apply min-h-[44px] min-w-[44px];
+  /* Mobile-first button utilities */
+  .btn-mobile {
+    @apply min-h-[44px] min-w-[44px] text-sm sm:text-base px-3 py-2 sm:px-4 sm:py-2;
   }
 
-  /* Responsive form elements */
-  .form-responsive {
-    @apply text-sm sm:text-base px-3 py-2 sm:px-4 sm:py-3;
+  /* Form responsive utilities */
+  .form-mobile {
+    @apply text-sm px-3 py-2 sm:px-4 sm:py-3;
   }
 
-  /* Responsive card padding */
-  .card-responsive {
-    @apply p-3 sm:p-4 md:p-6 lg:p-8;
+  /* Card responsive utilities */
+  .card-mobile {
+    @apply p-3 sm:p-4 md:p-6;
   }
 
-  /* Responsive grid gaps */
-  .grid-responsive {
-    @apply gap-2 sm:gap-3 md:gap-4 lg:gap-6;
+  /* Grid responsive utilities */
+  .grid-mobile {
+    @apply gap-2 sm:gap-3 md:gap-4;
+  }
+  
+  .grid-mobile-lg {
+    @apply gap-3 sm:gap-4 md:gap-6;
+  }
+
+  /* Container responsive utilities */
+  .container-mobile {
+    @apply px-4 sm:px-6 md:px-8 max-w-full;
+  }
+  
+  /* Height responsive utilities */
+  .min-h-mobile {
+    @apply min-h-[40px] sm:min-h-[44px] md:min-h-[48px];
+  }
+  
+  /* Modal responsive utilities */
+  .modal-mobile {
+    @apply w-[95vw] max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl;
+  }
+  
+  .modal-content-mobile {
+    @apply max-h-[85vh] sm:max-h-[90vh] overflow-y-auto;
+  }
+  
+  /* Sidebar responsive utilities */
+  .sidebar-mobile {
+    @apply w-[280px] sm:w-[320px] md:w-[360px];
+  }
+  
+  /* Table responsive utilities */
+  .table-mobile {
+    @apply text-xs sm:text-sm;
+  }
+  
+  .table-cell-mobile {
+    @apply p-2 sm:p-3 md:p-4;
+  }
+  
+  /* Safe area utilities for mobile devices */
+  .safe-area-inset {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .safe-area-inset-x {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  .safe-area-inset-y {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Additional mobile optimizations */
+@media (max-width: 640px) {
+  /* Improve touch targets on mobile */
+  button, a, input, select, textarea {
+    min-height: 44px;
+  }
+  
+  /* Prevent zoom on input focus */
+  input, select, textarea {
+    font-size: 16px;
+  }
+  
+  /* Better modal positioning on mobile */
+  .modal-content {
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+  }
+}
+
+/* Landscape phone optimizations */
+@media (max-height: 500px) and (orientation: landscape) {
+  .modal-content-mobile {
+    max-height: 85vh;
+  }
+  
+  .spacing-responsive {
+    @apply p-2;
+  }
+}
+
+/* Very small screens (below 375px) */
+@media (max-width: 374px) {
+  .container-mobile {
+    @apply px-2;
+  }
+  
+  .text-responsive-lg {
+    @apply text-base;
+  }
+  
+  .text-responsive-xl {
+    @apply text-lg;
   }
 }

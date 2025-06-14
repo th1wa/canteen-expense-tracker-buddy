@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSummaryData } from "@/hooks/useSummaryData";
 import { useExportData } from "@/hooks/useExportData";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import ExportControls from "./ExportControls";
 import SummaryCards from "./SummaryCards";
 import UserSummaryTable from "./UserSummaryTable";
@@ -28,6 +29,7 @@ const UserExpenseSummary = () => {
   const [selectedUserForExport, setSelectedUserForExport] = useState<string>('');
   const { profile } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   // Check if user has admin or hr role with proper null checking
   const hasAccess = profile?.role === 'admin' || profile?.role === 'hr';
@@ -128,10 +130,10 @@ const UserExpenseSummary = () => {
 
   if (!profile) {
     return (
-      <div className="text-center py-6 sm:py-8 md:py-12 px-4">
+      <div className="text-center py-8 sm:py-12 container-mobile">
         <div className="max-w-md mx-auto">
-          <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-destructive mb-3 sm:mb-4">Loading...</h2>
-          <p className="text-sm sm:text-base text-muted-foreground">Please wait while we load your profile.</p>
+          <h2 className="text-responsive-lg font-semibold text-destructive mb-4">Loading...</h2>
+          <p className="text-responsive-sm text-muted-foreground">Please wait while we load your profile.</p>
         </div>
       </div>
     );
@@ -139,10 +141,10 @@ const UserExpenseSummary = () => {
 
   if (!hasAccess) {
     return (
-      <div className="text-center py-6 sm:py-8 md:py-12 px-4">
+      <div className="text-center py-8 sm:py-12 container-mobile">
         <div className="max-w-md mx-auto">
-          <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-destructive mb-3 sm:mb-4">Access Denied</h2>
-          <p className="text-sm sm:text-base text-muted-foreground">Only HR and Admin users can access summary reports.</p>
+          <h2 className="text-responsive-lg font-semibold text-destructive mb-4">Access Denied</h2>
+          <p className="text-responsive-sm text-muted-foreground">Only HR and Admin users can access summary reports.</p>
         </div>
       </div>
     );
@@ -150,35 +152,35 @@ const UserExpenseSummary = () => {
 
   if (loading) {
     return (
-      <div className="text-center py-6 sm:py-8 md:py-12 px-4">
-        <div className="text-sm sm:text-base">Loading summary data...</div>
+      <div className="text-center py-8 sm:py-12 container-mobile">
+        <div className="text-responsive-sm">Loading summary data...</div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 px-2 sm:px-4 md:px-0">
+    <div className="space-y-4 sm:space-y-6 container-mobile">
       {/* Header Section */}
-      <div className="space-y-4 sm:space-y-6">
+      <div className="space-y-4">
         <div className="text-center sm:text-left">
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-800 dark:text-slate-200">
+          <h2 className="text-responsive-xl font-bold text-slate-800 dark:text-slate-200">
             User Expense & Payment Summary
           </h2>
-          <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">
+          <p className="text-responsive-sm text-muted-foreground mt-2">
             Monthly breakdown of user expenses and payments
           </p>
         </div>
         
         {/* Controls */}
-        <div className="flex flex-col space-y-3 sm:space-y-4 lg:flex-row lg:space-y-0 lg:space-x-4 lg:items-center lg:justify-between">
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+        <div className={`flex gap-3 ${isMobile ? 'flex-col' : 'flex-col sm:flex-row sm:items-center sm:justify-between'}`}>
+          <div className={`flex gap-3 ${isMobile ? 'flex-col' : 'flex-col sm:flex-row'}`}>
             <div className="flex items-center space-x-2">
               <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                <SelectTrigger className="w-full sm:w-40">
+                <SelectTrigger className={`${isMobile ? 'w-full' : 'w-full sm:w-40'}`}>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white dark:bg-gray-800 border shadow-lg z-50">
                   {Array.from({ length: 12 }, (_, i) => {
                     const date = new Date();
                     date.setMonth(date.getMonth() - i);
@@ -199,7 +201,7 @@ const UserExpenseSummary = () => {
                 placeholder="Search users..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value || '')}
-                className="w-full sm:w-48"
+                className={`form-mobile ${isMobile ? 'w-full' : 'w-full sm:w-48'}`}
               />
             </div>
           </div>
