@@ -1,7 +1,6 @@
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 
 interface ExpenseSummary {
   user_name: string;
@@ -22,123 +21,78 @@ interface UserSummary {
 
 export const useSummaryData = (selectedMonth: string, hasAccess: boolean) => {
   const [summaryData, setSummaryData] = useState<UserSummary[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
   const abortControllerRef = useRef<AbortController | null>(null);
-  const isMountedRef = useRef(true);
 
-  const fetchSummaryData = useCallback(async () => {
-    // Cancel any pending request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    // Create new abort controller for this request
-    abortControllerRef.current = new AbortController();
-    
-    // Reset error state
-    setError(null);
-    
+  useEffect(() => {
     if (!hasAccess) {
-      if (isMountedRef.current) {
-        setLoading(false);
-        setSummaryData([]);
-      }
+      setSummaryData([]);
+      setLoading(false);
+      setError(null);
       return;
     }
-    
-    setLoading(true);
-    
-    try {
-      // Enhanced validation of selectedMonth format
-      if (!selectedMonth || typeof selectedMonth !== 'string') {
-        throw new Error('Month selection is required');
+
+    if (!selectedMonth) {
+      setError('Invalid month selected');
+      return;
+    }
+
+    const fetchSummaryData = async () => {
+      // Cancel previous request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
 
-      if (!/^\d{4}-\d{2}$/.test(selectedMonth)) {
-        throw new Error('Invalid month format. Expected YYYY-MM');
-      }
-
-      const monthDate = new Date(selectedMonth + '-01');
+      abortControllerRef.current = new AbortController();
       
-      // Enhanced date validation
-      if (isNaN(monthDate.getTime())) {
-        throw new Error('Invalid date provided');
-      }
+      try {
+        setLoading(true);
+        setError(null);
 
-      // Check if date is too far in the future (sanity check)
-      const currentDate = new Date();
-      const maxDate = new Date(currentDate.getFullYear() + 1, 11, 31); // 1 year in future
-      if (monthDate > maxDate) {
-        throw new Error('Selected month is too far in the future');
-      }
-      
-      console.log(`Fetching summary data for month: ${selectedMonth}`);
-      
-      const { data, error: rpcError } = await supabase.rpc('get_user_expense_summary', {
-        selected_month: monthDate.toISOString().split('T')[0]
-      }, {
-        signal: abortControllerRef.current.signal
-      });
+        const monthDate = new Date(selectedMonth + '-01');
+        if (isNaN(monthDate.getTime())) {
+          throw new Error('Invalid date format');
+        }
 
-      if (rpcError) {
-        if (rpcError.message?.includes('abort')) return;
-        console.error('RPC Error:', rpcError);
-        throw new Error(`Database error: ${rpcError.message}`);
-      }
+        console.log('Fetching summary data for month:', selectedMonth);
+        
+        const { data, error: fetchError } = await supabase
+          .rpc('get_user_expense_summary', { 
+            selected_month: monthDate.toISOString().split('T')[0] 
+          });
 
-      // Only proceed if component is still mounted
-      if (!isMountedRef.current) return;
+        if (abortControllerRef.current?.signal.aborted) {
+          return;
+        }
 
-      // Enhanced data validation
-      if (data === null || data === undefined) {
-        console.warn('No data returned from summary function');
-        setSummaryData([]);
-        return;
-      }
+        if (fetchError) {
+          console.error('Error fetching summary data:', fetchError);
+          throw new Error(fetchError.message || 'Failed to fetch summary data');
+        }
 
-      if (!Array.isArray(data)) {
-        console.error('Invalid data format returned from summary function:', typeof data);
-        throw new Error('Invalid data format received from database');
-      }
+        if (!data) {
+          console.warn('No summary data received');
+          setSummaryData([]);
+          return;
+        }
 
-      // Group data by user with enhanced error handling
-      const userMap = new Map<string, UserSummary>();
-      
-      data.forEach((record: any, index: number) => {
-        try {
-          if (!record || typeof record !== 'object') {
-            console.warn(`Invalid record at index ${index}:`, record);
+        console.log('Raw summary data:', data);
+
+        // Group by user and aggregate
+        const userMap = new Map<string, UserSummary>();
+        
+        data.forEach((record: ExpenseSummary) => {
+          if (!record?.user_name) {
+            console.warn('Skipping record with invalid user_name:', record);
             return;
           }
+
+          const userName = record.user_name;
           
-          if (!record.user_name || typeof record.user_name !== 'string') {
-            console.warn(`Invalid user_name at index ${index}:`, record.user_name);
-            return;
-          }
-          
-          // Enhanced type-safe record processing
-          const typedRecord: ExpenseSummary = {
-            user_name: String(record.user_name).trim(),
-            expense_date: record.expense_date ? String(record.expense_date) : '',
-            expense_amount: Number(record.expense_amount) || 0,
-            payment_made: Boolean(record.payment_made),
-            payment_date: record.payment_date ? String(record.payment_date) : null,
-            remainder_amount: Number(record.remainder_amount) || 0
-          };
-          
-          // Validate expense_amount is not negative
-          if (typedRecord.expense_amount < 0) {
-            console.warn(`Negative expense amount for user ${typedRecord.user_name}:`, typedRecord.expense_amount);
-            typedRecord.expense_amount = 0;
-          }
-          
-          if (!typedRecord.user_name) return;
-          
-          if (!userMap.has(typedRecord.user_name)) {
-            userMap.set(typedRecord.user_name, {
-              user_name: typedRecord.user_name,
+          if (!userMap.has(userName)) {
+            userMap.set(userName, {
+              user_name: userName,
               total_expenses: 0,
               total_paid: 0,
               total_remainder: 0,
@@ -146,81 +100,48 @@ export const useSummaryData = (selectedMonth: string, hasAccess: boolean) => {
             });
           }
           
-          const userSummary = userMap.get(typedRecord.user_name)!;
-          userSummary.daily_records.push(typedRecord);
+          const userSummary = userMap.get(userName)!;
+          userSummary.daily_records.push(record);
           
-          userSummary.total_expenses += typedRecord.expense_amount;
-          if (typedRecord.payment_made) {
-            userSummary.total_paid += typedRecord.expense_amount;
-          }
-          userSummary.total_remainder += typedRecord.remainder_amount;
-        } catch (recordError) {
-          console.error(`Error processing record at index ${index}:`, recordError, record);
-        }
-      });
+          const expenseAmount = Number(record.expense_amount) || 0;
+          const remainderAmount = Number(record.remainder_amount) || 0;
+          const paidAmount = expenseAmount - remainderAmount;
+          
+          userSummary.total_expenses += expenseAmount;
+          userSummary.total_paid += Math.max(0, paidAmount);
+          userSummary.total_remainder += Math.max(0, remainderAmount);
+        });
 
-      const summaryArray = Array.from(userMap.values())
-        .map(user => ({
-          ...user,
-          // Ensure all totals are properly rounded to avoid floating point issues
-          total_expenses: Math.round(user.total_expenses * 100) / 100,
-          total_paid: Math.round(user.total_paid * 100) / 100,
-          total_remainder: Math.round(user.total_remainder * 100) / 100
-        }))
-        .sort((a, b) => a.user_name.localeCompare(b.user_name));
-      
-      console.log(`Successfully processed ${summaryArray.length} users with ${data.length} total records`);
-      
-      if (isMountedRef.current) {
-        setSummaryData(summaryArray);
-      }
-      
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        return; // Request was cancelled, don't update state
-      }
-      
-      console.error('Error fetching summary data:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred while fetching summary';
-      
-      if (isMountedRef.current) {
+        const result = Array.from(userMap.values())
+          .sort((a, b) => a.user_name.localeCompare(b.user_name));
+        
+        console.log('Processed summary data:', result);
+        setSummaryData(result);
+        
+      } catch (err) {
+        if (abortControllerRef.current?.signal.aborted) {
+          return;
+        }
+        
+        console.error('Error in fetchSummaryData:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
         setError(errorMessage);
         setSummaryData([]);
-        
-        // Show toast for user feedback
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive"
-        });
+      } finally {
+        if (!abortControllerRef.current?.signal.aborted) {
+          setLoading(false);
+        }
       }
-    } finally {
-      if (isMountedRef.current) {
-        setLoading(false);
-      }
-    }
-  }, [selectedMonth, hasAccess, toast]);
+    };
 
-  useEffect(() => {
     fetchSummaryData();
-    
-    // Cleanup function
+
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
     };
-  }, [fetchSummaryData]);
+  }, [selectedMonth, hasAccess]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      isMountedRef.current = false;
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, []);
-
-  return { summaryData, loading, error, refetch: fetchSummaryData };
+  return { summaryData, loading, error };
 };
