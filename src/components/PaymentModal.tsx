@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -47,6 +46,9 @@ const PaymentModal = ({
 
   // Check if user can manage payments (admin or canteen)
   const canManagePayments = profile && (profile.role === 'admin' || profile.role === 'canteen');
+
+  // Define a description for accessibility
+  const dialogDescriptionId = "payment-modal-description";
 
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,10 +126,18 @@ const PaymentModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md max-w-[95vw] max-h-[95vh] overflow-y-auto">
+      <DialogContent
+        className="sm:max-w-md max-w-[95vw] max-h-[95vh] overflow-y-auto"
+        aria-describedby={dialogDescriptionId}
+      >
         <DialogHeader>
           <DialogTitle className="text-lg sm:text-xl">Payment for {userName}</DialogTitle>
         </DialogHeader>
+        
+        {/* Invisible element for accessibility */}
+        <div id={dialogDescriptionId} className="sr-only">
+          Enter and record a payment for this user. View payment history and remaining balance.
+        </div>
         
         <div className="space-y-4">
           <div className="bg-muted p-3 sm:p-4 rounded-lg">
