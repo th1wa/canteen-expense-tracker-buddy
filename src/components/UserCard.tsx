@@ -29,6 +29,12 @@ const UserCard = ({ user, canManagePayments, onPaymentClick }: UserCardProps) =>
     return fullName ? `${user.user_name} (${fullName})` : user.user_name;
   };
 
+  // Ensure numeric values are properly handled
+  const totalAmount = Number(user.total_amount) || 0;
+  const totalPaid = Number(user.total_paid) || 0;
+  const remainingBalance = Number(user.remaining_balance) || 0;
+  const paymentProgress = Math.min(Number(user.payment_progress) || 0, 100);
+
   return (
     <Card className={`
       hover:shadow-lg transition-all duration-300 hover:scale-[1.02] w-full group 
@@ -92,7 +98,7 @@ const UserCard = ({ user, canManagePayments, onPaymentClick }: UserCardProps) =>
               ${isMobile ? 'text-base' : 'text-sm sm:text-base md:text-lg'}
             `}>
               <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 transition-transform hover:scale-110" />
-              Rs. {user.total_amount.toFixed(2)}
+              Rs. {totalAmount.toFixed(2)}
             </p>
           </div>
           
@@ -102,7 +108,7 @@ const UserCard = ({ user, canManagePayments, onPaymentClick }: UserCardProps) =>
               font-semibold text-green-600 transition-colors
               ${isMobile ? 'text-base' : 'text-sm sm:text-base md:text-lg'}
             `}>
-              Rs. {user.total_paid.toFixed(2)}
+              Rs. {totalPaid.toFixed(2)}
             </p>
           </div>
           
@@ -117,7 +123,7 @@ const UserCard = ({ user, canManagePayments, onPaymentClick }: UserCardProps) =>
               ${user.is_settled ? 'text-green-600' : 'text-orange-600'}
               ${isMobile ? 'text-base' : 'text-sm sm:text-base md:text-lg'}
             `}>
-              Rs. {user.remaining_balance.toFixed(2)}
+              Rs. {remainingBalance.toFixed(2)}
             </p>
           </div>
         </div>
@@ -127,17 +133,17 @@ const UserCard = ({ user, canManagePayments, onPaymentClick }: UserCardProps) =>
           <div className="flex justify-between text-xs sm:text-sm transition-all duration-200">
             <span>Payment Progress</span>
             <span className="transition-all duration-300 font-medium">
-              {Math.min(user.payment_progress, 100).toFixed(1)}%
+              {paymentProgress.toFixed(1)}%
             </span>
           </div>
           <Progress 
-            value={Math.min(user.payment_progress, 100)} 
+            value={paymentProgress} 
             className={`transition-all duration-500 ${isMobile ? 'h-3' : 'h-2 sm:h-3'}`}
           />
         </div>
 
         {/* Payments Section */}
-        {user.payments.length > 0 && (
+        {user.payments && user.payments.length > 0 && (
           <div className="mt-3 pt-3 border-t transition-all duration-200">
             <p className="text-xs sm:text-sm text-muted-foreground mb-2 transition-colors">
               Recent Payments ({user.payments.length})
@@ -156,7 +162,7 @@ const UserCard = ({ user, canManagePayments, onPaymentClick }: UserCardProps) =>
                   `}
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
-                  Rs. {payment.amount.toFixed(2)}
+                  Rs. {Number(payment.amount).toFixed(2)}
                 </Badge>
               ))}
               {user.payments.length > (isMobile ? 2 : 3) && (

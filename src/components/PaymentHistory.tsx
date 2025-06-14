@@ -16,7 +16,7 @@ interface PaymentHistoryProps {
 }
 
 const PaymentHistory = ({ payments }: PaymentHistoryProps) => {
-  if (payments.length === 0) {
+  if (!payments || payments.length === 0) {
     return (
       <Card className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border-slate-200 dark:border-slate-700">
         <CardContent className="p-6 text-center">
@@ -58,7 +58,7 @@ const PaymentHistory = ({ payments }: PaymentHistoryProps) => {
                 </div>
                 <div>
                   <p className="font-bold text-lg text-green-700 dark:text-green-400">
-                    Rs. {payment.amount.toFixed(2)}
+                    Rs. {Number(payment.amount).toFixed(2)}
                   </p>
                   <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
                     <Calendar className="w-3 h-3" />

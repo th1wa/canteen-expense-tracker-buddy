@@ -47,7 +47,7 @@ const PaymentForm = ({ userName, remainingBalance, onPaymentAdded, onClose }: Pa
 
     try {
       const { error } = await supabase
-        .from('payments' as any)
+        .from('payments')
         .insert([
           {
             user_name: userName,
@@ -56,11 +56,14 @@ const PaymentForm = ({ userName, remainingBalance, onPaymentAdded, onClose }: Pa
           }
         ]);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
       toast({
         title: "Payment Recorded",
-        description: `Rs. ${amount} payment recorded for ${userName}`,
+        description: `Rs. ${amount.toFixed(2)} payment recorded for ${userName}`,
       });
 
       setPaymentAmount('');
@@ -122,12 +125,12 @@ const PaymentForm = ({ userName, remainingBalance, onPaymentAdded, onClose }: Pa
                 max={remainingBalance}
                 className="pl-8 text-lg font-medium border-2 border-blue-200 dark:border-blue-700 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-slate-800"
                 required
+                disabled={isSubmitting}
               />
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium">₹</span>
             </div>
           </div>
 
-          {/* Quick Amount Buttons */}
           {quickAmountButtons.length > 0 && (
             <div className="space-y-2">
               <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">Quick Amounts</Label>
@@ -140,6 +143,7 @@ const PaymentForm = ({ userName, remainingBalance, onPaymentAdded, onClose }: Pa
                     size="sm"
                     onClick={() => setPaymentAmount(amount.toString())}
                     className="text-xs border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950 hover:border-blue-400 dark:hover:border-blue-500"
+                    disabled={isSubmitting}
                   >
                     ₹{amount}
                   </Button>
