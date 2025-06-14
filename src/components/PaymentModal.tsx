@@ -7,6 +7,7 @@ import PaymentForm from "@/components/PaymentForm";
 import PaymentHistory from "@/components/PaymentHistory";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Payment {
   id: string;
@@ -33,6 +34,7 @@ const PaymentModal = ({
   onPaymentAdded 
 }: PaymentModalProps) => {
   const { profile } = useAuth();
+  const isMobile = useIsMobile();
 
   const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
   const remainingBalance = totalAmount - totalPaid;
@@ -44,17 +46,27 @@ const PaymentModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg max-w-[95vw] max-h-[95vh] overflow-hidden p-0 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-950 border-0 shadow-2xl">
+      <DialogContent className={`
+        ${isMobile 
+          ? 'w-[95vw] h-[95vh] max-w-none rounded-lg m-2' 
+          : 'sm:max-w-lg max-w-[95vw] max-h-[95vh]'
+        } 
+        overflow-hidden p-0 bg-gradient-to-br from-slate-50 to-blue-50 
+        dark:from-slate-900 dark:to-blue-950 border-0 shadow-2xl
+      `}>
         {/* Custom Header */}
-        <div className="relative px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+        <div className="relative px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
           <DialogHeader>
-            <DialogTitle className="text-xl sm:text-2xl font-bold flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+            <DialogTitle className={`
+              ${isMobile ? 'text-lg' : 'text-xl sm:text-2xl'} 
+              font-bold flex items-center gap-2 sm:gap-3 pr-8
+            `}>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-full flex items-center justify-center text-sm sm:text-base">
                 💳
               </div>
-              Payment for {userName}
+              <span className="truncate">Payment for {userName}</span>
             </DialogTitle>
-            <DialogDescription className="text-blue-100 mt-1">
+            <DialogDescription className="text-blue-100 mt-1 text-sm">
               Manage payments and view payment history for this user
             </DialogDescription>
           </DialogHeader>
@@ -62,13 +74,22 @@ const PaymentModal = ({
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="absolute right-4 top-4 text-white hover:bg-white/20 rounded-full w-8 h-8 p-0"
+            className={`
+              absolute right-2 sm:right-4 top-2 sm:top-4 text-white 
+              hover:bg-white/20 rounded-full p-1 sm:p-2
+              ${isMobile ? 'w-8 h-8' : 'w-8 h-8'}
+              touch-manipulation
+            `}
           >
             <X className="h-4 w-4" />
           </Button>
         </div>
         
-        <div className="px-6 py-4 space-y-6 overflow-y-auto max-h-[70vh]">
+        <div className={`
+          px-4 sm:px-6 py-3 sm:py-4 space-y-4 sm:space-y-6 
+          overflow-y-auto ${isMobile ? 'max-h-[calc(95vh-80px)]' : 'max-h-[70vh]'}
+          scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600
+        `}>
           <PaymentSummary
             totalAmount={totalAmount}
             totalPaid={totalPaid}
@@ -87,9 +108,9 @@ const PaymentModal = ({
           )}
 
           {!canManagePayments && !isFullyPaid && (
-            <div className="text-center py-6 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800">
-              <div className="text-4xl mb-2">🔒</div>
-              <p className="text-sm text-amber-700 dark:text-amber-300 font-medium">
+            <div className="text-center py-4 sm:py-6 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800">
+              <div className="text-3xl sm:text-4xl mb-2">🔒</div>
+              <p className="text-xs sm:text-sm text-amber-700 dark:text-amber-300 font-medium px-2">
                 Only admin and canteen staff can record payments
               </p>
             </div>
