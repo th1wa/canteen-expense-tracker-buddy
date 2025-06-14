@@ -8,7 +8,7 @@ interface PendingUser {
   username: string;
   created_at: string;
   updated_at: string;
-  role: string;
+  role: 'admin' | 'hr' | 'canteen' | 'user';
 }
 
 export const useUserApprovals = () => {
@@ -38,7 +38,8 @@ export const useUserApprovals = () => {
                typeof user.username === 'string' && 
                typeof user.created_at === 'string' && 
                typeof user.updated_at === 'string' && 
-               typeof user.role === 'string';
+               typeof user.role === 'string' &&
+               ['admin', 'hr', 'canteen', 'user'].includes(user.role);
       });
       
       setPendingUsers(validUsers);
