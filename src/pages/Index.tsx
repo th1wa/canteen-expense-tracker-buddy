@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { DashboardHeader } from "@/components/DashboardHeader";
+import DashboardHeader from "@/components/DashboardHeader";
 import BasicUserBanner from "@/components/BasicUserBanner";
 import TabContent from "@/components/TabContent";
 import { useAuth } from "@/contexts/AuthContext";
