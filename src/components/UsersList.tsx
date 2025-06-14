@@ -68,7 +68,7 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
     setSettlementFilter('');
   };
 
-  const hasActiveFilters = searchTerm || balanceFilter || settlementFilter;
+  const hasActiveFilters = !!(searchTerm || balanceFilter || settlementFilter);
 
   const handlePaymentClick = (user: UserTotal) => {
     setSelectedUser(user);
