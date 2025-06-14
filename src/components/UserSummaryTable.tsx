@@ -3,32 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users } from "lucide-react";
 import UserDetailRow from './UserDetailRow';
-
-interface ExpenseSummary {
-  user_name: string;
-  expense_date: string;
-  expense_amount: number;
-  payment_made: boolean;
-  payment_date: string | null;
-  remainder_amount: number;
-}
-
-interface UserSummary {
-  user_name: string;
-  total_expenses: number;
-  total_paid: number;
-  total_remainder: number;
-  daily_records: ExpenseSummary[];
-}
-
-interface UserSummaryTableProps {
-  filteredData: UserSummary[];
-  searchTerm: string;
-  expandedUser: string | null;
-  isExporting: boolean;
-  onToggleExpand: (userName: string) => void;
-  onExportUserDetail: (userName: string) => void;
-}
+import { UserSummaryTableProps } from '@/types/summary';
 
 const UserSummaryTable: React.FC<UserSummaryTableProps> = ({
   filteredData,

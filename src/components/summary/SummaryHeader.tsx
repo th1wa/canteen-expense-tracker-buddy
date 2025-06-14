@@ -5,13 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
-
-interface SummaryHeaderProps {
-  selectedMonth: string;
-  setSelectedMonth: (month: string) => void;
-  searchTerm: string;
-  setSearchTerm: (term: string) => void;
-}
+import { SummaryHeaderProps } from '@/types/summary';
 
 const SummaryHeader: React.FC<SummaryHeaderProps> = ({
   selectedMonth,

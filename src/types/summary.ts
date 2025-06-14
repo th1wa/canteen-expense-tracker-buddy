@@ -15,3 +15,19 @@ export interface UserSummary {
   total_remainder: number;
   daily_records: ExpenseSummary[];
 }
+
+export interface SummaryHeaderProps {
+  selectedMonth: string;
+  setSelectedMonth: (month: string) => void;
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
+}
+
+export interface UserSummaryTableProps {
+  filteredData: UserSummary[];
+  searchTerm: string;
+  expandedUser: string | null;
+  isExporting: boolean;
+  onToggleExpand: (userName: string) => void;
+  onExportUserDetail: (userName: string) => void;
+}
