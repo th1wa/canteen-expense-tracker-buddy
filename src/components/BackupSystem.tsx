@@ -146,7 +146,8 @@ const BackupSystem = () => {
           headers: {
             'x-backup-type': 'manual_test'
           },
-          body: { test: true }
+          body: { test: true },
+          signal: controller.signal
         });
 
         clearTimeout(timeoutId);
@@ -157,8 +158,8 @@ const BackupSystem = () => {
           // Check for specific error types
           if (error.message?.includes('Failed to fetch') || error.message?.includes('FunctionsFetchError')) {
             toast({
-              title: "Network Error",
-              description: "Could not connect to the backup service. Please check your internet connection and try again.",
+              title: "Connection Error",
+              description: "Could not connect to the backup service. Please try again in a moment.",
               variant: "destructive",
             });
           } else {

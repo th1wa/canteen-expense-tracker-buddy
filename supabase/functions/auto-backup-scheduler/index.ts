@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -19,25 +18,16 @@ serve(async (req) => {
     // Get the authorization header
     const authHeader = req.headers.get('Authorization');
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
     
     console.log('Authorization check - Auth header exists:', !!authHeader);
     console.log('Service role key exists:', !!serviceRoleKey);
-    console.log('Anon key exists:', !!anonKey);
     
     // Allow calls from authenticated users or with proper service role key
     let isAuthorized = false;
     
-    if (authHeader) {
-      // Check if it's a service role call (for cron jobs) or authenticated user call
-      if (authHeader.includes('Bearer') && serviceRoleKey && authHeader.includes(serviceRoleKey)) {
-        isAuthorized = true;
-        console.log('Authorized via service role key');
-      } else if (authHeader.includes('Bearer') && anonKey) {
-        // For frontend calls, we'll verify the user is authenticated
-        isAuthorized = true;
-        console.log('Authorized via user authentication');
-      }
+    if (authHeader && authHeader.includes('Bearer')) {
+      isAuthorized = true;
+      console.log('Authorized via Bearer token');
     }
     
     if (!isAuthorized) {
@@ -66,7 +56,7 @@ serve(async (req) => {
       metadata: {
         timestamp: new Date().toISOString(),
         version: '1.0',
-        backup_type: req.headers.get('x-backup-type') || 'scheduled'
+        backup_type: req.headers.get('x-backup-type') || 'manual_test'
       },
       data: {} as any
     }
