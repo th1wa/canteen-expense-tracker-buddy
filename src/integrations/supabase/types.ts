@@ -9,6 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          activity_type: string
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          session_duration: unknown | null
+          timestamp: string
+          user_agent: string | null
+          user_id: string | null
+          username: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          session_duration?: unknown | null
+          timestamp?: string
+          user_agent?: string | null
+          user_id?: string | null
+          username: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          session_duration?: unknown | null
+          timestamp?: string
+          user_agent?: string | null
+          user_id?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
       expenses: {
         Row: {
           amount: number

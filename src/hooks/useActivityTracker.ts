@@ -33,7 +33,9 @@ export const useActivityTracker = () => {
       const clientInfo = getClientInfo();
       const ipAddress = await clientInfo.ipAddress;
 
-      const { error } = await supabase
+      // Log to both tables for comprehensive tracking
+      // Log to user_activity (existing table)
+      const { error: userActivityError } = await supabase
         .from('user_activity')
         .insert({
           user_id: user.id,
@@ -44,9 +46,26 @@ export const useActivityTracker = () => {
           session_duration: sessionDuration || null
         });
 
-      if (error) {
-        console.error('Error logging user activity:', error);
+      if (userActivityError) {
+        console.error('Error logging to user_activity:', userActivityError);
       }
+
+      // Log to activity_logs (new table)
+      const { error: activityLogsError } = await supabase
+        .from('activity_logs')
+        .insert({
+          user_id: user.id,
+          username: profile.username,
+          activity_type: activityType,
+          ip_address: ipAddress,
+          user_agent: clientInfo.userAgent,
+          session_duration: sessionDuration || null
+        });
+
+      if (activityLogsError) {
+        console.error('Error logging to activity_logs:', activityLogsError);
+      }
+
     } catch (error) {
       console.error('Error logging user activity:', error);
     }
