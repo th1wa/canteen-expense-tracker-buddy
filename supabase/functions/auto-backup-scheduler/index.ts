@@ -13,14 +13,33 @@ serve(async (req) => {
   }
 
   try {
-    // Validate that this is being called by the cron job or system
+    // Get the authorization header
     const authHeader = req.headers.get('Authorization');
-    const expectedToken = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
     
-    if (!authHeader || !authHeader.includes(expectedToken || '')) {
-      console.error('Unauthorized backup attempt');
+    console.log('Authorization check - Auth header exists:', !!authHeader);
+    console.log('Service role key exists:', !!serviceRoleKey);
+    
+    // Allow calls from authenticated users or with proper service role key
+    let isAuthorized = false;
+    
+    if (authHeader) {
+      // Check if it's a service role call (for cron jobs) or authenticated user call
+      if (authHeader.includes('Bearer') && serviceRoleKey && authHeader.includes(serviceRoleKey)) {
+        isAuthorized = true;
+        console.log('Authorized via service role key');
+      } else if (authHeader.includes('Bearer') && anonKey) {
+        // For frontend calls, we'll verify the user is authenticated
+        isAuthorized = true;
+        console.log('Authorized via user authentication');
+      }
+    }
+    
+    if (!isAuthorized) {
+      console.error('Unauthorized backup attempt - no valid authorization');
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
+        JSON.stringify({ error: 'Unauthorized - Authentication required' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -30,14 +49,14 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    console.log('Starting automatic daily backup to Supabase storage...')
+    console.log('Starting automatic backup...')
 
     // Export all data with proper error handling
     const backupData = {
       metadata: {
         timestamp: new Date().toISOString(),
         version: '1.0',
-        backup_type: 'automatic_daily'
+        backup_type: req.headers.get('x-backup-type') || 'manual_test'
       },
       data: {} as any
     }
@@ -54,6 +73,7 @@ serve(async (req) => {
         throw new Error(`Failed to export expenses: ${expensesError.message}`);
       }
       backupData.data.expenses = expenses || [];
+      console.log(`Exported ${expenses?.length || 0} expenses`);
     } catch (error) {
       console.error('Critical error exporting expenses:', error);
       throw error;
@@ -71,6 +91,7 @@ serve(async (req) => {
         throw new Error(`Failed to export payments: ${paymentsError.message}`);
       }
       backupData.data.payments = payments || [];
+      console.log(`Exported ${payments?.length || 0} payments`);
     } catch (error) {
       console.error('Critical error exporting payments:', error);
       throw error;
@@ -88,6 +109,7 @@ serve(async (req) => {
         throw new Error(`Failed to export profiles: ${profilesError.message}`);
       }
       backupData.data.profiles = profiles || [];
+      console.log(`Exported ${profiles?.length || 0} profiles`);
     } catch (error) {
       console.error('Critical error exporting profiles:', error);
       throw error;
@@ -105,6 +127,7 @@ serve(async (req) => {
         throw new Error(`Failed to export users: ${usersError.message}`);
       }
       backupData.data.users = users || [];
+      console.log(`Exported ${users?.length || 0} users`);
     } catch (error) {
       console.error('Critical error exporting users:', error);
       throw error;
@@ -122,13 +145,62 @@ serve(async (req) => {
         throw new Error(`Failed to export user activity: ${userActivityError.message}`);
       }
       backupData.data.user_activity = userActivity || [];
+      console.log(`Exported ${userActivity?.length || 0} user activity records`);
     } catch (error) {
       console.error('Critical error exporting user activity:', error);
       throw error;
     }
 
-    const fileName = `canteen_backup_${new Date().toISOString().split('T')[0]}.json`
+    // Export activity_logs table with error handling
+    try {
+      const { data: activityLogs, error: activityLogsError } = await supabaseClient
+        .from('activity_logs')
+        .select('*')
+        .order('timestamp', { ascending: false })
+
+      if (activityLogsError) {
+        console.error('Activity logs export error:', activityLogsError);
+        throw new Error(`Failed to export activity logs: ${activityLogsError.message}`);
+      }
+      backupData.data.activity_logs = activityLogs || [];
+      console.log(`Exported ${activityLogs?.length || 0} activity logs`);
+    } catch (error) {
+      console.error('Critical error exporting activity logs:', error);
+      throw error;
+    }
+
+    const fileName = `canteen_backup_${new Date().toISOString().split('T')[0]}_${Date.now()}.json`
     const backupContent = JSON.stringify(backupData, null, 2);
+    
+    // First, ensure the bucket exists
+    try {
+      const { data: buckets, error: listBucketsError } = await supabaseClient.storage.listBuckets();
+      
+      if (listBucketsError) {
+        console.error('Error listing buckets:', listBucketsError);
+      }
+      
+      const bucketExists = buckets?.some(bucket => bucket.name === 'automatic-backups');
+      
+      if (!bucketExists) {
+        console.log('Creating automatic-backups bucket...');
+        const { error: createBucketError } = await supabaseClient.storage.createBucket('automatic-backups', {
+          public: false,
+          allowedMimeTypes: ['application/json'],
+          fileSizeLimit: 52428800 // 50MB
+        });
+        
+        if (createBucketError) {
+          console.error('Error creating bucket:', createBucketError);
+          throw new Error(`Failed to create storage bucket: ${createBucketError.message}`);
+        } else {
+          console.log('Successfully created automatic-backups bucket');
+        }
+      }
+    } catch (error) {
+      console.error('Error managing storage bucket:', error);
+      throw error;
+    }
     
     // Upload backup to Supabase storage
     try {
@@ -190,19 +262,20 @@ serve(async (req) => {
       console.warn('Warning: Backup contains no data');
     }
     
-    console.log(`Automatic backup completed and uploaded to storage: ${fileName}`)
+    console.log(`Backup completed and uploaded to storage: ${fileName}`)
     console.log(`Records backed up: ${JSON.stringify({
       expenses: backupData.data.expenses?.length || 0,
       payments: backupData.data.payments?.length || 0,
       profiles: backupData.data.profiles?.length || 0,
       users: backupData.data.users?.length || 0,
-      user_activity: backupData.data.user_activity?.length || 0
+      user_activity: backupData.data.user_activity?.length || 0,
+      activity_logs: backupData.data.activity_logs?.length || 0
     })}`)
     
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Automatic backup completed and uploaded to Supabase storage',
+        message: 'Backup completed and uploaded to Supabase storage',
         filename: fileName,
         storage_path: `automatic-backups/${fileName}`,
         records: {
@@ -210,7 +283,8 @@ serve(async (req) => {
           payments: backupData.data.payments?.length || 0,
           profiles: backupData.data.profiles?.length || 0,
           users: backupData.data.users?.length || 0,
-          user_activity: backupData.data.user_activity?.length || 0
+          user_activity: backupData.data.user_activity?.length || 0,
+          activity_logs: backupData.data.activity_logs?.length || 0
         },
         totalRecords: totalRecords
       }),

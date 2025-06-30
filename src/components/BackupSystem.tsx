@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -72,13 +71,32 @@ const BackupSystem = () => {
     try {
       setIsTesting(true);
       
+      // Get the current session to ensure we have proper authorization
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to test the backup system",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('Testing automatic backup with authenticated user...');
+      
       const { data, error } = await supabase.functions.invoke('auto-backup-scheduler', {
-        body: { trigger: 'manual_test' }
+        headers: {
+          'x-backup-type': 'manual_test'
+        }
       });
 
       if (error) {
+        console.error('Test backup error details:', error);
         throw error;
       }
+
+      console.log('Test backup response:', data);
 
       toast({
         title: "Test Backup Successful",
@@ -94,7 +112,7 @@ const BackupSystem = () => {
       console.error('Test backup error:', error);
       toast({
         title: "Test Backup Failed",
-        description: error.message || "Failed to run test backup",
+        description: error.message || "Failed to run test backup. Please check console for details.",
         variant: "destructive",
       });
     } finally {

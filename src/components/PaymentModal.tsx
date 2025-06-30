@@ -1,11 +1,16 @@
-
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { useAuth } from "@/contexts/AuthContext";
-import PaymentSummary from "@/components/PaymentSummary";
-import PaymentForm from "@/components/PaymentForm";
-import PaymentHistory from "@/components/PaymentHistory";
-import { useIsMobile } from "@/hooks/use-mobile";
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarIcon, X } from "lucide-react";
+import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import PaymentHistory from "./PaymentHistory";
+import { cn } from "@/lib/utils";
 
 interface Payment {
   id: string;
@@ -18,100 +23,149 @@ interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   userName: string;
-  totalAmount: number;
-  payments: Payment[];
-  onPaymentAdded: () => void;
+  totalExpense: number;
 }
 
-const PaymentModal = ({ 
-  isOpen, 
-  onClose, 
-  userName, 
-  totalAmount, 
-  payments, 
-  onPaymentAdded 
-}: PaymentModalProps) => {
-  const { profile } = useAuth();
-  const isMobile = useIsMobile();
+const PaymentModal = ({ isOpen, onClose, userName, totalExpense }: PaymentModalProps) => {
+  const [amount, setAmount] = useState('');
+  const [paymentDate, setPaymentDate] = useState<Date>(new Date());
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const { toast } = useToast();
 
-  // Validate props with proper error handling
-  const validTotalAmount = Math.max(0, Number(totalAmount) || 0);
-  const validPayments = Array.isArray(payments) ? payments.filter(p => p && typeof p === 'object') : [];
-  const validUserName = userName?.trim() || 'Unknown User';
+  const fetchPayments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('user_name', userName)
+        .order('payment_date', { ascending: false });
 
-  const totalPaid = validPayments.reduce((sum, payment) => {
-    const amount = Number(payment?.amount) || 0;
-    return sum + amount;
-  }, 0);
-  
-  const remainingBalance = Math.max(0, validTotalAmount - totalPaid);
-  const paymentProgress = validTotalAmount > 0 ? Math.min((totalPaid / validTotalAmount) * 100, 100) : 0;
-  const isFullyPaid = remainingBalance <= 0;
+      if (error) throw error;
+      setPayments(data || []);
+    } catch (error) {
+      console.error('Error fetching payments:', error);
+    }
+  };
 
-  // Check if user can manage payments (admin or canteen)
-  const canManagePayments = profile?.role === 'admin' || profile?.role === 'canteen';
+  useEffect(() => {
+    if (isOpen) {
+      fetchPayments();
+    }
+  }, [isOpen, userName, refreshTrigger]);
 
-  if (!isOpen) return null;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+      toast({
+        title: "Invalid Amount",
+        description: "Please enter a valid payment amount",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const { error } = await supabase
+        .from('payments')
+        .insert([
+          {
+            user_name: userName,
+            amount: Number(amount),
+            payment_date: format(paymentDate, 'yyyy-MM-dd'),
+          }
+        ]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Payment Recorded",
+        description: `Payment of Rs. ${amount} has been recorded for ${userName}`,
+      });
+
+      setAmount('');
+      setPaymentDate(new Date());
+      setRefreshTrigger(prev => prev + 1);
+      onClose();
+    } catch (error: any) {
+      console.error('Error recording payment:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to record payment",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={`
-        modal-mobile
-        ${isMobile 
-          ? 'h-[95vh] max-h-none rounded-lg m-2' 
-          : 'max-h-[90vh]'
-        } 
-        overflow-hidden p-0 bg-gradient-to-br from-slate-50 to-blue-50 
-        dark:from-slate-900 dark:to-blue-950 border-0 shadow-2xl
-      `}>
-        {/* Custom Header */}
-        <div className="relative spacing-responsive-sm bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-          <DialogHeader>
-            <DialogTitle className={`
-              text-responsive-lg font-bold flex items-center gap-2 sm:gap-3
-            `}>
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-full flex items-center justify-center text-sm sm:text-base flex-shrink-0">
-                💳
-              </div>
-              <span className="truncate">Payment for {validUserName}</span>
-            </DialogTitle>
-            <DialogDescription className="text-blue-100 mt-1 text-responsive-xs">
-              Manage payments and view payment history for this user
-            </DialogDescription>
-          </DialogHeader>
-        </div>
-        
-        <div className={`
-          modal-content-mobile spacing-responsive-sm space-y-4 sm:space-y-6
-          scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600
-        `}>
-          <PaymentSummary
-            totalAmount={validTotalAmount}
-            totalPaid={totalPaid}
-            remainingBalance={remainingBalance}
-            paymentProgress={paymentProgress}
-            isFullyPaid={isFullyPaid}
-          />
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Record Payment for {userName}</DialogTitle>
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </DialogHeader>
 
-          {!isFullyPaid && canManagePayments && (
-            <PaymentForm
-              userName={validUserName}
-              remainingBalance={remainingBalance}
-              onPaymentAdded={onPaymentAdded}
-              onClose={onClose}
-            />
-          )}
+        <div className="space-y-6">
+          <div className="bg-muted p-4 rounded-lg">
+            <p className="text-sm text-muted-foreground">Total Outstanding Expense</p>
+            <p className="text-2xl font-bold text-red-600">Rs. {totalExpense.toFixed(2)}</p>
+          </div>
 
-          {!canManagePayments && !isFullyPaid && (
-            <div className="text-center py-4 sm:py-6 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800">
-              <div className="text-3xl sm:text-4xl mb-2">🔒</div>
-              <p className="text-responsive-xs text-amber-700 dark:text-amber-300 font-medium px-2">
-                Only admin and canteen staff can record payments
-              </p>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="amount">Payment Amount</Label>
+              <Input
+                id="amount"
+                type="number"
+                step="0.01"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="Enter payment amount"
+                required
+              />
             </div>
-          )}
 
-          <PaymentHistory payments={validPayments} />
+            <div>
+              <Label>Payment Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !paymentDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {paymentDate ? format(paymentDate, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={paymentDate}
+                    onSelect={(date) => date && setPaymentDate(date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <Button type="submit" disabled={isSubmitting} className="w-full">
+              {isSubmitting ? "Recording Payment..." : "Record Payment"}
+            </Button>
+          </form>
+
+          <PaymentHistory payments={payments} refreshTrigger={refreshTrigger} />
         </div>
       </DialogContent>
     </Dialog>
