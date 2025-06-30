@@ -41,7 +41,18 @@ const UserActivity = () => {
         return;
       }
 
-      setActivities(data || []);
+      // Type cast the data to ensure proper types
+      const typedActivities: UserActivityRecord[] = (data || []).map(activity => ({
+        id: activity.id,
+        username: activity.username,
+        activity_type: activity.activity_type,
+        timestamp: activity.timestamp,
+        ip_address: activity.ip_address ? String(activity.ip_address) : null,
+        user_agent: activity.user_agent ? String(activity.user_agent) : null,
+        session_duration: activity.session_duration ? String(activity.session_duration) : null,
+      }));
+
+      setActivities(typedActivities);
     } catch (error) {
       console.error('Error fetching user activities:', error);
     } finally {
