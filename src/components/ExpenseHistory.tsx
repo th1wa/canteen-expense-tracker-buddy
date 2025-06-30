@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +37,7 @@ const ExpenseHistory = ({ refreshTrigger }: ExpenseHistoryProps) => {
   const [uniqueUsers, setUniqueUsers] = useState<string[]>([]);
   const { profile } = useAuth();
   const { toast } = useToast();
+  const isMountedRef = useRef(true);
 
   const fetchExpenses = async () => {
     if (!profile) {
@@ -64,6 +66,8 @@ const ExpenseHistory = ({ refreshTrigger }: ExpenseHistoryProps) => {
         throw new Error(fetchError.message || 'Failed to fetch expenses');
       }
 
+      if (!isMountedRef.current) return;
+
       const validExpenses = (data || []).filter(expense => 
         expense && 
         typeof expense === 'object' && 
@@ -81,20 +85,30 @@ const ExpenseHistory = ({ refreshTrigger }: ExpenseHistoryProps) => {
     } catch (error) {
       console.error('Error fetching expenses:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      setError(errorMessage);
       
-      toast({
-        title: "Error",
-        description: `Failed to load expenses: ${errorMessage}`,
-        variant: "destructive"
-      });
+      if (isMountedRef.current) {
+        setError(errorMessage);
+        
+        toast({
+          title: "Error",
+          description: `Failed to load expenses: ${errorMessage}`,
+          variant: "destructive"
+        });
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
+    isMountedRef.current = true;
     fetchExpenses();
+    
+    return () => {
+      isMountedRef.current = false;
+    };
   }, [refreshTrigger, profile]);
 
   useEffect(() => {
@@ -186,12 +200,13 @@ const ExpenseHistory = ({ refreshTrigger }: ExpenseHistoryProps) => {
     return (
       <div className="text-center py-8">
         <div className="text-destructive mb-2">Error: {error}</div>
-        <button 
+        <Button 
           onClick={fetchExpenses}
-          className="text-sm text-blue-600 hover:text-blue-800 underline"
+          className="text-sm"
+          variant="outline"
         >
           Try again
-        </button>
+        </Button>
       </div>
     );
   }

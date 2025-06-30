@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -15,6 +15,7 @@ export const useUserApprovals = () => {
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
   const [loading, setLoading] = useState(false);
   const { profile, refreshProfile } = useAuth();
+  const channelRef = useRef<any>(null);
 
   const fetchPendingUsers = async () => {
     // Only fetch if user is admin
@@ -89,6 +90,12 @@ export const useUserApprovals = () => {
   };
 
   useEffect(() => {
+    // Clean up existing channel
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
     // Always set up the effect, but only fetch if admin
     fetchPendingUsers();
     
@@ -111,10 +118,15 @@ export const useUserApprovals = () => {
         )
         .subscribe();
 
-      return () => {
-        supabase.removeChannel(channel);
-      };
+      channelRef.current = channel;
     }
+
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
   }, [profile?.role]);
 
   return {

@@ -69,23 +69,65 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          first_name: string | null
           id: string
+          last_name: string | null
           role: Database["public"]["Enums"]["app_role"]
           updated_at: string
           username: string
         }
         Insert: {
           created_at?: string
+          first_name?: string | null
           id: string
+          last_name?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
           username: string
         }
         Update: {
           created_at?: string
+          first_name?: string | null
           id?: string
+          last_name?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      user_activity: {
+        Row: {
+          activity_type: string
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          session_duration: unknown | null
+          timestamp: string
+          user_agent: string | null
+          user_id: string
+          username: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          session_duration?: unknown | null
+          timestamp?: string
+          user_agent?: string | null
+          user_id: string
+          username: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          session_duration?: unknown | null
+          timestamp?: string
+          user_agent?: string | null
+          user_id?: string
           username?: string
         }
         Relationships: []

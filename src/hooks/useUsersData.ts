@@ -19,6 +19,7 @@ export const useUsersData = (refreshTrigger: number, hasAccess: boolean = true) 
   const { profile } = useAuth();
   const abortControllerRef = useRef<AbortController | null>(null);
   const isMountedRef = useRef(true);
+  const channelRef = useRef<any>(null);
 
   const fetchUsersWithPayments = useCallback(async () => {
     // Cancel any pending request
@@ -43,7 +44,7 @@ export const useUsersData = (refreshTrigger: number, hasAccess: boolean = true) 
       if (isMountedRef.current) {
         setUsers([]);
         setLoading(false);
-        setError('User not authenticated');
+        setError(null); // Clear error for unauthenticated state
       }
       return;
     }
@@ -54,6 +55,7 @@ export const useUsersData = (refreshTrigger: number, hasAccess: boolean = true) 
         setUsers([]);
         setTotalStats(null);
         setLoading(false);
+        setError(null);
       }
       return;
     }
@@ -65,7 +67,7 @@ export const useUsersData = (refreshTrigger: number, hasAccess: boolean = true) 
       const isBasicUser = profile.role === 'user';
       
       // Check if request was aborted before making API calls
-      if (abortControllerRef.current.signal.aborted) {
+      if (abortControllerRef.current?.signal.aborted) {
         return;
       }
       
@@ -77,31 +79,28 @@ export const useUsersData = (refreshTrigger: number, hasAccess: boolean = true) 
       ]);
 
       // Check if request was aborted after API calls
-      if (abortControllerRef.current.signal.aborted) {
+      if (abortControllerRef.current?.signal.aborted) {
         return;
       }
 
-      // Check for errors
-      if (expensesResult.error) {
-        if (expensesResult.error.name === 'AbortError') return;
+      // Check for errors - but ignore AbortError
+      if (expensesResult.error && expensesResult.error.name !== 'AbortError') {
         console.error('Expenses error:', expensesResult.error);
         throw new Error(`Failed to fetch expenses: ${expensesResult.error.message}`);
       }
 
-      if (usersResult.error) {
-        if (usersResult.error.name === 'AbortError') return;
+      if (usersResult.error && usersResult.error.name !== 'AbortError') {
         console.error('Users error:', usersResult.error);
         throw new Error(`Failed to fetch users: ${usersResult.error.message}`);
       }
 
-      if (paymentsResult.error) {
-        if (paymentsResult.error.name === 'AbortError') return;
+      if (paymentsResult.error && paymentsResult.error.name !== 'AbortError') {
         console.error('Payments error:', paymentsResult.error);
         throw new Error(`Failed to fetch payments: ${paymentsResult.error.message}`);
       }
 
       // Only update state if component is still mounted and request not aborted
-      if (!isMountedRef.current || abortControllerRef.current.signal.aborted) return;
+      if (!isMountedRef.current || abortControllerRef.current?.signal.aborted) return;
 
       // Safely handle null/undefined data
       const safeExpenses = Array.isArray(expensesResult.data) ? expensesResult.data : [];
@@ -112,9 +111,10 @@ export const useUsersData = (refreshTrigger: number, hasAccess: boolean = true) 
       const userMap = createUserMap(safeUsersData, safeExpenses, safePayments);
       const { usersArray, stats } = calculateUserStats(userMap);
 
-      if (isMountedRef.current && !abortControllerRef.current.signal.aborted) {
+      if (isMountedRef.current && !abortControllerRef.current?.signal.aborted) {
         setUsers(usersArray);
         setTotalStats(stats);
+        setError(null);
       }
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
@@ -124,13 +124,13 @@ export const useUsersData = (refreshTrigger: number, hasAccess: boolean = true) 
       console.error('Error fetching users with payments:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred while fetching data';
       
-      if (isMountedRef.current && !abortControllerRef.current.signal.aborted) {
+      if (isMountedRef.current && !abortControllerRef.current?.signal.aborted) {
         setError(errorMessage);
         setUsers([]);
         setTotalStats(null);
       }
     } finally {
-      if (isMountedRef.current && !abortControllerRef.current.signal.aborted) {
+      if (isMountedRef.current && !abortControllerRef.current?.signal.aborted) {
         setLoading(false);
       }
     }
@@ -149,6 +149,12 @@ export const useUsersData = (refreshTrigger: number, hasAccess: boolean = true) 
 
   // Set up real-time listener for profile changes that might affect user data
   useEffect(() => {
+    // Clean up existing channel
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
     if (!hasAccess || !profile) return;
 
     console.log('Setting up real-time listener for profile changes in useUsersData');
@@ -166,14 +172,21 @@ export const useUsersData = (refreshTrigger: number, hasAccess: boolean = true) 
           console.log('Profile update detected in useUsersData:', payload);
           // Small delay to ensure database consistency
           setTimeout(() => {
-            fetchUsersWithPayments();
+            if (isMountedRef.current) {
+              fetchUsersWithPayments();
+            }
           }, 200);
         }
       )
       .subscribe();
 
+    channelRef.current = channel;
+
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [hasAccess, profile, fetchUsersWithPayments]);
 
@@ -183,6 +196,10 @@ export const useUsersData = (refreshTrigger: number, hasAccess: boolean = true) 
       isMountedRef.current = false;
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
+      }
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
     };
   }, []);
