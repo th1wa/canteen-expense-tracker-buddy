@@ -7,10 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { Calendar as CalendarIcon, Search, Filter, Download, RefreshCw } from "lucide-react";
+import { Calendar as CalendarIcon, Search, Filter, Download, RefreshCw, User } from "lucide-react";
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
 interface Payment {
@@ -29,6 +30,7 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<string>('all');
   const [dateRange, setDateRange] = useState<string>('all');
@@ -36,6 +38,9 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
   const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
   const [uniqueUsers, setUniqueUsers] = useState<string[]>([]);
   const { toast } = useToast();
+  const { profile } = useAuth();
+
+  const hasAccess = profile?.role === 'admin' || profile?.role === 'hr' || profile?.role === 'canteen';
 
   const fetchPayments = async () => {
     try {
@@ -58,7 +63,6 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
       const paymentsData = data || [];
       setPayments(paymentsData);
       
-      // Extract unique users
       const users = Array.from(new Set(paymentsData.map(p => p.user_name))).sort();
       setUniqueUsers(users);
       
@@ -81,19 +85,16 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
   useEffect(() => {
     let filtered = [...payments];
 
-    // Search filter
     if (searchTerm) {
       filtered = filtered.filter(payment =>
         payment.user_name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // User filter
     if (selectedUser !== 'all') {
       filtered = filtered.filter(payment => payment.user_name === selectedUser);
     }
 
-    // Date range filter
     if (dateRange !== 'all') {
       const now = new Date();
       let startDate: Date;
@@ -151,55 +152,89 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
     setCustomDateTo(undefined);
   };
 
-  const exportToCSV = () => {
-    if (filteredPayments.length === 0) {
+  const exportToExcel = async (exportType: 'all' | 'filtered' | string) => {
+    setIsExporting(true);
+    try {
+      let dataToExport: Payment[] = [];
+      let filename = '';
+
+      if (exportType === 'all') {
+        dataToExport = payments;
+        filename = `all_payments_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+      } else if (exportType === 'filtered') {
+        dataToExport = filteredPayments;
+        filename = `filtered_payments_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+      } else {
+        // Export specific user
+        dataToExport = payments.filter(p => p.user_name === exportType);
+        filename = `${exportType.replace(/[^a-zA-Z0-9]/g, '_')}_payments_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+      }
+
+      if (dataToExport.length === 0) {
+        toast({
+          title: "No Data",
+          description: "No payments to export",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const csvHeaders = ['Date', 'User Name', 'Amount', 'Created At'];
+      const csvData = dataToExport.map(payment => [
+        format(new Date(payment.payment_date), 'yyyy-MM-dd'),
+        payment.user_name,
+        payment.amount.toString(),
+        format(new Date(payment.created_at), 'yyyy-MM-dd HH:mm:ss')
+      ]);
+
+      const csvContent = [csvHeaders, ...csvData]
+        .map(row => row.map(field => `"${field}"`).join(','))
+        .join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
       toast({
-        title: "No Data",
-        description: "No payments to export",
+        title: "Export Successful",
+        description: `Payment history exported successfully`,
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to export payment history",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setIsExporting(false);
     }
-
-    const csvHeaders = ['Date', 'User Name', 'Amount', 'Created At'];
-    const csvData = filteredPayments.map(payment => [
-      format(new Date(payment.payment_date), 'yyyy-MM-dd'),
-      payment.user_name,
-      payment.amount.toString(),
-      format(new Date(payment.created_at), 'yyyy-MM-dd HH:mm:ss')
-    ]);
-
-    const csvContent = [csvHeaders, ...csvData]
-      .map(row => row.map(field => `"${field}"`).join(','))
-      .join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `payment_history_${format(new Date(), 'yyyy-MM-dd')}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    toast({
-      title: "Export Successful",
-      description: "Payment history exported to CSV",
-    });
   };
 
+  if (!hasAccess) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-sm text-muted-foreground">You don't have permission to view payment history.</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <Card>
-        <CardHeader className="pb-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <CardHeader className="pb-3">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 💳 Payment History
               </CardTitle>
-              <CardDescription>
-                Complete record of all payments made
+              <CardDescription className="text-xs">
+                Complete record of all payments
               </CardDescription>
             </div>
             <div className="flex gap-2">
@@ -208,210 +243,251 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
                 disabled={isLoading}
                 variant="outline"
                 size="sm"
+                className="h-8 px-3 text-xs"
               >
                 {isLoading ? (
                   <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Loading...
+                    <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+                    Loading
                   </>
                 ) : (
                   <>
-                    <RefreshCw className="w-4 h-4 mr-2" />
+                    <RefreshCw className="w-3 h-3 mr-1" />
                     Refresh
                   </>
                 )}
               </Button>
-              <Button
-                onClick={exportToCSV}
-                disabled={filteredPayments.length === 0}
-                variant="outline"
-                size="sm"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Export CSV
-              </Button>
+              
+              {/* Export Dropdown */}
+              <div className="relative">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      disabled={isExporting || filteredPayments.length === 0}
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-3 text-xs"
+                    >
+                      <Download className="w-3 h-3 mr-1" />
+                      Export
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-56" align="end">
+                    <div className="space-y-2">
+                      <div className="text-xs font-medium mb-2">Export Options</div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start text-xs h-8"
+                        onClick={() => exportToExcel('all')}
+                        disabled={isExporting}
+                      >
+                        All Payments ({payments.length})
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start text-xs h-8"
+                        onClick={() => exportToExcel('filtered')}
+                        disabled={isExporting}
+                      >
+                        Filtered Payments ({filteredPayments.length})
+                      </Button>
+                      <div className="border-t pt-2">
+                        <div className="text-xs text-muted-foreground mb-1">By User:</div>
+                        <div className="max-h-32 overflow-y-auto space-y-1">
+                          {uniqueUsers.slice(0, 10).map(user => (
+                            <Button
+                              key={user}
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start text-xs h-7"
+                              onClick={() => exportToExcel(user)}
+                              disabled={isExporting}
+                            >
+                              <User className="w-3 h-3 mr-1" />
+                              {user}
+                            </Button>
+                          ))}
+                          {uniqueUsers.length > 10 && (
+                            <div className="text-xs text-muted-foreground text-center">
+                              +{uniqueUsers.length - 10} more users
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-6">
-          {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Search User</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Search by user name..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
+        <CardContent className="space-y-4">
+          {/* Compact Filters */}
+          <Card className="border-dashed">
+            <CardContent className="p-3">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3" />
+                  <Input
+                    placeholder="Search user..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-7 h-8 text-xs"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Filter by User</label>
-              <Select value={selectedUser} onValueChange={setSelectedUser}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All users" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Users</SelectItem>
-                  {uniqueUsers.map(user => (
-                    <SelectItem key={user} value={user}>{user}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                <Select value={selectedUser} onValueChange={setSelectedUser}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="All users" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Users</SelectItem>
+                    {uniqueUsers.map(user => (
+                      <SelectItem key={user} value={user}>{user}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Date Range</label>
-              <Select value={dateRange} onValueChange={setDateRange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All time" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Time</SelectItem>
-                  <SelectItem value="today">Today</SelectItem>
-                  <SelectItem value="this-week">This Week</SelectItem>
-                  <SelectItem value="this-month">This Month</SelectItem>
-                  <SelectItem value="this-year">This Year</SelectItem>
-                  <SelectItem value="custom">Custom Range</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                <Select value={dateRange} onValueChange={setDateRange}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="All time" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Time</SelectItem>
+                    <SelectItem value="today">Today</SelectItem>
+                    <SelectItem value="this-week">This Week</SelectItem>
+                    <SelectItem value="this-month">This Month</SelectItem>
+                    <SelectItem value="this-year">This Year</SelectItem>
+                    <SelectItem value="custom">Custom Range</SelectItem>
+                  </SelectContent>
+                </Select>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">&nbsp;</label>
-              <Button
-                onClick={clearFilters}
-                variant="outline"
-                className="w-full"
-              >
-                <Filter className="w-4 h-4 mr-2" />
-                Clear Filters
-              </Button>
-            </div>
-          </div>
-
-          {/* Custom Date Range */}
-          {dateRange === 'custom' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">From Date</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !customDateFrom && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {customDateFrom ? format(customDateFrom, "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={customDateFrom}
-                      onSelect={setCustomDateFrom}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                <Button
+                  onClick={clearFilters}
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-3 text-xs"
+                >
+                  <Filter className="w-3 h-3 mr-1" />
+                  Clear
+                </Button>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">To Date</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !customDateTo && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {customDateTo ? format(customDateTo, "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={customDateTo}
-                      onSelect={setCustomDateTo}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-          )}
+              {/* Custom Date Range */}
+              {dateRange === 'custom' && (
+                <div className="grid grid-cols-2 gap-2 mt-2 p-2 bg-blue-50 dark:bg-blue-950/20 rounded border border-blue-200 dark:border-blue-800">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={cn(
+                          "h-8 justify-start text-xs font-normal",
+                          !customDateFrom && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-1 h-3 w-3" />
+                        {customDateFrom ? format(customDateFrom, "MMM dd") : "From"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={customDateFrom}
+                        onSelect={setCustomDateFrom}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
 
-          {/* Summary */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={cn(
+                          "h-8 justify-start text-xs font-normal",
+                          !customDateTo && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-1 h-3 w-3" />
+                        {customDateTo ? format(customDateTo, "MMM dd") : "To"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={customDateTo}
+                        onSelect={setCustomDateTo}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Compact Summary */}
+          <div className="grid grid-cols-3 gap-2">
             <Card>
-              <CardContent className="pt-6">
-                <div className="text-2xl font-bold">{filteredPayments.length}</div>
-                <p className="text-xs text-muted-foreground">Total Payments</p>
+              <CardContent className="p-3">
+                <div className="text-lg font-bold">{filteredPayments.length}</div>
+                <p className="text-xs text-muted-foreground">Payments</p>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="pt-6">
-                <div className="text-2xl font-bold text-green-600">
+              <CardContent className="p-3">
+                <div className="text-lg font-bold text-green-600">
                   Rs. {getTotalAmount().toFixed(2)}
                 </div>
                 <p className="text-xs text-muted-foreground">Total Amount</p>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="pt-6">
-                <div className="text-2xl font-bold">{uniqueUsers.length}</div>
-                <p className="text-xs text-muted-foreground">Unique Users</p>
+              <CardContent className="p-3">
+                <div className="text-lg font-bold">{uniqueUsers.length}</div>
+                <p className="text-xs text-muted-foreground">Users</p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Payment List */}
-          <div className="space-y-3">
+          {/* Compact Payment List */}
+          <div className="space-y-2">
             {isLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                <p className="text-sm text-muted-foreground mt-2">Loading payments...</p>
+              <div className="text-center py-6">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+                <p className="text-xs text-muted-foreground mt-2">Loading payments...</p>
               </div>
             ) : filteredPayments.length === 0 ? (
-              <div className="text-center py-8 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                <p className="text-muted-foreground">
+              <div className="text-center py-6 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                <p className="text-xs text-muted-foreground">
                   {payments.length === 0 ? "No payments found" : "No payments match the current filters"}
                 </p>
               </div>
             ) : (
-              <div className="max-h-96 overflow-y-auto space-y-2 border rounded-lg">
+              <div className="max-h-80 overflow-y-auto space-y-1 border rounded-lg">
                 {filteredPayments.map((payment, index) => (
                   <div
                     key={payment.id}
-                    className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-card border-b last:border-b-0 hover:bg-muted/50 transition-colors gap-2"
+                    className="flex justify-between items-center p-3 bg-card border-b last:border-b-0 hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-medium text-sm">{payment.user_name}</span>
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs px-1">
                           #{(filteredPayments.length - index).toString().padStart(3, '0')}
                         </Badge>
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        Payment Date: {format(new Date(payment.payment_date), 'MMM dd, yyyy')}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Recorded: {format(new Date(payment.created_at), 'MMM dd, yyyy HH:mm')}
+                        {format(new Date(payment.payment_date), 'MMM dd, yyyy')} • {format(new Date(payment.created_at), 'HH:mm')}
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-lg font-bold text-green-600">
+                      <div className="text-sm font-bold text-green-600">
                         Rs. {payment.amount.toFixed(2)}
                       </div>
                       <Badge variant="secondary" className="text-xs">

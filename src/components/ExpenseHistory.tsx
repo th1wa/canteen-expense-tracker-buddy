@@ -54,7 +54,6 @@ const ExpenseHistory = ({ refreshTrigger, onExpenseAdded }: ExpenseHistoryProps)
         .select('*')
         .order('created_at', { ascending: false });
 
-      // Filter for basic users to only see their own expenses
       if (profile.role === 'user' && profile.username) {
         query = query.eq('user_name', profile.username);
       }
@@ -79,7 +78,6 @@ const ExpenseHistory = ({ refreshTrigger, onExpenseAdded }: ExpenseHistoryProps)
       setExpenses(validExpenses);
       setFilteredExpenses(validExpenses);
       
-      // Extract unique users for filter dropdown
       const users = [...new Set(validExpenses.map(expense => expense.user_name))].sort();
       setUniqueUsers(users);
     } catch (error) {
@@ -119,7 +117,6 @@ const ExpenseHistory = ({ refreshTrigger, onExpenseAdded }: ExpenseHistoryProps)
 
     let filtered = expenses;
 
-    // Filter by search term (user name or note)
     if (searchTerm?.trim()) {
       const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter(expense =>
@@ -128,21 +125,18 @@ const ExpenseHistory = ({ refreshTrigger, onExpenseAdded }: ExpenseHistoryProps)
       );
     }
 
-    // Filter by date
     if (dateFilter) {
       filtered = filtered.filter(expense =>
         expense?.expense_date === dateFilter
       );
     }
 
-    // Filter by user
     if (userFilter && userFilter !== 'all') {
       filtered = filtered.filter(expense =>
         expense?.user_name === userFilter
       );
     }
 
-    // Filter by amount range
     if (amountFilter && amountFilter !== 'all') {
       filtered = filtered.filter(expense => {
         const amount = Number(expense?.amount) || 0;
@@ -155,7 +149,6 @@ const ExpenseHistory = ({ refreshTrigger, onExpenseAdded }: ExpenseHistoryProps)
       });
     }
 
-    // Filter by note presence
     if (noteFilter && noteFilter !== 'all') {
       filtered = filtered.filter(expense => {
         switch (noteFilter) {
@@ -186,23 +179,23 @@ const ExpenseHistory = ({ refreshTrigger, onExpenseAdded }: ExpenseHistoryProps)
 
   if (!profile) {
     return (
-      <div className="text-center py-8">
+      <div className="text-center py-6">
         <div className="text-sm text-muted-foreground">Please log in to view expense history.</div>
       </div>
     );
   }
 
   if (loading) {
-    return <div className="text-center py-8">Loading expense history...</div>;
+    return <div className="text-center py-6 text-sm">Loading expense history...</div>;
   }
 
   if (error) {
     return (
-      <div className="text-center py-8">
-        <div className="text-destructive mb-2">Error: {error}</div>
+      <div className="text-center py-6">
+        <div className="text-destructive mb-2 text-sm">Error: {error}</div>
         <Button 
           onClick={fetchExpenses}
-          className="text-sm"
+          size="sm"
           variant="outline"
         >
           Try again
@@ -212,140 +205,128 @@ const ExpenseHistory = ({ refreshTrigger, onExpenseAdded }: ExpenseHistoryProps)
   }
 
   return (
-    <div className="space-y-4">
-      {/* Filter Controls */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-gray-500" />
-            <span className="text-sm font-medium">Filters</span>
-          </div>
-          {hasActiveFilters && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={clearAllFilters}
-              className="text-xs"
-            >
-              <FilterX className="w-3 h-3 mr-1" />
-              Clear All
-            </Button>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
-          {/* Search Filter */}
-          <div className="flex items-center space-x-2">
-            <Search className="w-4 h-4 text-gray-500 flex-shrink-0" />
-            <Input
-              placeholder="Search..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value || '')}
-              className="text-xs"
-            />
+    <div className="space-y-3">
+      {/* Compact Filter Controls */}
+      <Card className="border-dashed">
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Filter className="w-3 h-3 text-gray-500" />
+              <span className="text-xs font-medium">Filters</span>
+            </div>
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearAllFilters}
+                className="h-6 px-2 text-xs"
+              >
+                <FilterX className="w-3 h-3 mr-1" />
+                Clear
+              </Button>
+            )}
           </div>
 
-          {/* Date Filter */}
-          <div className="flex items-center space-x-2">
-            <Calendar className="w-4 h-4 text-gray-500 flex-shrink-0" />
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-400" />
+              <Input
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value || '')}
+                className="pl-7 h-8 text-xs"
+              />
+            </div>
+
             <Input
               type="date"
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value || '')}
-              className="text-xs"
+              className="h-8 text-xs"
             />
+
+            <Select value={userFilter} onValueChange={setUserFilter}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="All users" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All users</SelectItem>
+                {uniqueUsers.map(user => (
+                  <SelectItem key={user} value={user}>{user}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={amountFilter} onValueChange={setAmountFilter}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Amount" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All amounts</SelectItem>
+                <SelectItem value="low">≤ Rs. 100</SelectItem>
+                <SelectItem value="medium">Rs. 101-500</SelectItem>
+                <SelectItem value="high">{'>'} Rs. 500</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={noteFilter} onValueChange={setNoteFilter}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Notes" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="with-notes">With notes</SelectItem>
+                <SelectItem value="without-notes">Without notes</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+        </CardContent>
+      </Card>
 
-          {/* User Filter */}
-          <Select value={userFilter} onValueChange={setUserFilter}>
-            <SelectTrigger className="text-xs">
-              <SelectValue placeholder="All users" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All users</SelectItem>
-              {uniqueUsers.map(user => (
-                <SelectItem key={user} value={user}>{user}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Amount Filter */}
-          <Select value={amountFilter} onValueChange={setAmountFilter}>
-            <SelectTrigger className="text-xs">
-              <SelectValue placeholder="All amounts" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All amounts</SelectItem>
-              <SelectItem value="low">≤ Rs. 100</SelectItem>
-              <SelectItem value="medium">Rs. 101-500</SelectItem>
-              <SelectItem value="high">{'>'} Rs. 500</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Note Filter */}
-          <Select value={noteFilter} onValueChange={setNoteFilter}>
-            <SelectTrigger className="text-xs">
-              <SelectValue placeholder="Note filter" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="with-notes">With notes</SelectItem>
-              <SelectItem value="without-notes">Without notes</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Summary Card */}
-      <Card className="bg-amber-50">
-        <CardContent className="p-4">
+      {/* Compact Summary */}
+      <Card className="bg-amber-50 border-amber-200">
+        <CardContent className="p-3">
           <div className="flex justify-between items-center">
-            <div>
-              <p className="text-sm text-amber-700">
-                {filteredExpenses.length} transaction{filteredExpenses.length !== 1 ? 's' : ''}
-                {hasActiveFilters && ` (filtered from ${expenses.length})`}
-                {dateFilter && ` on ${format(new Date(dateFilter), 'MMM dd, yyyy')}`}
-              </p>
+            <div className="text-xs text-amber-700">
+              {filteredExpenses.length} transaction{filteredExpenses.length !== 1 ? 's' : ''}
+              {hasActiveFilters && ` (from ${expenses.length})`}
             </div>
-            <div>
-              <p className="text-xl font-bold text-amber-600">
-                Total: Rs. {totalAmount.toFixed(2)}
-              </p>
+            <div className="text-sm font-semibold text-amber-600">
+              Rs. {totalAmount.toFixed(2)}
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Results */}
+      {/* Compact Results */}
       {filteredExpenses.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
-          {hasActiveFilters ? 'No expenses found matching your filters.' : 'No expenses recorded yet.'}
+        <div className="text-center py-6 text-xs text-gray-500">
+          {hasActiveFilters ? 'No expenses found matching filters.' : 'No expenses recorded yet.'}
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {filteredExpenses.map((expense) => (
-            <Card key={expense.id} className="hover:shadow-sm transition-shadow">
-              <CardContent className="p-4">
+            <Card key={expense.id} className="hover:shadow-sm transition-shadow border-l-2 border-l-orange-400">
+              <CardContent className="p-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-gray-500" />
-                      <span className="font-medium">{expense.user_name || 'Unknown User'}</span>
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <User className="w-3 h-3 text-gray-500 flex-shrink-0" />
+                      <span className="font-medium text-sm truncate">{expense.user_name || 'Unknown'}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-gray-500" />
-                      <span className="text-sm text-gray-600">
-                        {format(new Date(expense.expense_date), 'MMM dd, yyyy')}
-                      </span>
+                    <div className="flex items-center gap-2 text-xs text-gray-600">
+                      <Calendar className="w-3 h-3" />
+                      <span>{format(new Date(expense.expense_date), 'MMM dd')}</span>
                     </div>
                     {expense.note && (
-                      <Badge variant="secondary">
-                        {expense.note}
+                      <Badge variant="secondary" className="text-xs px-2 py-0">
+                        {expense.note.length > 20 ? `${expense.note.substring(0, 20)}...` : expense.note}
                       </Badge>
                     )}
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-semibold text-orange-600 flex items-center gap-1">
-                      <DollarSign className="w-4 h-4" />
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-sm font-semibold text-orange-600 flex items-center gap-1">
+                      <DollarSign className="w-3 h-3" />
                       Rs. {Number(expense.amount).toFixed(2)}
                     </p>
                     <p className="text-xs text-gray-500">
