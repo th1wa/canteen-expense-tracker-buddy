@@ -9,6 +9,8 @@ interface PendingUser {
   created_at: string;
   updated_at: string;
   role: 'admin' | 'hr' | 'canteen' | 'user';
+  first_name: string | null;
+  last_name: string | null;
 }
 
 export const useUserApprovals = () => {
