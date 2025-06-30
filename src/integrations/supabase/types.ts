@@ -12,9 +12,14 @@ export type Database = {
       activity_logs: {
         Row: {
           activity_type: string
+          browser_name: string | null
           created_at: string
+          device_type: string | null
           id: string
           ip_address: unknown | null
+          page_url: string | null
+          referrer: string | null
+          screen_resolution: string | null
           session_duration: unknown | null
           timestamp: string
           user_agent: string | null
@@ -23,9 +28,14 @@ export type Database = {
         }
         Insert: {
           activity_type: string
+          browser_name?: string | null
           created_at?: string
+          device_type?: string | null
           id?: string
           ip_address?: unknown | null
+          page_url?: string | null
+          referrer?: string | null
+          screen_resolution?: string | null
           session_duration?: unknown | null
           timestamp?: string
           user_agent?: string | null
@@ -34,14 +44,52 @@ export type Database = {
         }
         Update: {
           activity_type?: string
+          browser_name?: string | null
           created_at?: string
+          device_type?: string | null
           id?: string
           ip_address?: unknown | null
+          page_url?: string | null
+          referrer?: string | null
+          screen_resolution?: string | null
           session_duration?: unknown | null
           timestamp?: string
           user_agent?: string | null
           user_id?: string | null
           username?: string
+        }
+        Relationships: []
+      }
+      backup_logs: {
+        Row: {
+          backup_type: string
+          created_at: string | null
+          created_by: string | null
+          error_message: string | null
+          file_name: string
+          file_size: number | null
+          id: string
+          status: string | null
+        }
+        Insert: {
+          backup_type: string
+          created_at?: string | null
+          created_by?: string | null
+          error_message?: string | null
+          file_name: string
+          file_size?: number | null
+          id?: string
+          status?: string | null
+        }
+        Update: {
+          backup_type?: string
+          created_at?: string | null
+          created_by?: string | null
+          error_message?: string | null
+          file_name?: string
+          file_size?: number | null
+          id?: string
+          status?: string | null
         }
         Relationships: []
       }
@@ -104,28 +152,49 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
           created_at: string
+          department: string | null
+          emergency_contact: string | null
+          employee_id: string | null
           first_name: string | null
           id: string
+          join_date: string | null
           last_name: string | null
+          notes: string | null
+          phone_number: string | null
           role: Database["public"]["Enums"]["app_role"]
           updated_at: string
           username: string
         }
         Insert: {
+          address?: string | null
           created_at?: string
+          department?: string | null
+          emergency_contact?: string | null
+          employee_id?: string | null
           first_name?: string | null
           id: string
+          join_date?: string | null
           last_name?: string | null
+          notes?: string | null
+          phone_number?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
           username: string
         }
         Update: {
+          address?: string | null
           created_at?: string
+          department?: string | null
+          emergency_contact?: string | null
+          employee_id?: string | null
           first_name?: string | null
           id?: string
+          join_date?: string | null
           last_name?: string | null
+          notes?: string | null
+          phone_number?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
           username?: string
@@ -135,9 +204,14 @@ export type Database = {
       user_activity: {
         Row: {
           activity_type: string
+          browser_name: string | null
           created_at: string
+          device_type: string | null
           id: string
           ip_address: unknown | null
+          page_url: string | null
+          referrer: string | null
+          screen_resolution: string | null
           session_duration: unknown | null
           timestamp: string
           user_agent: string | null
@@ -146,9 +220,14 @@ export type Database = {
         }
         Insert: {
           activity_type: string
+          browser_name?: string | null
           created_at?: string
+          device_type?: string | null
           id?: string
           ip_address?: unknown | null
+          page_url?: string | null
+          referrer?: string | null
+          screen_resolution?: string | null
           session_duration?: unknown | null
           timestamp?: string
           user_agent?: string | null
@@ -157,9 +236,14 @@ export type Database = {
         }
         Update: {
           activity_type?: string
+          browser_name?: string | null
           created_at?: string
+          device_type?: string | null
           id?: string
           ip_address?: unknown | null
+          page_url?: string | null
+          referrer?: string | null
+          screen_resolution?: string | null
           session_duration?: unknown | null
           timestamp?: string
           user_agent?: string | null

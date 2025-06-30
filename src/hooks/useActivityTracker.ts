@@ -8,7 +8,7 @@ export const useActivityTracker = () => {
   const sessionStartRef = useRef<Date | null>(null);
   const lastActivityRef = useRef<Date>(new Date());
 
-  const getClientInfo = () => {
+  const getDetailedClientInfo = () => {
     const getIpAddress = async () => {
       try {
         const response = await fetch('https://api.ipify.org?format=json');
@@ -20,9 +20,47 @@ export const useActivityTracker = () => {
       }
     };
 
+    const getBrowserInfo = () => {
+      const userAgent = navigator.userAgent;
+      let browserName = 'Unknown';
+      
+      if (userAgent.includes('Chrome') && !userAgent.includes('Edg')) {
+        browserName = 'Chrome';
+      } else if (userAgent.includes('Firefox')) {
+        browserName = 'Firefox';
+      } else if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) {
+        browserName = 'Safari';
+      } else if (userAgent.includes('Edg')) {
+        browserName = 'Edge';
+      } else if (userAgent.includes('Opera')) {
+        browserName = 'Opera';
+      }
+      
+      return browserName;
+    };
+
+    const getDeviceType = () => {
+      const userAgent = navigator.userAgent;
+      if (/tablet|ipad|playbook|silk/i.test(userAgent)) {
+        return 'Tablet';
+      } else if (/mobile|iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(userAgent)) {
+        return 'Mobile';
+      }
+      return 'Desktop';
+    };
+
+    const getScreenResolution = () => {
+      return `${screen.width}x${screen.height}`;
+    };
+
     return {
       userAgent: navigator.userAgent,
-      ipAddress: getIpAddress()
+      ipAddress: getIpAddress(),
+      browserName: getBrowserInfo(),
+      deviceType: getDeviceType(),
+      screenResolution: getScreenResolution(),
+      referrer: document.referrer || null,
+      pageUrl: window.location.href
     };
   };
 
@@ -30,44 +68,52 @@ export const useActivityTracker = () => {
     if (!user || !profile) return;
 
     try {
-      const clientInfo = getClientInfo();
+      const clientInfo = getDetailedClientInfo();
       const ipAddress = await clientInfo.ipAddress;
 
-      // Log to both tables for comprehensive tracking
-      // Log to user_activity (existing table)
+      // Enhanced activity data
+      const activityData = {
+        user_id: user.id,
+        username: profile.username,
+        activity_type: activityType,
+        ip_address: ipAddress,
+        user_agent: clientInfo.userAgent,
+        browser_name: clientInfo.browserName,
+        device_type: clientInfo.deviceType,
+        screen_resolution: clientInfo.screenResolution,
+        referrer: clientInfo.referrer,
+        page_url: clientInfo.pageUrl,
+        session_duration: sessionDuration || null
+      };
+
+      // Log to user_activity table
       const { error: userActivityError } = await supabase
         .from('user_activity')
-        .insert({
-          user_id: user.id,
-          username: profile.username,
-          activity_type: activityType,
-          ip_address: ipAddress,
-          user_agent: clientInfo.userAgent,
-          session_duration: sessionDuration || null
-        });
+        .insert(activityData);
 
       if (userActivityError) {
         console.error('Error logging to user_activity:', userActivityError);
       }
 
-      // Log to activity_logs (new table)
+      // Log to activity_logs table as well
       const { error: activityLogsError } = await supabase
         .from('activity_logs')
-        .insert({
-          user_id: user.id,
-          username: profile.username,
-          activity_type: activityType,
-          ip_address: ipAddress,
-          user_agent: clientInfo.userAgent,
-          session_duration: sessionDuration || null
-        });
+        .insert(activityData);
 
       if (activityLogsError) {
         console.error('Error logging to activity_logs:', activityLogsError);
       }
 
+      console.log('Enhanced activity logged:', {
+        type: activityType,
+        user: profile.username,
+        browser: clientInfo.browserName,
+        device: clientInfo.deviceType,
+        resolution: clientInfo.screenResolution
+      });
+
     } catch (error) {
-      console.error('Error logging user activity:', error);
+      console.error('Error logging enhanced user activity:', error);
     }
   };
 
@@ -87,7 +133,7 @@ export const useActivityTracker = () => {
       sessionStartRef.current = new Date();
       logActivity('login');
       
-      console.log('User session started:', {
+      console.log('Enhanced user session started:', {
         user: profile.username,
         time: sessionStartRef.current
       });
@@ -99,7 +145,7 @@ export const useActivityTracker = () => {
       const sessionDuration = calculateSessionDuration(sessionStartRef.current, sessionEnd);
       logActivity('logout', sessionDuration);
       
-      console.log('User session ended:', {
+      console.log('Enhanced user session ended:', {
         duration: sessionDuration,
         time: sessionEnd
       });
@@ -108,7 +154,7 @@ export const useActivityTracker = () => {
     }
   }, [user, profile]);
 
-  // Track user activity (mouse movement, clicks, etc.)
+  // Track enhanced user activity
   useEffect(() => {
     if (!user) return;
 
@@ -116,7 +162,7 @@ export const useActivityTracker = () => {
       lastActivityRef.current = new Date();
     };
 
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
     events.forEach(event => {
       document.addEventListener(event, updateActivity, true);
     });
@@ -128,7 +174,7 @@ export const useActivityTracker = () => {
     };
   }, [user]);
 
-  // Handle page unload (logout tracking)
+  // Handle page unload with enhanced data
   useEffect(() => {
     if (!user || !profile) return;
 
@@ -138,12 +184,17 @@ export const useActivityTracker = () => {
         const sessionDuration = calculateSessionDuration(sessionStartRef.current, sessionEnd);
         
         // Use sendBeacon for reliable logging on page unload
+        const clientInfo = getDetailedClientInfo();
         navigator.sendBeacon('/api/log-activity', JSON.stringify({
           user_id: user.id,
           username: profile.username,
           activity_type: 'logout',
           session_duration: sessionDuration,
-          timestamp: sessionEnd.toISOString()
+          timestamp: sessionEnd.toISOString(),
+          browser_name: clientInfo.browserName,
+          device_type: clientInfo.deviceType,
+          screen_resolution: clientInfo.screenResolution,
+          page_url: clientInfo.pageUrl
         }));
       }
     };

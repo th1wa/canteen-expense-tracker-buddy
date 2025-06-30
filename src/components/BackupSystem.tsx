@@ -13,7 +13,8 @@ import {
   Clock,
   Cloud,
   RefreshCw,
-  Play
+  Play,
+  Trash2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,10 +37,10 @@ const BackupSystem = () => {
   const [backupHistory, setBackupHistory] = useState<string[]>([]);
   const [storageBackups, setStorageBackups] = useState<any[]>([]);
   const [isLoadingStorage, setIsLoadingStorage] = useState(false);
+  const [deletingBackups, setDeletingBackups] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  // Load automatic backups from storage on component mount
   useEffect(() => {
     loadStorageBackups();
   }, []);
@@ -67,11 +68,50 @@ const BackupSystem = () => {
     }
   };
 
+  const deleteStorageBackup = async (fileName: string) => {
+    try {
+      setDeletingBackups(prev => new Set(prev).add(fileName));
+      
+      const { error } = await supabase.storage
+        .from('automatic-backups')
+        .remove([fileName]);
+
+      if (error) {
+        toast({
+          title: "Delete Failed",
+          description: `Failed to delete ${fileName}: ${error.message}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Backup Deleted",
+        description: `Successfully deleted ${fileName}`,
+      });
+
+      // Refresh the list
+      loadStorageBackups();
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete backup file",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingBackups(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(fileName);
+        return newSet;
+      });
+    }
+  };
+
   const testAutomaticBackup = async () => {
     try {
       setIsTesting(true);
       
-      // Get the current session to ensure we have proper authorization
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError || !session) {
@@ -103,7 +143,6 @@ const BackupSystem = () => {
         description: "Automatic backup test completed successfully. Check the recent backups list.",
       });
 
-      // Refresh the storage backups list
       setTimeout(() => {
         loadStorageBackups();
       }, 2000);
@@ -135,7 +174,6 @@ const BackupSystem = () => {
         return;
       }
 
-      // Create and download the file
       const url = URL.createObjectURL(data);
       const link = document.createElement('a');
       link.href = url;
@@ -169,7 +207,6 @@ const BackupSystem = () => {
 
       if (error) throw error;
 
-      // Create and download the file
       const fileName = `canteen_backup_${new Date().toISOString().split('T')[0]}.json`;
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -182,7 +219,6 @@ const BackupSystem = () => {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      // Update backup history
       setBackupHistory(prev => [fileName, ...prev.slice(0, 6)]);
 
       toast({
@@ -206,12 +242,10 @@ const BackupSystem = () => {
     try {
       setIsImporting(true);
 
-      // Validate file type
       if (!file.name.endsWith('.json')) {
         throw new Error('Please select a valid JSON backup file');
       }
 
-      // Read file content
       const fileContent = await file.text();
       let backupData;
       
@@ -221,7 +255,6 @@ const BackupSystem = () => {
         throw new Error('Invalid JSON format in backup file');
       }
 
-      // Validate backup structure
       if (!backupData.data) {
         throw new Error('Invalid backup file structure');
       }
@@ -240,7 +273,6 @@ const BackupSystem = () => {
         description: `Imported ${data.results.expenses} expenses, ${data.results.payments} payments, and ${data.results.profiles} profiles`,
       });
 
-      // Refresh the page to show updated data
       setTimeout(() => {
         window.location.reload();
       }, 2000);
@@ -266,50 +298,49 @@ const BackupSystem = () => {
     if (file) {
       handleImportData(file);
     }
-    // Reset input value to allow selecting the same file again
     event.target.value = '';
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-2 sm:p-4">
       {/* Automatic Storage Backups */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Cloud className="w-5 h-5" />
-            Automatic Backups (Supabase Storage)
+        <CardHeader className="pb-3 sm:pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <Cloud className="w-4 h-4 sm:w-5 sm:h-5" />
+            Automatic Backups
           </CardTitle>
-          <CardDescription>
-            Automatic daily backups stored securely in Supabase storage
+          <CardDescription className="text-sm">
+            Automatic daily backups stored securely
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4">
           <Alert>
             <CheckCircle className="h-4 w-4" />
-            <AlertDescription>
-              <strong>Automatic Daily Backups:</strong> The system creates automatic backups daily at 2:00 AM 
-              and stores them securely in Supabase storage. The last 7 days of backups are retained automatically.
+            <AlertDescription className="text-sm">
+              <strong>Daily Backups:</strong> Automatic backups at 2:00 AM. Last 7 days retained.
             </AlertDescription>
           </Alert>
           
-          <div className="flex justify-between items-center gap-4">
-            <span className="font-medium">Recent Automatic Backups</span>
-            <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+            <span className="font-medium text-sm sm:text-base">Recent Backups</span>
+            <div className="flex gap-2 w-full sm:w-auto">
               <Button
                 onClick={testAutomaticBackup}
                 disabled={isTesting}
                 variant="default"
                 size="sm"
+                className="flex-1 sm:flex-none text-xs sm:text-sm"
               >
                 {isTesting ? (
                   <>
-                    <Clock className="w-4 h-4 mr-2 animate-spin" />
+                    <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 animate-spin" />
                     Testing...
                   </>
                 ) : (
                   <>
-                    <Play className="w-4 h-4 mr-2" />
-                    Test Backup
+                    <Play className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                    Test
                   </>
                 )}
               </Button>
@@ -318,15 +349,16 @@ const BackupSystem = () => {
                 disabled={isLoadingStorage}
                 variant="outline"
                 size="sm"
+                className="flex-1 sm:flex-none text-xs sm:text-sm"
               >
                 {isLoadingStorage ? (
                   <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 animate-spin" />
                     Loading...
                   </>
                 ) : (
                   <>
-                    <RefreshCw className="w-4 h-4 mr-2" />
+                    <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                     Refresh
                   </>
                 )}
@@ -335,21 +367,21 @@ const BackupSystem = () => {
           </div>
 
           {storageBackups.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">
-              No automatic backups found in storage yet
+            <p className="text-muted-foreground text-center py-4 text-sm">
+              No automatic backups found yet
             </p>
           ) : (
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {storageBackups.map((backup, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-muted rounded border">
-                  <div className="flex-1">
-                    <span className="text-sm font-mono">{backup.name}</span>
+                <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-muted rounded border gap-2 sm:gap-0">
+                  <div className="flex-1 min-w-0">
+                    <span className="text-xs sm:text-sm font-mono block truncate">{backup.name}</span>
                     <div className="text-xs text-muted-foreground">
-                      Created: {new Date(backup.created_at).toLocaleString()}
+                      {new Date(backup.created_at).toLocaleString()}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <Badge variant="secondary" className="text-xs">
                       <CheckCircle className="w-3 h-3 mr-1" />
                       Auto
                     </Badge>
@@ -357,10 +389,44 @@ const BackupSystem = () => {
                       onClick={() => downloadStorageBackup(backup.name)}
                       size="sm"
                       variant="outline"
+                      className="text-xs flex-1 sm:flex-none"
                     >
-                      <Download className="w-4 h-4 mr-1" />
+                      <Download className="w-3 h-3 mr-1" />
                       Download
                     </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          disabled={deletingBackups.has(backup.name)}
+                          className="text-xs"
+                        >
+                          {deletingBackups.has(backup.name) ? (
+                            <Clock className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-3 h-3" />
+                          )}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="text-base sm:text-lg">Delete Backup</AlertDialogTitle>
+                          <AlertDialogDescription className="text-sm">
+                            Are you sure you want to delete "{backup.name}"? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                          <AlertDialogCancel className="text-sm">Cancel</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => deleteStorageBackup(backup.name)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 text-sm"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               ))}
@@ -373,38 +439,37 @@ const BackupSystem = () => {
 
       {/* Manual Export Section */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Download className="w-5 h-5" />
+        <CardHeader className="pb-3 sm:pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <Download className="w-4 h-4 sm:w-5 sm:h-5" />
             Manual Export
           </CardTitle>
-          <CardDescription>
-            Export all database data to a JSON file for backup purposes
+          <CardDescription className="text-sm">
+            Export database to JSON file
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4">
           <Alert>
             <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              This will export ALL data including expenses, payments, and user profiles. 
-              Keep backup files secure and in a safe location.
+            <AlertDescription className="text-sm">
+              Exports ALL data. Keep files secure.
             </AlertDescription>
           </Alert>
           
           <Button 
             onClick={handleExportData}
             disabled={isExporting}
-            className="w-full"
+            className="w-full text-sm sm:text-base"
           >
             {isExporting ? (
               <>
                 <Clock className="w-4 h-4 mr-2 animate-spin" />
-                Exporting Data...
+                Exporting...
               </>
             ) : (
               <>
                 <Download className="w-4 h-4 mr-2" />
-                Export Database Now
+                Export Now
               </>
             )}
           </Button>
@@ -413,21 +478,20 @@ const BackupSystem = () => {
 
       {/* Manual Import Section */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Upload className="w-5 h-5" />
+        <CardHeader className="pb-3 sm:pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
             Manual Import
           </CardTitle>
-          <CardDescription>
-            Import database data from a backup file
+          <CardDescription className="text-sm">
+            Import from backup file
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4">
           <Alert>
             <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              <strong>WARNING:</strong> This will overwrite ALL existing data in the database. 
-              Make sure to create a backup before importing.
+            <AlertDescription className="text-sm">
+              <strong>WARNING:</strong> Overwrites ALL data. Backup first.
             </AlertDescription>
           </Alert>
 
@@ -444,36 +508,35 @@ const BackupSystem = () => {
               <Button 
                 variant="destructive" 
                 disabled={isImporting}
-                className="w-full"
+                className="w-full text-sm sm:text-base"
               >
                 {isImporting ? (
                   <>
                     <Clock className="w-4 h-4 mr-2 animate-spin" />
-                    Importing Data...
+                    Importing...
                   </>
                 ) : (
                   <>
                     <Upload className="w-4 h-4 mr-2" />
-                    Import Database
+                    Import
                   </>
                 )}
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent>
+            <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
               <AlertDialogHeader>
-                <AlertDialogTitle>Confirm Database Import</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action will permanently overwrite all existing data in the database. 
-                  This cannot be undone. Are you sure you want to continue?
+                <AlertDialogTitle className="text-base sm:text-lg">Confirm Import</AlertDialogTitle>
+                <AlertDialogDescription className="text-sm">
+                  This will permanently overwrite all data. Continue?
                 </AlertDialogDescription>
               </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                <AlertDialogCancel className="text-sm">Cancel</AlertDialogCancel>
                 <AlertDialogAction 
                   onClick={triggerFileInput}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90 text-sm"
                 >
-                  Yes, Import Data
+                  Import Data
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -483,26 +546,26 @@ const BackupSystem = () => {
 
       {/* Manual Backup History */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="w-5 h-5" />
-            Manual Backup History
+        <CardHeader className="pb-3 sm:pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
+            Session History
           </CardTitle>
-          <CardDescription>
-            Last 7 manual backups created during this session
+          <CardDescription className="text-sm">
+            Manual backups from this session
           </CardDescription>
         </CardHeader>
         <CardContent>
           {backupHistory.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">
-              No manual backups created in this session yet
+            <p className="text-muted-foreground text-center py-4 text-sm">
+              No manual backups yet
             </p>
           ) : (
             <div className="space-y-2">
               {backupHistory.map((backup, index) => (
-                <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
-                  <span className="text-sm font-mono">{backup}</span>
-                  <Badge variant="secondary">
+                <div key={index} className="flex items-center justify-between p-2 bg-muted rounded text-sm">
+                  <span className="font-mono truncate flex-1 mr-2">{backup}</span>
+                  <Badge variant="secondary" className="text-xs">
                     <CheckCircle className="w-3 h-3 mr-1" />
                     Manual
                   </Badge>

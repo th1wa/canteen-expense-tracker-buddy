@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarIcon, X } from "lucide-react";
+import { Calendar as CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -104,25 +105,22 @@ const PaymentModal = ({ isOpen, onClose, userName, totalExpense }: PaymentModalP
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[90vw] md:max-w-[600px] max-h-[90vh] overflow-y-auto mx-4">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle>Record Payment for {userName}</DialogTitle>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <DialogTitle className="text-lg sm:text-xl">
+            Record Payment for {userName}
+          </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
-          <div className="bg-muted p-4 rounded-lg">
-            <p className="text-sm text-muted-foreground">Total Outstanding Expense</p>
-            <p className="text-2xl font-bold text-red-600">Rs. {totalExpense.toFixed(2)}</p>
+        <div className="space-y-4 sm:space-y-6">
+          <div className="bg-muted p-3 sm:p-4 rounded-lg">
+            <p className="text-xs sm:text-sm text-muted-foreground">Total Outstanding Expense</p>
+            <p className="text-xl sm:text-2xl font-bold text-red-600">Rs. {totalExpense.toFixed(2)}</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
             <div>
-              <Label htmlFor="amount">Payment Amount</Label>
+              <Label htmlFor="amount" className="text-sm sm:text-base">Payment Amount</Label>
               <Input
                 id="amount"
                 type="number"
@@ -131,25 +129,26 @@ const PaymentModal = ({ isOpen, onClose, userName, totalExpense }: PaymentModalP
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="Enter payment amount"
                 required
+                className="text-sm sm:text-base"
               />
             </div>
 
             <div>
-              <Label>Payment Date</Label>
+              <Label className="text-sm sm:text-base">Payment Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal",
+                      "w-full justify-start text-left font-normal text-sm sm:text-base",
                       !paymentDate && "text-muted-foreground"
                     )}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
                     {paymentDate ? format(paymentDate, "PPP") : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
                     selected={paymentDate}
@@ -160,12 +159,18 @@ const PaymentModal = ({ isOpen, onClose, userName, totalExpense }: PaymentModalP
               </Popover>
             </div>
 
-            <Button type="submit" disabled={isSubmitting} className="w-full">
+            <Button 
+              type="submit" 
+              disabled={isSubmitting} 
+              className="w-full text-sm sm:text-base py-2 sm:py-3"
+            >
               {isSubmitting ? "Recording Payment..." : "Record Payment"}
             </Button>
           </form>
 
-          <PaymentHistory payments={payments} refreshTrigger={refreshTrigger} />
+          <div className="border-t pt-4">
+            <PaymentHistory payments={payments} refreshTrigger={refreshTrigger} />
+          </div>
         </div>
       </DialogContent>
     </Dialog>

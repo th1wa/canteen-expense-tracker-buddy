@@ -53,10 +53,10 @@ const TabContent: React.FC<TabContentProps> = ({
         );
       
       case 'payments':
-        return <PaymentHistory refreshTrigger={refreshTrigger + localRefreshTrigger} />;
+        return <UsersList refreshTrigger={refreshTrigger + localRefreshTrigger} />;
       
       case 'users':
-        return <UsersList refreshTrigger={refreshTrigger + localRefreshTrigger} />;
+        return <PaymentHistory refreshTrigger={refreshTrigger + localRefreshTrigger} />;
       
       case 'activity':
         if (!profile || (profile.role !== 'admin' && profile.role !== 'hr')) {
