@@ -212,7 +212,6 @@ const UserExpenseSummary = () => {
           totalExpenses={grandTotals.totalExpenses}
           totalPaid={grandTotals.totalPaid}
           totalRemaining={grandTotals.totalRemaining}
-          selectedMonth={selectedMonth}
         />
       </div>
 

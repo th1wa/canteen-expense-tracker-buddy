@@ -25,9 +25,9 @@ const SummaryHeader: React.FC<SummaryHeaderProps> = ({
   setSelectedMonth,
   searchTerm,
   setSearchTerm,
-  sortBy,
+  sortBy = 'name',
   setSortBy,
-  sortOrder,
+  sortOrder = 'asc',
   setSortOrder,
   clearFilters,
   hasActiveFilters = false
@@ -106,7 +106,7 @@ const SummaryHeader: React.FC<SummaryHeaderProps> = ({
 
             <div className={`grid gap-3 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}`}>
               {/* Sort By */}
-              {setSortBy && sortBy && (
+              {setSortBy && (
                 <Select value={sortBy} onValueChange={setSortBy}>
                   <SelectTrigger className="text-xs">
                     <SelectValue placeholder="Sort by..." />
@@ -121,7 +121,7 @@ const SummaryHeader: React.FC<SummaryHeaderProps> = ({
               )}
 
               {/* Sort Order */}
-              {setSortOrder && sortOrder && (
+              {setSortOrder && (
                 <Select value={sortOrder} onValueChange={setSortOrder}>
                   <SelectTrigger className="text-xs">
                     <SelectValue placeholder="Sort order..." />
