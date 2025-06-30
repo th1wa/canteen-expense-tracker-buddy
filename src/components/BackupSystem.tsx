@@ -138,7 +138,7 @@ const BackupSystem = () => {
       
       // Use Promise.race to implement timeout
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Request timeout')), 30000)
+        setTimeout(() => reject(new Error('Request timeout')), 45000) // Increased to 45 seconds
       );
 
       const backupPromise = supabase.functions.invoke('auto-backup-scheduler', {
@@ -158,7 +158,13 @@ const BackupSystem = () => {
           if (error.message?.includes('Failed to fetch') || error.message?.includes('FunctionsFetchError')) {
             toast({
               title: "Connection Error",
-              description: "Could not connect to the backup service. Please try again in a moment.",
+              description: "Could not connect to the backup service. The function may be starting up - please try again in a moment.",
+              variant: "destructive",
+            });
+          } else if (error.message?.includes('timeout')) {
+            toast({
+              title: "Request Timeout",
+              description: "The backup test is taking longer than expected. Please try again.",
               variant: "destructive",
             });
           } else {
@@ -173,15 +179,23 @@ const BackupSystem = () => {
 
         console.log('Test backup response:', data);
 
-        toast({
-          title: "Test Backup Successful",
-          description: "Automatic backup test completed successfully. Check the recent backups list.",
-        });
+        if (data?.success) {
+          toast({
+            title: "Test Backup Successful",
+            description: `Backup completed! File: ${data.filename}. Records: ${data.totalRecords}`,
+          });
 
-        // Refresh backup list after successful test
-        setTimeout(() => {
-          loadStorageBackups();
-        }, 2000);
+          // Refresh backup list after successful test
+          setTimeout(() => {
+            loadStorageBackups();
+          }, 2000);
+        } else {
+          toast({
+            title: "Backup Test Failed",
+            description: data?.error || "Unknown error occurred",
+            variant: "destructive",
+          });
+        }
 
       } catch (networkError: any) {
         console.error('Network error during backup test:', networkError);
