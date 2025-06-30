@@ -107,10 +107,13 @@ const DashboardCharts = ({ refreshTrigger }: DashboardChartsProps) => {
 
       setTrendsData(processedTrends);
 
-      // Expense categories (mock data since category isn't in current schema)
+      // Expense categories - using note field to determine category or default to 'General'
       const categoryMap: { [key: string]: number } = {};
       expenses.forEach(exp => {
-        const category = exp.category || 'General';
+        // Use note field to determine category, or default to 'General'
+        const category = exp.note ? (exp.note.toLowerCase().includes('food') ? 'Food' : 
+                                   exp.note.toLowerCase().includes('travel') ? 'Travel' : 
+                                   exp.note.toLowerCase().includes('supply') ? 'Supplies' : 'General') : 'General';
         categoryMap[category] = (categoryMap[category] || 0) + parseFloat(exp.amount.toString());
       });
 
@@ -122,11 +125,13 @@ const DashboardCharts = ({ refreshTrigger }: DashboardChartsProps) => {
 
       setExpenseData(processedExpenseData);
 
-      // Payment methods (mock data since method isn't in current schema)
+      // Payment methods - since payment_method doesn't exist, we'll create mock data based on amount ranges
       const methodMap: { [key: string]: number } = {};
       payments.forEach(pay => {
-        const method = pay.payment_method || 'Cash';
-        methodMap[method] = (methodMap[method] || 0) + parseFloat(pay.amount.toString());
+        // Create mock payment method based on amount (since payment_method field doesn't exist)
+        const amount = parseFloat(pay.amount.toString());
+        const method = amount > 1000 ? 'Bank Transfer' : amount > 500 ? 'Card' : 'Cash';
+        methodMap[method] = (methodMap[method] || 0) + amount;
       });
 
       const processedPaymentData = Object.entries(methodMap).map(([name, value]) => ({

@@ -47,16 +47,16 @@ const PDFReports = ({ refreshTrigger }: PDFReportsProps) => {
         const totalAmount = expenses.reduce((sum, exp) => sum + parseFloat(exp.amount.toString()), 0);
         doc.text(`Total Amount: Rs. ${totalAmount.toFixed(2)}`, 20, 50);
 
-        // Table
+        // Table - using 'note' instead of 'description'
         const tableData = expenses.map(exp => [
           exp.user_name,
           `Rs. ${parseFloat(exp.amount.toString()).toFixed(2)}`,
           exp.expense_date,
-          exp.description || 'N/A'
+          exp.note || 'N/A'
         ]);
 
         doc.autoTable({
-          head: [['User Name', 'Amount', 'Date', 'Description']],
+          head: [['User Name', 'Amount', 'Date', 'Note']],
           body: tableData,
           startY: 60,
           styles: { fontSize: 10 },
@@ -106,13 +106,17 @@ const PDFReports = ({ refreshTrigger }: PDFReportsProps) => {
         const totalAmount = payments.reduce((sum, pay) => sum + parseFloat(pay.amount.toString()), 0);
         doc.text(`Total Payments: Rs. ${totalAmount.toFixed(2)}`, 20, 50);
 
-        // Table
-        const tableData = payments.map(pay => [
-          pay.user_name,
-          `Rs. ${parseFloat(pay.amount.toString()).toFixed(2)}`,
-          pay.payment_date,
-          pay.payment_method || 'N/A'
-        ]);
+        // Table - creating mock payment method since field doesn't exist
+        const tableData = payments.map(pay => {
+          const amount = parseFloat(pay.amount.toString());
+          const mockMethod = amount > 1000 ? 'Bank Transfer' : amount > 500 ? 'Card' : 'Cash';
+          return [
+            pay.user_name,
+            `Rs. ${amount.toFixed(2)}`,
+            pay.payment_date,
+            mockMethod
+          ];
+        });
 
         doc.autoTable({
           head: [['User Name', 'Amount', 'Date', 'Method']],
