@@ -1,390 +1,430 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
-import { History, Calendar, DollarSign, Search, Filter, FilterX, User } from "lucide-react";
+import { Calendar as CalendarIcon, Search, Filter, Download, RefreshCw } from "lucide-react";
+import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface Payment {
   id: string;
-  user_name: string;
   amount: number;
   payment_date: string;
+  user_name: string;
   created_at: string;
 }
 
 interface PaymentHistoryProps {
-  refreshTrigger: number;
+  refreshTrigger?: number;
 }
 
-const PaymentHistory = ({ refreshTrigger }: PaymentHistoryProps) => {
+const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [dateFilter, setDateFilter] = useState('');
-  const [userFilter, setUserFilter] = useState('');
-  const [amountFilter, setAmountFilter] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<string>('all');
+  const [dateRange, setDateRange] = useState<string>('all');
+  const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>();
+  const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
   const [uniqueUsers, setUniqueUsers] = useState<string[]>([]);
-  const { profile } = useAuth();
   const { toast } = useToast();
-  const isMountedRef = useRef(true);
 
   const fetchPayments = async () => {
-    if (!profile) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    
     try {
-      let query = supabase
+      setIsLoading(true);
+      const { data, error } = await supabase
         .from('payments')
         .select('*')
         .order('payment_date', { ascending: false });
 
-      // Filter for basic users to only see their own payments
-      if (profile.role === 'user' && profile.username) {
-        query = query.eq('user_name', profile.username);
-      }
-
-      const { data, error: fetchError } = await query;
-
-      if (fetchError) {
-        console.error('Error fetching payments:', fetchError);
-        throw new Error(fetchError.message || 'Failed to fetch payments');
-      }
-
-      if (!isMountedRef.current) return;
-
-      const validPayments = (data || []).filter(payment => 
-        payment && 
-        typeof payment === 'object' && 
-        payment.user_name && 
-        payment.amount !== null &&
-        payment.payment_date
-      );
-
-      setPayments(validPayments);
-      setFilteredPayments(validPayments);
-      
-      // Extract unique users for filter dropdown
-      const users = [...new Set(validPayments.map(payment => payment.user_name))].sort();
-      setUniqueUsers(users);
-    } catch (error) {
-      console.error('Error fetching payments:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
-      if (isMountedRef.current) {
-        setError(errorMessage);
-        
+      if (error) {
+        console.error('Error fetching payments:', error);
         toast({
           title: "Error",
-          description: `Failed to load payments: ${errorMessage}`,
-          variant: "destructive"
+          description: "Failed to fetch payment history",
+          variant: "destructive",
         });
+        return;
       }
+
+      const paymentsData = data || [];
+      setPayments(paymentsData);
+      
+      // Extract unique users
+      const users = Array.from(new Set(paymentsData.map(p => p.user_name))).sort();
+      setUniqueUsers(users);
+      
+    } catch (error) {
+      console.error('Error fetching payments:', error);
+      toast({
+        title: "Error",
+        description: "An error occurred while fetching payments",
+        variant: "destructive",
+      });
     } finally {
-      if (isMountedRef.current) {
-        setLoading(false);
-      }
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    isMountedRef.current = true;
     fetchPayments();
-    
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, [refreshTrigger, profile]);
+  }, [refreshTrigger]);
 
   useEffect(() => {
-    if (!Array.isArray(payments)) {
-      setFilteredPayments([]);
-      return;
-    }
+    let filtered = [...payments];
 
-    let filtered = payments;
-
-    // Filter by search term (user name)
-    if (searchTerm?.trim()) {
-      const searchLower = searchTerm.toLowerCase();
+    // Search filter
+    if (searchTerm) {
       filtered = filtered.filter(payment =>
-        payment?.user_name?.toLowerCase().includes(searchLower)
+        payment.user_name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Filter by date
-    if (dateFilter) {
-      filtered = filtered.filter(payment =>
-        payment?.payment_date === dateFilter
-      );
+    // User filter
+    if (selectedUser !== 'all') {
+      filtered = filtered.filter(payment => payment.user_name === selectedUser);
     }
 
-    // Filter by user
-    if (userFilter && userFilter !== 'all') {
-      filtered = filtered.filter(payment =>
-        payment?.user_name === userFilter
-      );
-    }
+    // Date range filter
+    if (dateRange !== 'all') {
+      const now = new Date();
+      let startDate: Date;
+      let endDate: Date = now;
 
-    // Filter by amount range
-    if (amountFilter && amountFilter !== 'all') {
-      filtered = filtered.filter(payment => {
-        const amount = Number(payment?.amount) || 0;
-        switch (amountFilter) {
-          case 'low': return amount <= 500;
-          case 'medium': return amount > 500 && amount <= 2000;
-          case 'high': return amount > 2000;
-          default: return true;
-        }
-      });
+      switch (dateRange) {
+        case 'today':
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+          break;
+        case 'this-week':
+          const dayOfWeek = now.getDay();
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
+          break;
+        case 'this-month':
+          startDate = startOfMonth(now);
+          endDate = endOfMonth(now);
+          break;
+        case 'this-year':
+          startDate = startOfYear(now);
+          endDate = endOfYear(now);
+          break;
+        case 'custom':
+          if (customDateFrom && customDateTo) {
+            startDate = customDateFrom;
+            endDate = customDateTo;
+          } else {
+            startDate = new Date(0);
+          }
+          break;
+        default:
+          startDate = new Date(0);
+      }
+
+      if (startDate) {
+        filtered = filtered.filter(payment => {
+          const paymentDate = new Date(payment.payment_date);
+          return paymentDate >= startDate && paymentDate <= endDate;
+        });
+      }
     }
 
     setFilteredPayments(filtered);
-  }, [searchTerm, dateFilter, userFilter, amountFilter, payments]);
+  }, [payments, searchTerm, selectedUser, dateRange, customDateFrom, customDateTo]);
 
-  const clearAllFilters = () => {
-    setSearchTerm('');
-    setDateFilter('');
-    setUserFilter('');
-    setAmountFilter('');
+  const getTotalAmount = () => {
+    return filteredPayments.reduce((sum, payment) => sum + payment.amount, 0);
   };
 
-  const hasActiveFilters = searchTerm || dateFilter || userFilter || amountFilter;
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSelectedUser('all');
+    setDateRange('all');
+    setCustomDateFrom(undefined);
+    setCustomDateTo(undefined);
+  };
 
-  const totalAmount = filteredPayments.reduce((sum, payment) => {
-    const amount = Number(payment?.amount) || 0;
-    return sum + amount;
-  }, 0);
+  const exportToCSV = () => {
+    if (filteredPayments.length === 0) {
+      toast({
+        title: "No Data",
+        description: "No payments to export",
+        variant: "destructive",
+      });
+      return;
+    }
 
-  if (!profile) {
-    return (
-      <div className="text-center py-8">
-        <div className="text-sm text-muted-foreground">Please log in to view payment history.</div>
-      </div>
-    );
-  }
+    const csvHeaders = ['Date', 'User Name', 'Amount', 'Created At'];
+    const csvData = filteredPayments.map(payment => [
+      format(new Date(payment.payment_date), 'yyyy-MM-dd'),
+      payment.user_name,
+      payment.amount.toString(),
+      format(new Date(payment.created_at), 'yyyy-MM-dd HH:mm:ss')
+    ]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <span className="ml-2 text-sm text-muted-foreground">Loading payments...</span>
-      </div>
-    );
-  }
+    const csvContent = [csvHeaders, ...csvData]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
 
-  if (error) {
-    return (
-      <div className="text-center py-8">
-        <div className="text-destructive mb-2">Error: {error}</div>
-        <Button 
-          onClick={fetchPayments}
-          className="text-sm"
-          variant="outline"
-        >
-          Try again
-        </Button>
-      </div>
-    );
-  }
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `payment_history_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "Export Successful",
+      description: "Payment history exported to CSV",
+    });
+  };
 
   return (
-    <div className="space-y-4 p-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
-            <History className="w-4 h-4 text-white" />
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                💳 Payment History
+              </CardTitle>
+              <CardDescription>
+                Complete record of all payments made
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={fetchPayments}
+                disabled={isLoading}
+                variant="outline"
+                size="sm"
+              >
+                {isLoading ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Refresh
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={exportToCSV}
+                disabled={filteredPayments.length === 0}
+                variant="outline"
+                size="sm"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export CSV
+              </Button>
+            </div>
           </div>
-          <h2 className="text-xl font-semibold">Payment History</h2>
-        </div>
-        <Badge variant="secondary" className="text-sm">
-          {filteredPayments.length} payment{filteredPayments.length !== 1 ? 's' : ''}
-        </Badge>
-      </div>
+        </CardHeader>
 
-      {/* Filter Controls */}
-      <Card className="bg-slate-50 dark:bg-slate-800/50">
-        <CardContent className="p-4">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-gray-500" />
-                <span className="text-sm font-medium">Filters</span>
+        <CardContent className="space-y-6">
+          {/* Filters */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Search User</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Search by user name..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
               </div>
-              {hasActiveFilters && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={clearAllFilters}
-                  className="text-xs h-8"
-                >
-                  <FilterX className="w-3 h-3 mr-1" />
-                  Clear All
-                </Button>
-              )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {/* Search Filter */}
-              <div className="flex items-center space-x-2">
-                <Search className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                <Input
-                  placeholder="Search users..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value || '')}
-                  className="text-sm h-9"
-                />
-              </div>
-
-              {/* Date Filter */}
-              <div className="flex items-center space-x-2">
-                <Calendar className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                <Input
-                  type="date"
-                  value={dateFilter}
-                  onChange={(e) => setDateFilter(e.target.value || '')}
-                  className="text-sm h-9"
-                />
-              </div>
-
-              {/* User Filter */}
-              <Select value={userFilter} onValueChange={setUserFilter}>
-                <SelectTrigger className="text-sm h-9">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Filter by User</label>
+              <Select value={selectedUser} onValueChange={setSelectedUser}>
+                <SelectTrigger>
                   <SelectValue placeholder="All users" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All users</SelectItem>
+                  <SelectItem value="all">All Users</SelectItem>
                   {uniqueUsers.map(user => (
                     <SelectItem key={user} value={user}>{user}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+            </div>
 
-              {/* Amount Filter */}
-              <Select value={amountFilter} onValueChange={setAmountFilter}>
-                <SelectTrigger className="text-sm h-9">
-                  <SelectValue placeholder="All amounts" />
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Date Range</label>
+              <Select value={dateRange} onValueChange={setDateRange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All time" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All amounts</SelectItem>
-                  <SelectItem value="low">≤ Rs. 500</SelectItem>
-                  <SelectItem value="medium">Rs. 501-2000</SelectItem>
-                  <SelectItem value="high">{'>'} Rs. 2000</SelectItem>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="this-week">This Week</SelectItem>
+                  <SelectItem value="this-month">This Month</SelectItem>
+                  <SelectItem value="this-year">This Year</SelectItem>
+                  <SelectItem value="custom">Custom Range</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Summary Card */}
-      <Card className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200 dark:border-green-700">
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <div>
-              <p className="text-sm text-green-700 dark:text-green-300">
-                {filteredPayments.length} payment{filteredPayments.length !== 1 ? 's' : ''}
-                {hasActiveFilters && ` (filtered from ${payments.length})`}
-              </p>
-              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                {dateFilter && `on ${format(new Date(dateFilter), 'MMM dd, yyyy')}`}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400 flex items-center gap-1">
-                <DollarSign className="w-5 h-5" />
-                Rs. {totalAmount.toFixed(2)}
-              </p>
-              <p className="text-xs text-green-600 dark:text-green-400">Total Amount</p>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">&nbsp;</label>
+              <Button
+                onClick={clearFilters}
+                variant="outline"
+                className="w-full"
+              >
+                <Filter className="w-4 h-4 mr-2" />
+                Clear Filters
+              </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Results */}
-      {filteredPayments.length === 0 ? (
-        <Card className="border-dashed border-2 border-gray-200 dark:border-gray-700">
-          <CardContent className="p-8 text-center">
-            <div className="text-6xl mb-3">💳</div>
-            <p className="text-gray-600 dark:text-gray-400 font-medium mb-2">
-              {hasActiveFilters ? 'No payments found matching your filters' : 'No payments recorded yet'}
-            </p>
-            <p className="text-sm text-gray-500 dark:text-gray-500">
-              {hasActiveFilters ? 'Try adjusting your filters' : 'Payments will appear here once recorded'}
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-3">
-          {filteredPayments.map((payment, index) => (
-            <Card 
-              key={payment.id} 
-              className="hover:shadow-md transition-all duration-200 hover:scale-[1.01] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
-              style={{ 
-                animationDelay: `${index * 50}ms`,
-                animation: 'fadeInUp 0.5s ease-out forwards'
-              }}
-            >
-              <CardContent className="p-4">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center shadow-lg flex-shrink-0">
-                      <DollarSign className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <User className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                        <span className="font-semibold text-gray-900 dark:text-white truncate">
-                          {payment.user_name || 'Unknown User'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                        <Calendar className="w-3 h-3 flex-shrink-0" />
-                        <span>{format(new Date(payment.payment_date), 'MMM dd, yyyy')}</span>
-                        <span className="text-gray-400">•</span>
-                        <span>{format(new Date(payment.created_at), 'hh:mm a')}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                      Rs. {Number(payment.amount).toFixed(2)}
-                    </p>
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse mx-auto mt-1"></div>
-                  </div>
-                </div>
+          {/* Custom Date Range */}
+          {dateRange === 'custom' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">From Date</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !customDateFrom && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {customDateFrom ? format(customDateFrom, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={customDateFrom}
+                      onSelect={setCustomDateFrom}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">To Date</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !customDateTo && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {customDateTo ? format(customDateTo, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={customDateTo}
+                      onSelect={setCustomDateTo}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+          )}
+
+          {/* Summary */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-2xl font-bold">{filteredPayments.length}</div>
+                <p className="text-xs text-muted-foreground">Total Payments</p>
               </CardContent>
             </Card>
-          ))}
-        </div>
-      )}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-2xl font-bold text-green-600">
+                  Rs. {getTotalAmount().toFixed(2)}
+                </div>
+                <p className="text-xs text-muted-foreground">Total Amount</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-2xl font-bold">{uniqueUsers.length}</div>
+                <p className="text-xs text-muted-foreground">Unique Users</p>
+              </CardContent>
+            </Card>
+          </div>
 
-      <style>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
+          {/* Payment List */}
+          <div className="space-y-3">
+            {isLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="text-sm text-muted-foreground mt-2">Loading payments...</p>
+              </div>
+            ) : filteredPayments.length === 0 ? (
+              <div className="text-center py-8 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                <p className="text-muted-foreground">
+                  {payments.length === 0 ? "No payments found" : "No payments match the current filters"}
+                </p>
+              </div>
+            ) : (
+              <div className="max-h-96 overflow-y-auto space-y-2 border rounded-lg">
+                {filteredPayments.map((payment, index) => (
+                  <div
+                    key={payment.id}
+                    className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-card border-b last:border-b-0 hover:bg-muted/50 transition-colors gap-2"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium text-sm">{payment.user_name}</span>
+                        <Badge variant="outline" className="text-xs">
+                          #{(filteredPayments.length - index).toString().padStart(3, '0')}
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Payment Date: {format(new Date(payment.payment_date), 'MMM dd, yyyy')}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Recorded: {format(new Date(payment.created_at), 'MMM dd, yyyy HH:mm')}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-green-600">
+                        Rs. {payment.amount.toFixed(2)}
+                      </div>
+                      <Badge variant="secondary" className="text-xs">
+                        Paid
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
