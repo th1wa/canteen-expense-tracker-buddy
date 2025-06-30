@@ -25,9 +25,10 @@ interface PaymentModalProps {
   onClose: () => void;
   userName: string;
   totalExpense: number;
+  onPaymentAdded?: () => void;
 }
 
-const PaymentModal = ({ isOpen, onClose, userName, totalExpense }: PaymentModalProps) => {
+const PaymentModal = ({ isOpen, onClose, userName, totalExpense, onPaymentAdded }: PaymentModalProps) => {
   const [amount, setAmount] = useState('');
   const [paymentDate, setPaymentDate] = useState<Date>(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -68,6 +69,12 @@ const PaymentModal = ({ isOpen, onClose, userName, totalExpense }: PaymentModalP
       setAmount('');
       setPaymentDate(new Date());
       setRefreshTrigger(prev => prev + 1);
+      
+      // Call the onPaymentAdded callback if provided
+      if (onPaymentAdded) {
+        onPaymentAdded();
+      }
+      
       onClose();
     } catch (error: any) {
       console.error('Error recording payment:', error);
