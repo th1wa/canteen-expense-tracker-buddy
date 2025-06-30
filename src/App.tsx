@@ -1,43 +1,41 @@
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { QueryClient } from 'react-query';
+import { AuthProvider } from './contexts/AuthContext';
+import { Toaster } from "@/components/ui/toaster"
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { ThemeProvider } from "@/contexts/ThemeContext";
-import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import ProtectedRoute from "@/components/ProtectedRoute";
+import ProtectedRoute from "./components/ProtectedRoute";
+import SummaryReport from "./pages/SummaryReport";
 
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <ThemeProvider>
-        <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+function App() {
+  return (
+    <QueryClient>
+      <AuthProvider>
+        <BrowserRouter>
+          <div className="min-h-screen bg-background">
             <Routes>
               <Route path="/auth" element={<Auth />} />
-              <Route 
-                path="/" 
-                element={
-                  <ProtectedRoute>
-                    <Index />
-                  </ProtectedRoute>
-                } 
-              />
+              <Route path="/summary" element={
+                <ProtectedRoute>
+                  <SummaryReport />
+                </ProtectedRoute>
+              } />
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <Index />
+                </ProtectedRoute>
+              } />
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </BrowserRouter>
-        </AuthProvider>
-      </ThemeProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+            <Toaster />
+          </div>
+        </BrowserRouter>
+      </AuthProvider>
+    </QueryClient>
+  );
+}
 
 export default App;
