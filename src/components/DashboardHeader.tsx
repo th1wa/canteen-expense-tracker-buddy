@@ -4,28 +4,51 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { LogOut, Coffee } from "lucide-react";
 import ThemeToggle from './ThemeToggle';
+import { Badge } from "@/components/ui/badge";
 
 const DashboardHeader = () => {
   const { profile, signOut } = useAuth();
 
+  const getRoleDisplayName = (role: string) => {
+    switch (role) {
+      case 'user': return 'User';
+      case 'admin': return 'Admin';
+      case 'hr': return 'HR';
+      case 'canteen': return 'Canteen';
+      default: return role;
+    }
+  };
+
+  const getRoleBadgeVariant = (role: string) => {
+    switch (role) {
+      case 'admin': return 'default';
+      case 'hr': return 'default';
+      case 'canteen': return 'secondary';
+      case 'user': return 'outline';
+      default: return 'secondary';
+    }
+  };
+
   return (
     <header className="bg-white dark:bg-gray-800 shadow-sm border-b">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex items-center">
-            <Coffee className="h-8 w-8 text-orange-600 mr-3" />
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Canteen Buddy
+      <div className="max-w-7xl mx-auto container-mobile">
+        <div className="flex justify-between items-center h-12 sm:h-14 md:h-16">
+          <div className="flex items-center min-w-0 flex-1">
+            <Coffee className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-orange-600 mr-2 sm:mr-3 flex-shrink-0" />
+            <h1 className="text-base sm:text-lg md:text-2xl font-bold text-gray-900 dark:text-white truncate">
+              <span className="hidden sm:inline">Canteen Buddy</span>
+              <span className="sm:hidden">Canteen</span>
             </h1>
           </div>
           
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-4 flex-shrink-0">
             {profile && (
-              <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300">
-                <span>Welcome, {profile.username}</span>
-                <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs font-medium">
-                  {profile.role}
-                </span>
+              <div className="hidden sm:flex items-center space-x-2 text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+                <span className="hidden md:inline">Welcome, {profile.username}</span>
+                <span className="md:hidden">Hi, {profile.username}</span>
+                <Badge variant={getRoleBadgeVariant(profile.role)} className="text-xs font-medium">
+                  {getRoleDisplayName(profile.role)}
+                </Badge>
               </div>
             )}
             
@@ -35,10 +58,11 @@ const DashboardHeader = () => {
               variant="outline"
               size="sm"
               onClick={signOut}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-1 sm:space-x-2 btn-mobile text-xs sm:text-sm"
             >
-              <LogOut className="h-4 w-4" />
-              <span>Sign Out</span>
+              <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Sign Out</span>
+              <span className="sm:hidden">Out</span>
             </Button>
           </div>
         </div>

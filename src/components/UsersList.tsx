@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useUsersData } from "@/hooks/useUsersData";
 import { useAuth } from "@/contexts/AuthContext";
@@ -82,7 +83,7 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
 
   if (!profile) {
     return (
-      <div className="text-center py-8">
+      <div className="text-center py-6 sm:py-8 container-mobile">
         <div className="text-sm text-muted-foreground">Please log in to view users.</div>
       </div>
     );
@@ -90,7 +91,7 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
 
   if (!hasAccess) {
     return (
-      <div className="text-center py-8">
+      <div className="text-center py-6 sm:py-8 container-mobile">
         <div className="text-sm text-muted-foreground">You don't have permission to view all users.</div>
       </div>
     );
@@ -98,7 +99,7 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
 
   if (loading) {
     return (
-      <div className="text-center py-8">
+      <div className="text-center py-6 sm:py-8 container-mobile">
         <div className="text-sm text-muted-foreground">Loading users...</div>
       </div>
     );
@@ -106,8 +107,8 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
 
   if (error) {
     return (
-      <div className="text-center py-8">
-        <div className="text-destructive mb-2">Error: {error}</div>
+      <div className="text-center py-6 sm:py-8 container-mobile">
+        <div className="text-destructive mb-2 text-sm">Error: {error}</div>
       </div>
     );
   }
@@ -116,38 +117,44 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
   const canManagePayments = profile?.role === 'admin' || profile?.role === 'canteen';
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4 container-mobile">
       {/* Filter Controls */}
-      <UserFilters
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        balanceFilter={balanceFilter}
-        setBalanceFilter={setBalanceFilter}
-        settlementFilter={settlementFilter}
-        setSettlementFilter={setSettlementFilter}
-        hasActiveFilters={hasActiveFilters}
-        onClearFilters={clearAllFilters}
-      />
+      <div className="w-full">
+        <UserFilters
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          balanceFilter={balanceFilter}
+          setBalanceFilter={setBalanceFilter}
+          settlementFilter={settlementFilter}
+          setSettlementFilter={setSettlementFilter}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={clearAllFilters}
+        />
+      </div>
 
       {/* Summary Stats */}
       {totalStats && (
-        <UserStats
-          totalUsers={filteredUsers.length}
-          originalUsersCount={users?.length}
-          totalExpenses={totalStats.totalExpenses}
-          totalPaid={totalStats.totalPaid}
-          totalOutstanding={totalStats.totalOutstanding}
-          hasActiveFilters={hasActiveFilters}
-        />
+        <div className="w-full">
+          <UserStats
+            totalUsers={filteredUsers.length}
+            originalUsersCount={users?.length}
+            totalExpenses={totalStats.totalExpenses}
+            totalPaid={totalStats.totalPaid}
+            totalOutstanding={totalStats.totalOutstanding}
+            hasActiveFilters={hasActiveFilters}
+          />
+        </div>
       )}
 
       {/* Users Grid */}
-      <UsersGrid
-        users={filteredUsers}
-        canManagePayments={canManagePayments}
-        onPaymentClick={handlePaymentClick}
-        hasActiveFilters={hasActiveFilters}
-      />
+      <div className="w-full">
+        <UsersGrid
+          users={filteredUsers}
+          canManagePayments={canManagePayments}
+          onPaymentClick={handlePaymentClick}
+          hasActiveFilters={hasActiveFilters}
+        />
+      </div>
 
       {/* Payment Modal */}
       {selectedUser && (
@@ -156,6 +163,7 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
           onClose={() => setShowPaymentModal(false)}
           userName={selectedUser.user_name}
           totalExpense={selectedUser.remaining_balance || 0}
+          onPaymentAdded={handlePaymentAdded}
         />
       )}
     </div>

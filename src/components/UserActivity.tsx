@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -297,13 +298,13 @@ const UserActivity = () => {
 
   if (!profile || (profile.role !== 'admin' && profile.role !== 'hr')) {
     return (
-      <Card>
+      <Card className="container-mobile">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="w-5 h-5" />
+          <CardTitle className="flex items-center gap-2 text-responsive-base">
+            <Activity className="w-4 h-4 sm:w-5 sm:h-5" />
             Access Denied
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-responsive-sm">
             You don't have permission to view user activity.
           </CardDescription>
         </CardHeader>
@@ -312,75 +313,79 @@ const UserActivity = () => {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Enhanced Stats Dashboard */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+    <div className="space-y-3 sm:space-y-4 lg:space-y-6 container-mobile">
+      {/* Enhanced Stats Dashboard - Responsive Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 xl:grid-cols-6 gap-2 sm:gap-3 lg:gap-4">
         <Card className="border-l-4 border-l-green-500">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-green-500" />
-              <div>
-                <div className="text-lg font-bold">{stats.todayLogins}</div>
-                <p className="text-xs text-muted-foreground">Today's Logins</p>
+          <CardContent className="p-2 sm:p-3">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
+              <div className="min-w-0">
+                <div className="text-sm sm:text-lg font-bold truncate">{stats.todayLogins}</div>
+                <p className="text-xs text-muted-foreground hidden sm:block">Today's Logins</p>
+                <p className="text-xs text-muted-foreground sm:hidden">Today</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-l-blue-500">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-blue-500" />
-              <div>
-                <div className="text-lg font-bold">{stats.totalLogins}</div>
-                <p className="text-xs text-muted-foreground">Total Logins</p>
+          <CardContent className="p-2 sm:p-3">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500 flex-shrink-0" />
+              <div className="min-w-0">
+                <div className="text-sm sm:text-lg font-bold truncate">{stats.totalLogins}</div>
+                <p className="text-xs text-muted-foreground hidden sm:block">Total Logins</p>
+                <p className="text-xs text-muted-foreground sm:hidden">Total</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-l-purple-500">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-purple-500" />
-              <div>
-                <div className="text-lg font-bold">{stats.uniqueUsers}</div>
-                <p className="text-xs text-muted-foreground">Unique Users</p>
+          <CardContent className="p-2 sm:p-3">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Users className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500 flex-shrink-0" />
+              <div className="min-w-0">
+                <div className="text-sm sm:text-lg font-bold truncate">{stats.uniqueUsers}</div>
+                <p className="text-xs text-muted-foreground hidden sm:block">Unique Users</p>
+                <p className="text-xs text-muted-foreground sm:hidden">Users</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-l-orange-500">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-orange-500" />
-              <div>
-                <div className="text-lg font-bold">{stats.avgSessionDuration}</div>
-                <p className="text-xs text-muted-foreground">Avg Session</p>
+          <CardContent className="p-2 sm:p-3">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-orange-500 flex-shrink-0" />
+              <div className="min-w-0">
+                <div className="text-sm sm:text-lg font-bold truncate">{stats.avgSessionDuration}</div>
+                <p className="text-xs text-muted-foreground hidden sm:block">Avg Session</p>
+                <p className="text-xs text-muted-foreground sm:hidden">Session</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-pink-500">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <User className="w-4 h-4 text-pink-500" />
-              <div>
-                <div className="text-sm font-bold truncate">{stats.mostActiveUser || 'N/A'}</div>
+        <Card className="border-l-4 border-l-pink-500 col-span-2 sm:col-span-1">
+          <CardContent className="p-2 sm:p-3">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <User className="w-3 h-3 sm:w-4 sm:h-4 text-pink-500 flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <div className="text-xs sm:text-sm font-bold truncate">{stats.mostActiveUser || 'N/A'}</div>
                 <p className="text-xs text-muted-foreground">Most Active</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-indigo-500">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-indigo-500" />
-              <div>
-                <div className="text-lg font-bold">{stats.peakHour || 'N/A'}</div>
+        <Card className="border-l-4 border-l-indigo-500 col-span-2 sm:col-span-3 lg:col-span-1">
+          <CardContent className="p-2 sm:p-3">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-indigo-500 flex-shrink-0" />
+              <div className="min-w-0">
+                <div className="text-sm sm:text-lg font-bold">{stats.peakHour || 'N/A'}</div>
                 <p className="text-xs text-muted-foreground">Peak Hour</p>
               </div>
             </div>
@@ -388,27 +393,27 @@ const UserActivity = () => {
         </Card>
       </div>
 
-      {/* Browser & Device Analytics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Browser & Device Analytics - Responsive Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Monitor className="w-4 h-4" />
+          <CardHeader className="pb-2 sm:pb-3">
+            <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+              <Monitor className="w-3 h-3 sm:w-4 sm:h-4" />
               Browser Usage
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-1 sm:space-y-2">
             {Object.entries(stats.browserStats).slice(0, 5).map(([browser, count]) => (
               <div key={browser} className="flex justify-between items-center">
-                <span className="text-xs">{browser}</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+                <span className="text-xs sm:text-sm truncate flex-1 mr-2">{browser}</span>
+                <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                  <div className="w-12 sm:w-16 h-1.5 sm:h-2 bg-muted rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-blue-500" 
                       style={{ width: `${(count / stats.totalLogins) * 100}%` }}
                     />
                   </div>
-                  <span className="text-xs font-medium">{count}</span>
+                  <span className="text-xs font-medium w-6 text-right">{count}</span>
                 </div>
               </div>
             ))}
@@ -416,27 +421,27 @@ const UserActivity = () => {
         </Card>
 
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Smartphone className="w-4 h-4" />
+          <CardHeader className="pb-2 sm:pb-3">
+            <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+              <Smartphone className="w-3 h-3 sm:w-4 sm:h-4" />
               Device Types
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-1 sm:space-y-2">
             {Object.entries(stats.deviceStats).slice(0, 5).map(([device, count]) => (
               <div key={device} className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 sm:gap-2 flex-1 min-w-0">
                   {getDeviceIcon(device)}
-                  <span className="text-xs">{device}</span>
+                  <span className="text-xs sm:text-sm truncate">{device}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+                <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                  <div className="w-12 sm:w-16 h-1.5 sm:h-2 bg-muted rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-green-500" 
                       style={{ width: `${(count / stats.totalLogins) * 100}%` }}
                     />
                   </div>
-                  <span className="text-xs font-medium">{count}</span>
+                  <span className="text-xs font-medium w-6 text-right">{count}</span>
                 </div>
               </div>
             ))}
@@ -444,16 +449,16 @@ const UserActivity = () => {
         </Card>
       </div>
 
-      {/* Filters Section */}
+      {/* Filters Section - Mobile Optimized */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-sm">
-            <Filter className="w-4 h-4" />
+        <CardHeader className="pb-2 sm:pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+            <Filter className="w-3 h-3 sm:w-4 sm:h-4" />
             Activity Filters
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3">
             <div className="space-y-1">
               <label className="text-xs font-medium">Search</label>
               <div className="relative">
@@ -462,7 +467,7 @@ const UserActivity = () => {
                   placeholder="Search username..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-7 h-8 text-xs"
+                  className="pl-7 h-8 text-xs form-mobile"
                 />
               </div>
             </div>
@@ -473,7 +478,7 @@ const UserActivity = () => {
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="All activities" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-background border shadow-lg z-50">
                   <SelectItem value="all">All Activities</SelectItem>
                   <SelectItem value="login">Login</SelectItem>
                   <SelectItem value="logout">Logout</SelectItem>
@@ -487,7 +492,7 @@ const UserActivity = () => {
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="All time" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-background border shadow-lg z-50">
                   <SelectItem value="all">All Time</SelectItem>
                   <SelectItem value="today">Today</SelectItem>
                   <SelectItem value="week">Last 7 Days</SelectItem>
@@ -501,75 +506,79 @@ const UserActivity = () => {
               <Button
                 onClick={fetchActivities}
                 disabled={loading}
-                className="w-full h-8"
+                className="w-full h-8 btn-mobile"
                 variant="outline"
                 size="sm"
               >
                 <RefreshCw className={`w-3 h-3 mr-1 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
+                <span className="hidden sm:inline">Refresh</span>
+                <span className="sm:hidden">↻</span>
               </Button>
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-1 sm:col-span-2 lg:col-span-1">
               <label className="text-xs font-medium">Results</label>
               <div className="text-xs text-muted-foreground bg-muted/30 p-2 rounded border">
-                {filteredActivities.length} of {activities.length} activities
+                <span className="hidden sm:inline">{filteredActivities.length} of {activities.length} activities</span>
+                <span className="sm:hidden">{filteredActivities.length}/{activities.length}</span>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Activities List */}
+      {/* Activities List - Mobile Optimized */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-sm">
-            <Activity className="w-4 h-4" />
+        <CardHeader className="pb-2 sm:pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+            <Activity className="w-3 h-3 sm:w-4 sm:h-4" />
             Recent Activity Log
           </CardTitle>
-          <CardDescription className="text-xs">
-            Real-time user activity monitoring with enhanced tracking data
+          <CardDescription className="text-xs sm:text-sm">
+            <span className="hidden sm:inline">Real-time user activity monitoring with enhanced tracking data</span>
+            <span className="sm:hidden">Real-time activity monitoring</span>
           </CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-6">
-              <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-3 text-muted-foreground" />
-              <p className="text-xs text-muted-foreground">Loading activities...</p>
+            <div className="text-center py-4 sm:py-6">
+              <RefreshCw className="w-4 h-4 sm:w-6 sm:h-6 animate-spin mx-auto mb-2 sm:mb-3 text-muted-foreground" />
+              <p className="text-xs sm:text-sm text-muted-foreground">Loading activities...</p>
             </div>
           ) : filteredActivities.length === 0 ? (
-            <div className="text-center py-6 text-muted-foreground">
-              <Activity className="w-8 h-8 mx-auto mb-3 opacity-50" />
-              <p className="text-xs">No activities found matching your filters.</p>
+            <div className="text-center py-4 sm:py-6 text-muted-foreground">
+              <Activity className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 sm:mb-3 opacity-50" />
+              <p className="text-xs sm:text-sm">No activities found matching your filters.</p>
             </div>
           ) : (
-            <div className="space-y-2 max-h-80 overflow-y-auto">
+            <div className="space-y-1 sm:space-y-2 max-h-60 sm:max-h-80 lg:max-h-96 overflow-y-auto">
               {filteredActivities.map((activity, index) => (
                 <div key={activity.id}>
-                  <div className="flex items-start justify-between space-x-3 p-3 rounded-lg hover:bg-muted/30 transition-colors">
-                    <div className="flex items-start space-x-3 flex-1 min-w-0">
-                      <div className="mt-1 flex-shrink-0">
+                  <div className="flex items-start justify-between space-x-2 sm:space-x-3 p-2 sm:p-3 rounded-lg hover:bg-muted/30 transition-colors">
+                    <div className="flex items-start space-x-2 sm:space-x-3 flex-1 min-w-0">
+                      <div className="mt-0.5 sm:mt-1 flex-shrink-0">
                         {getActivityIcon(activity.activity_type)}
                       </div>
-                      <div className="flex-1 space-y-2 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-sm truncate">{activity.username}</span>
+                      <div className="flex-1 space-y-1 sm:space-y-2 min-w-0">
+                        <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                          <span className="font-medium text-xs sm:text-sm truncate">{activity.username}</span>
                           <Badge variant={getActivityBadgeVariant(activity.activity_type)} className="text-xs">
                             {activity.activity_type}
                           </Badge>
                           {activity.device_type && (
                             <Badge variant="outline" className="text-xs flex items-center gap-1">
                               {getDeviceIcon(activity.device_type)}
-                              {activity.device_type}
+                              <span className="hidden sm:inline">{activity.device_type}</span>
                             </Badge>
                           )}
                         </div>
                         
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-muted-foreground">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-2 text-xs text-muted-foreground">
                           <div className="flex items-center gap-1">
                             <Clock className="w-3 h-3 flex-shrink-0" />
-                            <span>{format(new Date(activity.timestamp), 'MMM dd, HH:mm:ss')}</span>
-                            <span className="text-xs opacity-75">
+                            <span className="hidden sm:inline">{format(new Date(activity.timestamp), 'MMM dd, HH:mm:ss')}</span>
+                            <span className="sm:hidden">{format(new Date(activity.timestamp), 'dd/MM HH:mm')}</span>
+                            <span className="text-xs opacity-75 hidden lg:inline">
                               ({formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })})
                             </span>
                           </div>
@@ -584,28 +593,34 @@ const UserActivity = () => {
                           {(activity.browser_name || activity.user_agent) && (
                             <div className="flex items-center gap-1">
                               <Monitor className="w-3 h-3 flex-shrink-0" />
-                              <span>{activity.browser_name || getBrowserInfo(activity.user_agent)}</span>
+                              <span className="truncate">{activity.browser_name || getBrowserInfo(activity.user_agent)}</span>
                             </div>
                           )}
 
                           {activity.screen_resolution && (
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1 hidden sm:flex">
                               <Monitor className="w-3 h-3 flex-shrink-0" />
-                              <span>{activity.screen_resolution}</span>
+                              <span className="truncate">{activity.screen_resolution}</span>
                             </div>
                           )}
                           
                           {activity.session_duration && (
                             <div className="flex items-center gap-1">
                               <Clock className="w-3 h-3 flex-shrink-0" />
-                              <span>Session: {formatSessionDuration(activity.session_duration)}</span>
+                              <span className="truncate">
+                                <span className="hidden sm:inline">Session: </span>
+                                {formatSessionDuration(activity.session_duration)}
+                              </span>
                             </div>
                           )}
 
                           {activity.page_url && (
                             <div className="flex items-center gap-1 col-span-full">
                               <Globe className="w-3 h-3 flex-shrink-0" />
-                              <span className="truncate">Page: {activity.page_url}</span>
+                              <span className="truncate">
+                                <span className="hidden sm:inline">Page: </span>
+                                {activity.page_url}
+                              </span>
                             </div>
                           )}
                         </div>
@@ -613,7 +628,7 @@ const UserActivity = () => {
                     </div>
                   </div>
                   
-                  {index < filteredActivities.length - 1 && <Separator className="mt-2" />}
+                  {index < filteredActivities.length - 1 && <Separator className="mt-1 sm:mt-2" />}
                 </div>
               ))}
             </div>

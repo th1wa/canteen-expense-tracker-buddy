@@ -106,16 +106,16 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
   };
 
   return (
-    <Sidebar className="w-64 lg:w-72">
-      <SidebarHeader className="p-3 sm:p-4">
+    <Sidebar className="sidebar-mobile">
+      <SidebarHeader className="p-2 sm:p-3 md:p-4">
         <div className="flex items-center gap-2 sm:gap-3">
-          <span className="text-xl sm:text-2xl">🧡</span>
+          <span className="text-lg sm:text-xl md:text-2xl">🧡</span>
           <div className="min-w-0 flex-1">
-            <h2 className="text-base sm:text-lg font-bold text-orange-800 dark:text-orange-200 truncate">
+            <h2 className="text-sm sm:text-base md:text-lg font-bold text-orange-800 dark:text-orange-200 truncate">
               Canteen Buddy
             </h2>
             {profile && (
-              <Badge variant={getRoleBadgeVariant(profile.role)} className="text-xs">
+              <Badge variant={getRoleBadgeVariant(profile.role)} className="text-xs mt-1">
                 {getRoleDisplayName(profile.role)}
               </Badge>
             )}
@@ -123,9 +123,9 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-2 sm:px-3">
+      <SidebarContent className="px-1 sm:px-2 md:px-3">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs sm:text-sm">Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs sm:text-sm px-2">Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
@@ -134,10 +134,10 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
                     onClick={() => onTabChange(item.id)}
                     isActive={activeTab === item.id}
                     tooltip={item.description}
-                    className="text-sm sm:text-base py-2 sm:py-3"
+                    className="text-xs sm:text-sm md:text-base py-2 sm:py-3 px-2 sm:px-3"
                   >
-                    <item.icon className="w-4 h-4 flex-shrink-0" />
-                    <span className="truncate">{item.title}</span>
+                    <item.icon className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                    <span className="truncate min-w-0">{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -146,10 +146,10 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-3 sm:p-4">
-        <SidebarSeparator className="mb-3 sm:mb-4" />
+      <SidebarFooter className="p-2 sm:p-3 md:p-4">
+        <SidebarSeparator className="mb-2 sm:mb-3 md:mb-4" />
         {profile && (
-          <div className="mb-3 text-xs sm:text-sm text-muted-foreground">
+          <div className="mb-2 sm:mb-3 text-xs sm:text-sm text-muted-foreground">
             <div className="font-medium text-foreground">Welcome back!</div>
             <div className="truncate">{profile.username}</div>
           </div>
@@ -158,10 +158,10 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
           variant="outline"
           size="sm"
           onClick={signOut}
-          className="w-full flex items-center gap-2 text-xs sm:text-sm"
+          className="w-full flex items-center gap-1 sm:gap-2 text-xs sm:text-sm btn-mobile"
         >
           <LogOut className="w-3 h-3 sm:w-4 sm:h-4" />
-          Sign Out
+          <span>Sign Out</span>
         </Button>
       </SidebarFooter>
     </Sidebar>
