@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -137,20 +136,20 @@ const BackupSystem = () => {
 
       console.log('Testing automatic backup with authenticated user...');
       
-      // Add timeout and retry logic
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      // Use Promise.race to implement timeout
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 30000)
+      );
+
+      const backupPromise = supabase.functions.invoke('auto-backup-scheduler', {
+        headers: {
+          'x-backup-type': 'manual_test'
+        },
+        body: { test: true }
+      });
 
       try {
-        const { data, error } = await supabase.functions.invoke('auto-backup-scheduler', {
-          headers: {
-            'x-backup-type': 'manual_test'
-          },
-          body: { test: true },
-          signal: controller.signal
-        });
-
-        clearTimeout(timeoutId);
+        const { data, error } = await Promise.race([backupPromise, timeoutPromise]) as any;
 
         if (error) {
           console.error('Test backup error details:', error);
@@ -185,10 +184,9 @@ const BackupSystem = () => {
         }, 2000);
 
       } catch (networkError: any) {
-        clearTimeout(timeoutId);
         console.error('Network error during backup test:', networkError);
         
-        if (networkError.name === 'AbortError') {
+        if (networkError.message === 'Request timeout') {
           toast({
             title: "Request Timeout",
             description: "The backup test took too long to complete. Please try again.",
