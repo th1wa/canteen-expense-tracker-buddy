@@ -31,30 +31,8 @@ const PaymentModal = ({ isOpen, onClose, userName, totalExpense }: PaymentModalP
   const [amount, setAmount] = useState('');
   const [paymentDate, setPaymentDate] = useState<Date>(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [payments, setPayments] = useState<Payment[]>([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const { toast } = useToast();
-
-  const fetchPayments = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('payments')
-        .select('*')
-        .eq('user_name', userName)
-        .order('payment_date', { ascending: false });
-
-      if (error) throw error;
-      setPayments(data || []);
-    } catch (error) {
-      console.error('Error fetching payments:', error);
-    }
-  };
-
-  useEffect(() => {
-    if (isOpen) {
-      fetchPayments();
-    }
-  }, [isOpen, userName, refreshTrigger]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -184,7 +162,7 @@ const PaymentModal = ({ isOpen, onClose, userName, totalExpense }: PaymentModalP
             </form>
 
             <div className="border-t pt-4">
-              <PaymentHistory payments={payments} refreshTrigger={refreshTrigger} />
+              <PaymentHistory refreshTrigger={refreshTrigger} />
             </div>
           </div>
         </div>
