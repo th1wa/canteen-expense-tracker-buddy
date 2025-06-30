@@ -53,10 +53,10 @@ const TabContent: React.FC<TabContentProps> = ({
         );
       
       case 'payments':
-        return <UsersList refreshTrigger={refreshTrigger + localRefreshTrigger} />;
+        return <PaymentHistory refreshTrigger={refreshTrigger + localRefreshTrigger} />;
       
       case 'users':
-        return <PaymentHistory refreshTrigger={refreshTrigger + localRefreshTrigger} />;
+        return <UsersList refreshTrigger={refreshTrigger + localRefreshTrigger} />;
       
       case 'activity':
         if (!profile || (profile.role !== 'admin' && profile.role !== 'hr')) {
@@ -109,7 +109,7 @@ const TabContent: React.FC<TabContentProps> = ({
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full min-h-full">
       {renderTabContent()}
     </div>
   );
