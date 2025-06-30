@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatDistanceToNow, format } from "date-fns";
-import { Activity, User, Clock, Globe, Monitor, Search, Filter, RefreshCw, Calendar, BarChart3, Smartphone, Desktop, Tablet, Users, TrendingUp } from "lucide-react";
+import { Activity, User, Clock, Globe, Monitor, Search, Filter, RefreshCw, Calendar, BarChart3, Smartphone, Tablet, Users, TrendingUp } from "lucide-react";
 
 interface UserActivityRecord {
   id: string;
@@ -272,7 +272,7 @@ const UserActivity = () => {
         return <Tablet className="w-3 h-3" />;
       case 'desktop':
       default:
-        return <Desktop className="w-3 h-3" />;
+        return <Monitor className="w-3 h-3" />;
     }
   };
 
