@@ -9,6 +9,7 @@ import UserActivity from "./UserActivity";
 import BackupSystem from "./BackupSystem";
 import UserManagement from "./UserManagement";
 import AddExpenseForm from "./AddExpenseForm";
+import ReportsAnalytics from "./ReportsAnalytics";
 
 interface TabContentProps {
   activeTab: string;
@@ -57,6 +58,21 @@ const TabContent: React.FC<TabContentProps> = ({
       
       case 'users':
         return <UsersList refreshTrigger={refreshTrigger + localRefreshTrigger} />;
+      
+      case 'reports':
+        if (!profile || (profile.role !== 'admin' && profile.role !== 'hr')) {
+          return (
+            <div className="text-center py-8">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Access Denied
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                You don't have permission to view reports and analytics.
+              </p>
+            </div>
+          );
+        }
+        return <ReportsAnalytics />;
       
       case 'activity':
         if (!profile || (profile.role !== 'admin' && profile.role !== 'hr')) {

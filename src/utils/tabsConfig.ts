@@ -18,6 +18,7 @@ export const getTabsConfig = (profile: any): TabConfig[] => {
   const canManageExpenses = profile.role === 'admin' || profile.role === 'canteen';
   const canAccessBackup = profile.role === 'admin';
   const canAccessSummary = profile.role === 'admin' || profile.role === 'hr';
+  const canAccessReports = profile.role === 'admin' || profile.role === 'hr';
   const isBasicUser = profile.role === 'user';
 
   const tabs: TabConfig[] = [];
@@ -55,6 +56,15 @@ export const getTabsConfig = (profile: any): TabConfig[] => {
       title: 'Dashboard & Analytics',
       description: 'Daily and monthly collection statistics with payment tracking',
       icon: TrendingUp
+    });
+  }
+
+  if (canAccessReports) {
+    tabs.push({
+      id: 'reports',
+      title: 'Reports & Analytics',
+      description: 'Comprehensive sales reports with downloadable PDF and Excel exports',
+      icon: FileBarChart
     });
   }
 

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Calendar, Users, PlusCircle, Settings, LogOut, UserCheck, Activity, History, CreditCard } from "lucide-react";
+import { Calendar, Users, PlusCircle, Settings, LogOut, UserCheck, Activity, History, CreditCard, FileBarChart } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -31,6 +31,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
   const canAccessBackup = profile && profile.role === 'admin';
   const canManageUsers = profile && profile.role === 'admin';
   const canViewActivity = profile && (profile.role === 'admin' || profile.role === 'hr');
+  const canAccessReports = profile && (profile.role === 'admin' || profile.role === 'hr');
   const isBasicUser = profile && profile.role === 'user';
 
   const menuItems = [
@@ -58,6 +59,12 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
       icon: CreditCard,
       description: isBasicUser ? "Your payment records" : "All payment records"
     },
+    ...(canAccessReports ? [{
+      id: "reports",
+      title: "Reports & Analytics",
+      icon: FileBarChart,
+      description: "Comprehensive reports with downloadable exports"
+    }] : []),
     ...(canManageUsers ? [{
       id: "user-management",
       title: "User Management",
