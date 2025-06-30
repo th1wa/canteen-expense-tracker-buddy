@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -14,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    // Validate that this is being called by the cron job
+    // Validate that this is being called by the cron job or system
     const authHeader = req.headers.get('Authorization');
     const expectedToken = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
@@ -31,7 +30,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    console.log('Starting automatic daily backup...')
+    console.log('Starting automatic daily backup to Supabase storage...')
 
     // Export all data with proper error handling
     const backupData = {
@@ -111,7 +110,76 @@ serve(async (req) => {
       throw error;
     }
 
+    // Export user_activity table with error handling
+    try {
+      const { data: userActivity, error: userActivityError } = await supabaseClient
+        .from('user_activity')
+        .select('*')
+        .order('timestamp', { ascending: false })
+
+      if (userActivityError) {
+        console.error('User activity export error:', userActivityError);
+        throw new Error(`Failed to export user activity: ${userActivityError.message}`);
+      }
+      backupData.data.user_activity = userActivity || [];
+    } catch (error) {
+      console.error('Critical error exporting user activity:', error);
+      throw error;
+    }
+
     const fileName = `canteen_backup_${new Date().toISOString().split('T')[0]}.json`
+    const backupContent = JSON.stringify(backupData, null, 2);
+    
+    // Upload backup to Supabase storage
+    try {
+      const { data: uploadData, error: uploadError } = await supabaseClient.storage
+        .from('automatic-backups')
+        .upload(fileName, new Blob([backupContent], { type: 'application/json' }), {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        throw new Error(`Failed to upload backup to storage: ${uploadError.message}`);
+      }
+
+      console.log('Backup uploaded to storage successfully:', uploadData);
+    } catch (error) {
+      console.error('Critical error uploading to storage:', error);
+      throw error;
+    }
+
+    // Clean up old backups (keep only last 7 days)
+    try {
+      const { data: existingFiles, error: listError } = await supabaseClient.storage
+        .from('automatic-backups')
+        .list('', {
+          limit: 100,
+          sortBy: { column: 'created_at', order: 'desc' }
+        });
+
+      if (listError) {
+        console.warn('Warning: Could not list existing backups for cleanup:', listError);
+      } else if (existingFiles && existingFiles.length > 7) {
+        // Keep only the 7 most recent files
+        const filesToDelete = existingFiles.slice(7).map(file => file.name);
+        
+        if (filesToDelete.length > 0) {
+          const { error: deleteError } = await supabaseClient.storage
+            .from('automatic-backups')
+            .remove(filesToDelete);
+
+          if (deleteError) {
+            console.warn('Warning: Could not delete old backup files:', deleteError);
+          } else {
+            console.log(`Cleaned up ${filesToDelete.length} old backup files`);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Warning: Error during backup cleanup:', error);
+    }
     
     // Validate backup data
     const totalRecords = Object.values(backupData.data).reduce((sum: number, arr: any) => {
@@ -122,24 +190,27 @@ serve(async (req) => {
       console.warn('Warning: Backup contains no data');
     }
     
-    console.log(`Automatic backup completed: ${fileName}`)
+    console.log(`Automatic backup completed and uploaded to storage: ${fileName}`)
     console.log(`Records backed up: ${JSON.stringify({
       expenses: backupData.data.expenses?.length || 0,
       payments: backupData.data.payments?.length || 0,
       profiles: backupData.data.profiles?.length || 0,
-      users: backupData.data.users?.length || 0
+      users: backupData.data.users?.length || 0,
+      user_activity: backupData.data.user_activity?.length || 0
     })}`)
     
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Automatic backup completed successfully',
+        message: 'Automatic backup completed and uploaded to Supabase storage',
         filename: fileName,
+        storage_path: `automatic-backups/${fileName}`,
         records: {
           expenses: backupData.data.expenses?.length || 0,
           payments: backupData.data.payments?.length || 0,
           profiles: backupData.data.profiles?.length || 0,
-          users: backupData.data.users?.length || 0
+          users: backupData.data.users?.length || 0,
+          user_activity: backupData.data.user_activity?.length || 0
         },
         totalRecords: totalRecords
       }),

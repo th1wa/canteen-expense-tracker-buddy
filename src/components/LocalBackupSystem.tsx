@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -11,7 +11,9 @@ import {
   Settings,
   AlertTriangle,
   CheckCircle,
-  Clock
+  Clock,
+  Cloud,
+  RefreshCw
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,8 +33,77 @@ const LocalBackupSystem = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [backupHistory, setBackupHistory] = useState<string[]>([]);
+  const [storageBackups, setStorageBackups] = useState<any[]>([]);
+  const [isLoadingStorage, setIsLoadingStorage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Load automatic backups from storage on component mount
+  useEffect(() => {
+    loadStorageBackups();
+  }, []);
+
+  const loadStorageBackups = async () => {
+    try {
+      setIsLoadingStorage(true);
+      const { data: files, error } = await supabase.storage
+        .from('automatic-backups')
+        .list('', {
+          limit: 20,
+          sortBy: { column: 'created_at', order: 'desc' }
+        });
+
+      if (error) {
+        console.error('Error loading storage backups:', error);
+        return;
+      }
+
+      setStorageBackups(files || []);
+    } catch (error) {
+      console.error('Error loading storage backups:', error);
+    } finally {
+      setIsLoadingStorage(false);
+    }
+  };
+
+  const downloadStorageBackup = async (fileName: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('automatic-backups')
+        .download(fileName);
+
+      if (error) {
+        toast({
+          title: "Download Failed",
+          description: `Failed to download ${fileName}: ${error.message}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Create and download the file
+      const url = URL.createObjectURL(data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Download Successful",
+        description: `Downloaded ${fileName}`,
+      });
+    } catch (error: any) {
+      console.error('Download error:', error);
+      toast({
+        title: "Download Failed",
+        description: error.message || "Failed to download backup file",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleExportData = async () => {
     try {
@@ -147,7 +218,86 @@ const LocalBackupSystem = () => {
 
   return (
     <div className="space-y-6">
-      {/* Export Section */}
+      {/* Automatic Storage Backups */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Cloud className="w-5 h-5" />
+            Automatic Backups (Supabase Storage)
+          </CardTitle>
+          <CardDescription>
+            Automatic daily backups stored securely in Supabase storage
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Alert>
+            <CheckCircle className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Automatic Daily Backups:</strong> The system creates automatic backups daily at 2:00 AM 
+              and stores them securely in Supabase storage. The last 7 days of backups are retained automatically.
+            </AlertDescription>
+          </Alert>
+          
+          <div className="flex justify-between items-center">
+            <span className="font-medium">Recent Automatic Backups</span>
+            <Button
+              onClick={loadStorageBackups}
+              disabled={isLoadingStorage}
+              variant="outline"
+              size="sm"
+            >
+              {isLoadingStorage ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh
+                </>
+              )}
+            </Button>
+          </div>
+
+          {storageBackups.length === 0 ? (
+            <p className="text-muted-foreground text-center py-4">
+              No automatic backups found in storage yet
+            </p>
+          ) : (
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {storageBackups.map((backup, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-muted rounded border">
+                  <div className="flex-1">
+                    <span className="text-sm font-mono">{backup.name}</span>
+                    <div className="text-xs text-muted-foreground">
+                      Created: {new Date(backup.created_at).toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      Auto
+                    </Badge>
+                    <Button
+                      onClick={() => downloadStorageBackup(backup.name)}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <Download className="w-4 h-4 mr-1" />
+                      Download
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Separator />
+
+      {/* Manual Export Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -187,7 +337,7 @@ const LocalBackupSystem = () => {
         </CardContent>
       </Card>
 
-      {/* Import Section */}
+      {/* Manual Import Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -257,12 +407,12 @@ const LocalBackupSystem = () => {
         </CardContent>
       </Card>
 
-      {/* Backup History */}
+      {/* Manual Backup History */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Settings className="w-5 h-5" />
-            Recent Backup History
+            Manual Backup History
           </CardTitle>
           <CardDescription>
             Last 7 manual backups created during this session
@@ -271,7 +421,7 @@ const LocalBackupSystem = () => {
         <CardContent>
           {backupHistory.length === 0 ? (
             <p className="text-muted-foreground text-center py-4">
-              No backups created in this session yet
+              No manual backups created in this session yet
             </p>
           ) : (
             <div className="space-y-2">
@@ -280,54 +430,12 @@ const LocalBackupSystem = () => {
                   <span className="text-sm font-mono">{backup}</span>
                   <Badge variant="secondary">
                     <CheckCircle className="w-3 h-3 mr-1" />
-                    Success
+                    Manual
                   </Badge>
                 </div>
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Automatic Backup Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="w-5 h-5" />
-            Automatic Backup Information
-          </CardTitle>
-          <CardDescription>
-            Information about the automatic daily backup system
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Alert>
-            <CheckCircle className="h-4 w-4" />
-            <AlertDescription>
-              <strong>Automatic Daily Backups:</strong> The system is configured to create 
-              automatic backups daily. These backups are stored locally and follow the 
-              naming convention: canteen_backup_YYYY-MM-DD.json
-            </AlertDescription>
-          </Alert>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div>
-              <strong>Backup Schedule:</strong>
-              <p className="text-muted-foreground">Daily at midnight (server time)</p>
-            </div>
-            <div>
-              <strong>Retention Policy:</strong>
-              <p className="text-muted-foreground">Last 7 days kept automatically</p>
-            </div>
-            <div>
-              <strong>File Format:</strong>
-              <p className="text-muted-foreground">JSON with complete database export</p>
-            </div>
-            <div>
-              <strong>Storage Location:</strong>
-              <p className="text-muted-foreground">Local server directory</p>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>

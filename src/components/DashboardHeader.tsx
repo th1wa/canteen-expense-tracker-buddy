@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { LogOut, Coffee } from "lucide-react";
 import ThemeToggle from './ThemeToggle';
-import UserApprovalNotification from './UserApprovalNotification';
 
 const DashboardHeader = () => {
   const { profile, signOut } = useAuth();
@@ -29,9 +28,6 @@ const DashboardHeader = () => {
                 </span>
               </div>
             )}
-            
-            {/* User approval notification for admin users */}
-            <UserApprovalNotification />
             
             <ThemeToggle />
             
