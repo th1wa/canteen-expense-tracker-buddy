@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import ExpenseHistory from "./ExpenseHistory";
 import PaymentHistory from "./PaymentHistory";
@@ -8,6 +8,7 @@ import DashboardStats from "./DashboardStats";
 import UserActivity from "./UserActivity";
 import BackupSystem from "./BackupSystem";
 import UserManagement from "./UserManagement";
+import AddExpenseForm from "./AddExpenseForm";
 
 interface TabContentProps {
   activeTab: string;
@@ -23,25 +24,39 @@ const TabContent: React.FC<TabContentProps> = ({
   onExpenseAdded 
 }) => {
   const { user } = useAuth();
+  const [localRefreshTrigger, setLocalRefreshTrigger] = useState(0);
+
+  const handleExpenseAdded = () => {
+    // Trigger refresh in parent and local components
+    onExpenseAdded();
+    setLocalRefreshTrigger(prev => prev + 1);
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <DashboardStats refreshTrigger={refreshTrigger} />;
+        return <DashboardStats refreshTrigger={refreshTrigger + localRefreshTrigger} />;
       
       case 'expenses':
         return (
+          <AddExpenseForm 
+            onExpenseAdded={handleExpenseAdded}
+          />
+        );
+      
+      case 'history':
+        return (
           <ExpenseHistory 
-            refreshTrigger={refreshTrigger} 
-            onExpenseAdded={onExpenseAdded} 
+            refreshTrigger={refreshTrigger + localRefreshTrigger} 
+            onExpenseAdded={handleExpenseAdded}
           />
         );
       
       case 'payments':
-        return <PaymentHistory refreshTrigger={refreshTrigger} />;
+        return <PaymentHistory refreshTrigger={refreshTrigger + localRefreshTrigger} />;
       
       case 'users':
-        return <UsersList refreshTrigger={refreshTrigger} />;
+        return <UsersList refreshTrigger={refreshTrigger + localRefreshTrigger} />;
       
       case 'activity':
         if (!profile || (profile.role !== 'admin' && profile.role !== 'hr')) {
@@ -89,7 +104,7 @@ const TabContent: React.FC<TabContentProps> = ({
         return <BackupSystem />;
       
       default:
-        return <DashboardStats refreshTrigger={refreshTrigger} />;
+        return <DashboardStats refreshTrigger={refreshTrigger + localRefreshTrigger} />;
     }
   };
 

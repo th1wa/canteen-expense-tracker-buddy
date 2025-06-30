@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Calendar, Users, TrendingUp, PlusCircle, Settings, LogOut, UserCheck, Activity } from "lucide-react";
+import { Calendar, Users, PlusCircle, Settings, LogOut, UserCheck, Activity, History } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -40,12 +40,12 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
       icon: PlusCircle,
       description: "Record new expenses"
     }] : []),
-    ...(canManageUsers ? [{
-      id: "user-management",
-      title: "User Management",
-      icon: UserCheck,
-      description: "Manage user roles and permissions"
-    }] : []),
+    {
+      id: "history",
+      title: isBasicUser ? "My History" : "Expense History",
+      icon: History,
+      description: isBasicUser ? "Your expense history" : "All expense records"
+    },
     {
       id: "users",
       title: isBasicUser ? "My Status" : "Users",
@@ -54,22 +54,22 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
     },
     {
       id: "payments",
-      title: isBasicUser ? "My History" : "History",
+      title: isBasicUser ? "My Payments" : "Payments",
       icon: Calendar,
-      description: isBasicUser ? "Your transactions" : "Transaction history"
+      description: isBasicUser ? "Your payment records" : "Payment history"
     },
+    ...(canManageUsers ? [{
+      id: "user-management",
+      title: "User Management",
+      icon: UserCheck,
+      description: "Manage user roles and permissions"
+    }] : []),
     ...(canViewActivity ? [{
       id: "activity",
       title: "User Activity",
       icon: Activity,
       description: "View user login/logout activity"
     }] : []),
-    {
-      id: "dashboard",
-      title: "Analytics",
-      icon: TrendingUp,
-      description: "Stats & insights"
-    },
     ...(canAccessBackup ? [{
       id: "backup",
       title: "Backup",

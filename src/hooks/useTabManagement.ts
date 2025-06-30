@@ -12,9 +12,9 @@ export const useTabManagement = (profile: any) => {
     const canManageExpenses = profile.role === 'admin' || profile.role === 'canteen';
     
     if (isBasicUser) {
-      setActiveTab('users');
+      setActiveTab('history'); // Show history for basic users
     } else if (canManageExpenses) {
-      setActiveTab('expenses');
+      setActiveTab('expenses'); // Show add expense for managers
     } else {
       setActiveTab('users');
     }

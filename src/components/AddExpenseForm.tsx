@@ -60,7 +60,14 @@ const AddExpenseForm = ({ onExpenseAdded }: AddExpenseFormProps) => {
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase
+      console.log('Adding expense:', {
+        user_name: userName.trim(),
+        amount: amountNum,
+        expense_date: expenseDate,
+        note: note.trim() || null
+      });
+
+      const { data, error } = await supabase
         .from('expenses')
         .insert([
           {
@@ -69,9 +76,15 @@ const AddExpenseForm = ({ onExpenseAdded }: AddExpenseFormProps) => {
             expense_date: expenseDate,
             note: note.trim() || null
           }
-        ]);
+        ])
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      console.log('Expense added successfully:', data);
 
       toast({
         title: "Success!",
@@ -84,7 +97,7 @@ const AddExpenseForm = ({ onExpenseAdded }: AddExpenseFormProps) => {
       setExpenseDate(format(new Date(), 'yyyy-MM-dd'));
       setNote('');
       
-      // Trigger refresh in parent and history
+      // Trigger refresh in parent components and today's history
       onExpenseAdded();
       setRefreshHistoryTrigger(prev => prev + 1);
 
@@ -92,7 +105,7 @@ const AddExpenseForm = ({ onExpenseAdded }: AddExpenseFormProps) => {
       console.error('Error adding expense:', error);
       toast({
         title: "Error",
-        description: "Failed to add expense. Please try again.",
+        description: `Failed to add expense: ${error?.message || 'Unknown error'}`,
         variant: "destructive"
       });
     } finally {
@@ -111,32 +124,35 @@ const AddExpenseForm = ({ onExpenseAdded }: AddExpenseFormProps) => {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-          <UserNameInput
-            value={userName}
-            onChange={setUserName}
-            className="sm:col-span-2 lg:col-span-1"
-          />
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border">
+        <h2 className="text-xl font-semibold mb-4">Add New Expense</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <UserNameInput
+              value={userName}
+              onChange={setUserName}
+              className="sm:col-span-2 lg:col-span-1"
+            />
 
-          <ExpenseFormFields
-            amount={amount}
-            onAmountChange={setAmount}
-            expenseDate={expenseDate}
-            onExpenseDateChange={setExpenseDate}
-            note={note}
-            onNoteChange={setNote}
-          />
-        </div>
+            <ExpenseFormFields
+              amount={amount}
+              onAmountChange={setAmount}
+              expenseDate={expenseDate}
+              onExpenseDateChange={setExpenseDate}
+              note={note}
+              onNoteChange={setNote}
+            />
+          </div>
 
-        <Button 
-          type="submit" 
-          className="w-full bg-orange-600 hover:bg-orange-700 text-sm sm:text-base py-2 sm:py-3"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? 'Saving...' : 'Save Expense'}
-        </Button>
-      </form>
+          <Button 
+            type="submit" 
+            className="w-full bg-orange-600 hover:bg-orange-700 text-sm sm:text-base py-2 sm:py-3"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Adding Expense...' : 'Add Expense'}
+          </Button>
+        </form>
+      </div>
 
       <TodayExpenseHistory refreshTrigger={refreshHistoryTrigger} />
     </div>
