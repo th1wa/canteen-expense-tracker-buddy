@@ -12,10 +12,11 @@ interface Payment {
 }
 
 interface PaymentHistoryProps {
-  payments: Payment[];
+  payments?: Payment[];
+  refreshTrigger: number;
 }
 
-const PaymentHistory = ({ payments }: PaymentHistoryProps) => {
+const PaymentHistory = ({ payments = [], refreshTrigger }: PaymentHistoryProps) => {
   if (!payments || payments.length === 0) {
     return (
       <Card className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border-slate-200 dark:border-slate-700">

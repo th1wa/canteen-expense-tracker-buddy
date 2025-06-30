@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,9 +21,10 @@ interface Expense {
 
 interface ExpenseHistoryProps {
   refreshTrigger: number;
+  onExpenseAdded: () => void;
 }
 
-const ExpenseHistory = ({ refreshTrigger }: ExpenseHistoryProps) => {
+const ExpenseHistory = ({ refreshTrigger, onExpenseAdded }: ExpenseHistoryProps) => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [filteredExpenses, setFilteredExpenses] = useState<Expense[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
