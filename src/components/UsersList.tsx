@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useUsersData } from "@/hooks/useUsersData";
 import { useAuth } from "@/contexts/AuthContext";
@@ -156,9 +155,7 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
           isOpen={showPaymentModal}
           onClose={() => setShowPaymentModal(false)}
           userName={selectedUser.user_name}
-          totalAmount={selectedUser.total_amount}
-          payments={selectedUser.payments}
-          onPaymentAdded={handlePaymentAdded}
+          totalExpense={selectedUser.remaining_balance || 0}
         />
       )}
     </div>

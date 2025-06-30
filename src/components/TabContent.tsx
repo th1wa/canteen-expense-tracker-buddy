@@ -7,7 +7,7 @@ import UsersList from "./UsersList";
 import DashboardStats from "./DashboardStats";
 import UserActivity from "./UserActivity";
 import BackupSystem from "./BackupSystem";
-import GoogleDriveBackup from "./GoogleDriveBackup";
+import UserManagement from "./UserManagement";
 
 interface TabContentProps {
   activeTab: string;
@@ -58,6 +58,21 @@ const TabContent: React.FC<TabContentProps> = ({
         }
         return <UserActivity />;
       
+      case 'user-management':
+        if (!profile || profile.role !== 'admin') {
+          return (
+            <div className="text-center py-8">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Access Denied
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                You don't have permission to manage users.
+              </p>
+            </div>
+          );
+        }
+        return <UserManagement />;
+      
       case 'backup':
         if (!profile || profile.role !== 'admin') {
           return (
@@ -72,21 +87,6 @@ const TabContent: React.FC<TabContentProps> = ({
           );
         }
         return <BackupSystem />;
-      
-      case 'google-drive':
-        if (!profile || profile.role !== 'admin') {
-          return (
-            <div className="text-center py-8">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Access Denied
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300">
-                You don't have permission to access Google Drive backup.
-              </p>
-            </div>
-          );
-        }
-        return <GoogleDriveBackup />;
       
       default:
         return <DashboardStats refreshTrigger={refreshTrigger} />;

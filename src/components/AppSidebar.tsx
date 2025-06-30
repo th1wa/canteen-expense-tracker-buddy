@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Calendar, Users, TrendingUp, PlusCircle, Settings, LogOut, FileBarChart, UserCheck, Activity } from "lucide-react";
+import { Calendar, Users, TrendingUp, PlusCircle, Settings, LogOut, UserCheck, Activity } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -16,7 +17,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
-import UserApprovalNotification from "@/components/UserApprovalNotification";
 
 interface AppSidebarProps {
   activeTab: string;
@@ -29,14 +29,13 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
   // Check permissions
   const canManageExpenses = profile && (profile.role === 'admin' || profile.role === 'canteen');
   const canAccessBackup = profile && profile.role === 'admin';
-  const canAccessSummary = profile && (profile.role === 'admin' || profile.role === 'hr');
   const canManageUsers = profile && profile.role === 'admin';
   const canViewActivity = profile && (profile.role === 'admin' || profile.role === 'hr');
   const isBasicUser = profile && profile.role === 'user';
 
   const menuItems = [
     ...(canManageExpenses ? [{
-      id: "add-expense",
+      id: "expenses",
       title: "Add Expense",
       icon: PlusCircle,
       description: "Record new expenses"
@@ -54,13 +53,13 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
       description: isBasicUser ? "View your balance" : "View user balances"
     },
     {
-      id: "history",
+      id: "payments",
       title: isBasicUser ? "My History" : "History",
       icon: Calendar,
       description: isBasicUser ? "Your transactions" : "Transaction history"
     },
     ...(canViewActivity ? [{
-      id: "user-activity",
+      id: "activity",
       title: "User Activity",
       icon: Activity,
       description: "View user login/logout activity"
@@ -71,17 +70,11 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
       icon: TrendingUp,
       description: "Stats & insights"
     },
-    ...(canAccessSummary ? [{
-      id: "summary",
-      title: "Summary Report",
-      icon: FileBarChart,
-      description: "Monthly user summary"
-    }] : []),
     ...(canAccessBackup ? [{
       id: "backup",
-      title: "Local Backup",
+      title: "Backup",
       icon: Settings,
-      description: "Data backup & import"
+      description: "Data backup & management"
     }] : [])
   ];
 

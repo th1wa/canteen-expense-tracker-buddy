@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import { getDefaultTab } from '@/utils/tabsConfig';
 
 export const useTabManagement = (profile: any) => {
   const [activeTab, setActiveTab] = useState('users');
@@ -9,8 +8,16 @@ export const useTabManagement = (profile: any) => {
   useEffect(() => {
     if (!profile) return;
     
-    const defaultTab = getDefaultTab(profile);
-    setActiveTab(defaultTab);
+    const isBasicUser = profile.role === 'user';
+    const canManageExpenses = profile.role === 'admin' || profile.role === 'canteen';
+    
+    if (isBasicUser) {
+      setActiveTab('users');
+    } else if (canManageExpenses) {
+      setActiveTab('expenses');
+    } else {
+      setActiveTab('users');
+    }
   }, [profile]);
 
   return {
