@@ -49,40 +49,6 @@ const BackupSystem = () => {
   const loadStorageBackups = async () => {
     try {
       setIsLoadingStorage(true);
-      
-      // First check if bucket exists, if not create it
-      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-      
-      if (bucketsError) {
-        console.error('Error listing buckets:', bucketsError);
-        toast({
-          title: "Storage Error",
-          description: "Could not access storage buckets",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const bucketExists = buckets?.some(bucket => bucket.name === 'automatic-backups');
-      
-      if (!bucketExists) {
-        console.log('Creating automatic-backups bucket...');
-        const { error: createError } = await supabase.storage.createBucket('automatic-backups', {
-          public: false,
-          allowedMimeTypes: ['application/json'],
-          fileSizeLimit: 52428800 // 50MB
-        });
-        
-        if (createError) {
-          console.error('Error creating bucket:', createError);
-          toast({
-            title: "Storage Setup Error",
-            description: "Could not create backup storage bucket",
-            variant: "destructive",
-          });
-          return;
-        }
-      }
 
       const { data: files, error } = await supabase.storage
         .from('automatic-backups')
@@ -472,7 +438,7 @@ const BackupSystem = () => {
           {storageBackups.length === 0 ? (
             <div className="text-center py-8 bg-gray-50 dark:bg-gray-900 rounded-lg">
               <p className="text-muted-foreground">
-                No automatic backups found yet. The first backup will be created at the next scheduled time.
+                No automatic backups found yet. Click "Test Backup" to create one now.
               </p>
             </div>
           ) : (
