@@ -16,9 +16,15 @@ import {
   DollarSign,
   FileText,
   FileSpreadsheet,
-  RefreshCw 
+  RefreshCw,
+  ArrowUp,
+  ArrowDown,
+  Clock,
+  Target,
+  CreditCard,
+  AlertCircle
 } from "lucide-react";
-import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, subDays } from "date-fns";
+import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, subDays, isToday, isYesterday } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -40,8 +46,16 @@ interface ReportData {
   paymentsByUser: { [key: string]: number };
   dailyExpenses: { date: string; amount: number }[];
   dailyPayments: { date: string; amount: number }[];
-  topSpenders: { name: string; amount: number }[];
+  topSpenders: { name: string; amount: number; payments: number; outstanding: number }[];
   recentTransactions: any[];
+  averageExpensePerUser: number;
+  collectionRate: number;
+  activeUsers: number;
+  settlementRate: number;
+  peakExpenseDay: { date: string; amount: number };
+  peakPaymentDay: { date: string; amount: number };
+  monthlyGrowth: number;
+  dailyAverage: number;
 }
 
 const ReportsAnalytics = () => {
@@ -93,7 +107,7 @@ const ReportsAnalytics = () => {
       const startDateStr = format(startDate, 'yyyy-MM-dd');
       const endDateStr = format(endDate, 'yyyy-MM-dd');
 
-      // Fetch expenses and payments
+      // Fetch current period data
       const [expensesResult, paymentsResult] = await Promise.all([
         supabase
           .from('expenses')
@@ -109,13 +123,30 @@ const ReportsAnalytics = () => {
           .order('payment_date', { ascending: false })
       ]);
 
+      // Fetch previous period for growth comparison
+      const prevStartDate = new Date(startDate);
+      prevStartDate.setMonth(prevStartDate.getMonth() - 1);
+      const prevEndDate = new Date(endDate);
+      prevEndDate.setMonth(prevEndDate.getMonth() - 1);
+
+      const [prevExpensesResult] = await Promise.all([
+        supabase
+          .from('expenses')
+          .select('amount')
+          .gte('expense_date', format(prevStartDate, 'yyyy-MM-dd'))
+          .lte('expense_date', format(prevEndDate, 'yyyy-MM-dd'))
+      ]);
+
       const expenses = expensesResult.data || [];
       const payments = paymentsResult.data || [];
+      const prevExpenses = prevExpensesResult.data || [];
 
       // Calculate totals
       const totalExpenses = expenses.reduce((sum, exp) => sum + parseFloat(exp.amount.toString()), 0);
       const totalPayments = payments.reduce((sum, pay) => sum + parseFloat(pay.amount.toString()), 0);
       const outstandingAmount = totalExpenses - totalPayments;
+      const prevTotalExpenses = prevExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount.toString()), 0);
+      const monthlyGrowth = prevTotalExpenses > 0 ? ((totalExpenses - prevTotalExpenses) / prevTotalExpenses) * 100 : 0;
 
       // Get unique users
       const allUsers = new Set([
@@ -123,6 +154,20 @@ const ReportsAnalytics = () => {
         ...payments.map(p => p.user_name)
       ]);
       const totalUsers = allUsers.size;
+      const activeUsers = new Set(expenses.map(e => e.user_name)).size;
+
+      // Calculate rates and averages
+      const averageExpensePerUser = totalUsers > 0 ? totalExpenses / totalUsers : 0;
+      const collectionRate = totalExpenses > 0 ? (totalPayments / totalExpenses) * 100 : 0;
+      const settlementRate = totalUsers > 0 ? (Array.from(allUsers).filter(user => {
+        const userExpenses = expenses.filter(e => e.user_name === user).reduce((sum, e) => sum + parseFloat(e.amount.toString()), 0);
+        const userPayments = payments.filter(p => p.user_name === user).reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
+        return userExpenses <= userPayments;
+      }).length / totalUsers) * 100 : 0;
+
+      // Calculate daily average
+      const daysDiff = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24)));
+      const dailyAverage = totalExpenses / daysDiff;
 
       // Expenses by user
       const expensesByUser: { [key: string]: number } = {};
@@ -151,17 +196,26 @@ const ReportsAnalytics = () => {
       const dailyExpenses = Object.entries(dailyExpenseMap).map(([date, amount]) => ({ date, amount }));
       const dailyPayments = Object.entries(dailyPaymentMap).map(([date, amount]) => ({ date, amount }));
 
-      // Top spenders
+      // Find peak days
+      const peakExpenseDay = dailyExpenses.reduce((max, day) => day.amount > max.amount ? day : max, { date: '', amount: 0 });
+      const peakPaymentDay = dailyPayments.reduce((max, day) => day.amount > max.amount ? day : max, { date: '', amount: 0 });
+
+      // Enhanced top spenders with more details
       const topSpenders = Object.entries(expensesByUser)
         .sort(([,a], [,b]) => b - a)
-        .slice(0, 10)
-        .map(([name, amount]) => ({ name, amount }));
+        .slice(0, 15)
+        .map(([name, amount]) => ({
+          name,
+          amount,
+          payments: paymentsByUser[name] || 0,
+          outstanding: amount - (paymentsByUser[name] || 0)
+        }));
 
       // Recent transactions (combine expenses and payments)
       const recentTransactions = [
-        ...expenses.slice(0, 10).map(exp => ({ ...exp, type: 'expense' })),
-        ...payments.slice(0, 10).map(pay => ({ ...pay, type: 'payment' }))
-      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 20);
+        ...expenses.slice(0, 15).map(exp => ({ ...exp, type: 'expense' })),
+        ...payments.slice(0, 15).map(pay => ({ ...pay, type: 'payment' }))
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 30);
 
       setReportData({
         totalExpenses,
@@ -173,7 +227,15 @@ const ReportsAnalytics = () => {
         dailyExpenses,
         dailyPayments,
         topSpenders,
-        recentTransactions
+        recentTransactions,
+        averageExpensePerUser,
+        collectionRate,
+        activeUsers,
+        settlementRate,
+        peakExpenseDay,
+        peakPaymentDay,
+        monthlyGrowth,
+        dailyAverage
       });
 
     } catch (error) {
@@ -215,24 +277,44 @@ const ReportsAnalytics = () => {
       let yPosition = 60;
 
       if (reportType === 'summary') {
-        // Summary statistics
-        doc.text(`Total Expenses: Rs. ${reportData.totalExpenses.toFixed(2)}`, 20, yPosition);
-        doc.text(`Total Payments: Rs. ${reportData.totalPayments.toFixed(2)}`, 20, yPosition + 10);
-        doc.text(`Outstanding Amount: Rs. ${reportData.outstandingAmount.toFixed(2)}`, 20, yPosition + 20);
-        doc.text(`Active Users: ${reportData.totalUsers}`, 20, yPosition + 30);
+        // Enhanced summary statistics
+        const stats = [
+          ['Total Expenses', `Rs. ${reportData.totalExpenses.toFixed(2)}`],
+          ['Total Payments', `Rs. ${reportData.totalPayments.toFixed(2)}`],
+          ['Outstanding Amount', `Rs. ${reportData.outstandingAmount.toFixed(2)}`],
+          ['Total Users', reportData.totalUsers.toString()],
+          ['Active Users', reportData.activeUsers.toString()],
+          ['Collection Rate', `${reportData.collectionRate.toFixed(1)}%`],
+          ['Settlement Rate', `${reportData.settlementRate.toFixed(1)}%`],
+          ['Average per User', `Rs. ${reportData.averageExpensePerUser.toFixed(2)}`],
+          ['Daily Average', `Rs. ${reportData.dailyAverage.toFixed(2)}`],
+          ['Monthly Growth', `${reportData.monthlyGrowth.toFixed(1)}%`]
+        ];
 
-        // Top spenders table
-        yPosition += 50;
         doc.autoTable({
-          head: [['User Name', 'Total Expenses', 'Payments Made', 'Outstanding']],
-          body: reportData.topSpenders.map(spender => [
-            spender.name,
-            `Rs. ${spender.amount.toFixed(2)}`,
-            `Rs. ${(reportData.paymentsByUser[spender.name] || 0).toFixed(2)}`,
-            `Rs. ${(spender.amount - (reportData.paymentsByUser[spender.name] || 0)).toFixed(2)}`
-          ]),
+          head: [['Metric', 'Value']],
+          body: stats,
           startY: yPosition,
           styles: { fontSize: 10 },
+          headStyles: { fillColor: [41, 128, 185] }
+        });
+
+        // Top spenders table
+        yPosition = (doc as any).lastAutoTable.finalY + 20;
+        doc.text('Top Spenders Analysis', 20, yPosition);
+        yPosition += 10;
+
+        doc.autoTable({
+          head: [['User Name', 'Total Expenses', 'Payments Made', 'Outstanding', 'Status']],
+          body: reportData.topSpenders.slice(0, 10).map(spender => [
+            spender.name,
+            `Rs. ${spender.amount.toFixed(2)}`,
+            `Rs. ${spender.payments.toFixed(2)}`,
+            `Rs. ${spender.outstanding.toFixed(2)}`,
+            spender.outstanding <= 0 ? 'Settled' : 'Pending'
+          ]),
+          startY: yPosition,
+          styles: { fontSize: 9 },
           headStyles: { fillColor: [41, 128, 185] }
         });
       } else if (reportType === 'individual' && userName) {
@@ -240,21 +322,35 @@ const ReportsAnalytics = () => {
         const userPayments = reportData.paymentsByUser[userName] || 0;
         const userOutstanding = userExpenses - userPayments;
 
-        doc.text(`User Expenses: Rs. ${userExpenses.toFixed(2)}`, 20, yPosition);
-        doc.text(`User Payments: Rs. ${userPayments.toFixed(2)}`, 20, yPosition + 10);
-        doc.text(`Outstanding: Rs. ${userOutstanding.toFixed(2)}`, 20, yPosition + 20);
-      } else {
-        // Detailed report with all data
+        const userStats = [
+          ['User Expenses', `Rs. ${userExpenses.toFixed(2)}`],
+          ['User Payments', `Rs. ${userPayments.toFixed(2)}`],
+          ['Outstanding', `Rs. ${userOutstanding.toFixed(2)}`],
+          ['Status', userOutstanding <= 0 ? 'Settled' : 'Pending'],
+          ['Collection Rate', `${userExpenses > 0 ? ((userPayments / userExpenses) * 100).toFixed(1) : 0}%`]
+        ];
+
         doc.autoTable({
-          head: [['User Name', 'Expenses', 'Payments', 'Outstanding']],
+          head: [['Metric', 'Value']],
+          body: userStats,
+          startY: yPosition,
+          styles: { fontSize: 10 },
+          headStyles: { fillColor: [41, 128, 185] }
+        });
+      } else {
+        // Detailed report with all users
+        doc.autoTable({
+          head: [['User Name', 'Expenses', 'Payments', 'Outstanding', 'Collection %', 'Status']],
           body: Object.keys(reportData.expensesByUser).map(user => [
             user,
             `Rs. ${reportData.expensesByUser[user].toFixed(2)}`,
             `Rs. ${(reportData.paymentsByUser[user] || 0).toFixed(2)}`,
-            `Rs. ${(reportData.expensesByUser[user] - (reportData.paymentsByUser[user] || 0)).toFixed(2)}`
+            `Rs. ${(reportData.expensesByUser[user] - (reportData.paymentsByUser[user] || 0)).toFixed(2)}`,
+            `${reportData.expensesByUser[user] > 0 ? (((reportData.paymentsByUser[user] || 0) / reportData.expensesByUser[user]) * 100).toFixed(1) : 0}%`,
+            (reportData.expensesByUser[user] - (reportData.paymentsByUser[user] || 0)) <= 0 ? 'Settled' : 'Pending'
           ]),
           startY: yPosition,
-          styles: { fontSize: 10 },
+          styles: { fontSize: 8 },
           headStyles: { fillColor: [41, 128, 185] }
         });
       }
@@ -298,11 +394,17 @@ const ReportsAnalytics = () => {
         csvContent += `Total Expenses,Rs. ${reportData.totalExpenses.toFixed(2)}\n`;
         csvContent += `Total Payments,Rs. ${reportData.totalPayments.toFixed(2)}\n`;
         csvContent += `Outstanding Amount,Rs. ${reportData.outstandingAmount.toFixed(2)}\n`;
-        csvContent += `Active Users,${reportData.totalUsers}\n\n`;
+        csvContent += `Total Users,${reportData.totalUsers}\n`;
+        csvContent += `Active Users,${reportData.activeUsers}\n`;
+        csvContent += `Collection Rate,${reportData.collectionRate.toFixed(1)}%\n`;
+        csvContent += `Settlement Rate,${reportData.settlementRate.toFixed(1)}%\n`;
+        csvContent += `Average per User,Rs. ${reportData.averageExpensePerUser.toFixed(2)}\n`;
+        csvContent += `Daily Average,Rs. ${reportData.dailyAverage.toFixed(2)}\n`;
+        csvContent += `Monthly Growth,${reportData.monthlyGrowth.toFixed(1)}%\n\n`;
         
-        csvContent += `User Name,Total Expenses,Payments Made,Outstanding\n`;
+        csvContent += `User Name,Total Expenses,Payments Made,Outstanding,Status\n`;
         reportData.topSpenders.forEach(spender => {
-          csvContent += `${spender.name},Rs. ${spender.amount.toFixed(2)},Rs. ${(reportData.paymentsByUser[spender.name] || 0).toFixed(2)},Rs. ${(spender.amount - (reportData.paymentsByUser[spender.name] || 0)).toFixed(2)}\n`;
+          csvContent += `${spender.name},Rs. ${spender.amount.toFixed(2)},Rs. ${spender.payments.toFixed(2)},Rs. ${spender.outstanding.toFixed(2)},${spender.outstanding <= 0 ? 'Settled' : 'Pending'}\n`;
         });
       } else if (reportType === 'individual' && userName) {
         const userExpenses = reportData.expensesByUser[userName] || 0;
@@ -310,10 +412,15 @@ const ReportsAnalytics = () => {
         csvContent += `User Expenses,Rs. ${userExpenses.toFixed(2)}\n`;
         csvContent += `User Payments,Rs. ${userPayments.toFixed(2)}\n`;
         csvContent += `Outstanding,Rs. ${(userExpenses - userPayments).toFixed(2)}\n`;
+        csvContent += `Status,${(userExpenses - userPayments) <= 0 ? 'Settled' : 'Pending'}\n`;
       } else {
-        csvContent += `User Name,Expenses,Payments,Outstanding\n`;
+        csvContent += `User Name,Expenses,Payments,Outstanding,Collection %,Status\n`;
         Object.keys(reportData.expensesByUser).forEach(user => {
-          csvContent += `${user},Rs. ${reportData.expensesByUser[user].toFixed(2)},Rs. ${(reportData.paymentsByUser[user] || 0).toFixed(2)},Rs. ${(reportData.expensesByUser[user] - (reportData.paymentsByUser[user] || 0)).toFixed(2)}\n`;
+          const expenses = reportData.expensesByUser[user];
+          const payments = reportData.paymentsByUser[user] || 0;
+          const outstanding = expenses - payments;
+          const collectionRate = expenses > 0 ? ((payments / expenses) * 100).toFixed(1) : '0';
+          csvContent += `${user},Rs. ${expenses.toFixed(2)},Rs. ${payments.toFixed(2)},Rs. ${outstanding.toFixed(2)},${collectionRate}%,${outstanding <= 0 ? 'Settled' : 'Pending'}\n`;
         });
       }
 
@@ -361,18 +468,19 @@ const ReportsAnalytics = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
             <FileBarChart className="w-5 h-5" />
-            Reports & Analytics
+            Reports & Analytics Dashboard
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <CardContent className="space-y-4">
+          {/* Date Range Controls */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <Select value={dateRange} onValueChange={setDateRange}>
-              <SelectTrigger className="w-full md:w-48">
+              <SelectTrigger className="w-full sm:w-40">
                 <SelectValue placeholder="Select period" />
               </SelectTrigger>
               <SelectContent>
@@ -390,13 +498,14 @@ const ReportsAnalytics = () => {
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
+                      size="sm"
                       className={cn(
                         "justify-start text-left font-normal",
                         !customDateFrom && "text-muted-foreground"
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {customDateFrom ? format(customDateFrom, "PPP") : "From date"}
+                      {customDateFrom ? format(customDateFrom, "PPP") : "From"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
@@ -413,13 +522,14 @@ const ReportsAnalytics = () => {
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
+                      size="sm"
                       className={cn(
                         "justify-start text-left font-normal",
                         !customDateTo && "text-muted-foreground"
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {customDateTo ? format(customDateTo, "PPP") : "To date"}
+                      {customDateTo ? format(customDateTo, "PPP") : "To"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
@@ -434,143 +544,190 @@ const ReportsAnalytics = () => {
               </div>
             )}
 
-            <Button onClick={fetchReportData} variant="outline" disabled={loading}>
+            <Button onClick={fetchReportData} variant="outline" size="sm" disabled={loading}>
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>
           </div>
 
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-blue-500" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Expenses</p>
-                    <p className="text-xl font-bold">Rs. {reportData.totalExpenses.toFixed(2)}</p>
-                  </div>
+          {/* Compact Summary Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
+            <Card className="p-3">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-blue-500" />
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Total Expenses</p>
+                  <p className="text-sm font-bold truncate">Rs. {reportData.totalExpenses.toFixed(0)}</p>
                 </div>
-              </CardContent>
+              </div>
             </Card>
 
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-green-500" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Payments</p>
-                    <p className="text-xl font-bold">Rs. {reportData.totalPayments.toFixed(2)}</p>
-                  </div>
+            <Card className="p-3">
+              <div className="flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-green-500" />
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Collections</p>
+                  <p className="text-sm font-bold truncate">Rs. {reportData.totalPayments.toFixed(0)}</p>
                 </div>
-              </CardContent>
+              </div>
             </Card>
 
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-purple-500" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Active Users</p>
-                    <p className="text-xl font-bold">{reportData.totalUsers}</p>
-                  </div>
+            <Card className="p-3">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-500" />
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Outstanding</p>
+                  <p className="text-sm font-bold truncate">Rs. {reportData.outstandingAmount.toFixed(0)}</p>
                 </div>
-              </CardContent>
+              </div>
             </Card>
 
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-red-500" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Outstanding</p>
-                    <p className="text-xl font-bold">Rs. {reportData.outstandingAmount.toFixed(2)}</p>
-                  </div>
+            <Card className="p-3">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-purple-500" />
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Users</p>
+                  <p className="text-sm font-bold">{reportData.activeUsers}/{reportData.totalUsers}</p>
                 </div>
-              </CardContent>
+              </div>
             </Card>
+
+            <Card className="p-3">
+              <div className="flex items-center gap-2">
+                <Target className="w-4 h-4 text-orange-500" />
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Collection Rate</p>
+                  <p className="text-sm font-bold">{reportData.collectionRate.toFixed(1)}%</p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-3">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-teal-500" />
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Daily Avg</p>
+                  <p className="text-sm font-bold truncate">Rs. {reportData.dailyAverage.toFixed(0)}</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Additional Metrics */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            <div className="text-center p-2 bg-muted rounded-lg">
+              <p className="text-xs text-muted-foreground">Settlement Rate</p>
+              <p className="text-sm font-semibold">{reportData.settlementRate.toFixed(1)}%</p>
+            </div>
+            <div className="text-center p-2 bg-muted rounded-lg">
+              <p className="text-xs text-muted-foreground">Avg per User</p>
+              <p className="text-sm font-semibold">Rs. {reportData.averageExpensePerUser.toFixed(0)}</p>
+            </div>
+            <div className="text-center p-2 bg-muted rounded-lg">
+              <p className="text-xs text-muted-foreground">Monthly Growth</p>
+              <p className={cn("text-sm font-semibold flex items-center justify-center gap-1", 
+                reportData.monthlyGrowth >= 0 ? "text-green-600" : "text-red-600")}>
+                {reportData.monthlyGrowth >= 0 ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+                {Math.abs(reportData.monthlyGrowth).toFixed(1)}%
+              </p>
+            </div>
+            <div className="text-center p-2 bg-muted rounded-lg">
+              <p className="text-xs text-muted-foreground">Peak Day</p>
+              <p className="text-sm font-semibold">Rs. {reportData.peakExpenseDay.amount.toFixed(0)}</p>
+            </div>
           </div>
 
           {/* Export Options */}
           <Tabs defaultValue="summary" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="summary">Summary Reports</TabsTrigger>
-              <TabsTrigger value="detailed">Detailed Reports</TabsTrigger>
-              <TabsTrigger value="individual">Individual Reports</TabsTrigger>
+              <TabsTrigger value="summary">Summary</TabsTrigger>
+              <TabsTrigger value="detailed">Detailed</TabsTrigger>
+              <TabsTrigger value="individual">Individual</TabsTrigger>
             </TabsList>
 
             <TabsContent value="summary" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Summary Report Export</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-4">
-                    <Button 
-                      onClick={() => exportToPDF('summary')}
-                      disabled={exporting}
-                      className="flex items-center gap-2"
-                    >
-                      <FileText className="w-4 h-4" />
-                      Export PDF
-                    </Button>
-                    <Button 
-                      onClick={() => exportToExcel('summary')}
-                      disabled={exporting}
-                      variant="outline"
-                      className="flex items-center gap-2"
-                    >
-                      <FileSpreadsheet className="w-4 h-4" />
-                      Export Excel
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Card className="flex-1">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">Summary Report Export</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={() => exportToPDF('summary')}
+                        disabled={exporting}
+                        size="sm"
+                        className="flex items-center gap-2"
+                      >
+                        <FileText className="w-4 h-4" />
+                        PDF
+                      </Button>
+                      <Button 
+                        onClick={() => exportToExcel('summary')}
+                        disabled={exporting}
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                      >
+                        <FileSpreadsheet className="w-4 h-4" />
+                        Excel
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
 
-              {/* Top Spenders */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Top Spenders</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {reportData.topSpenders.slice(0, 5).map((spender, index) => (
-                      <div key={spender.name} className="flex justify-between items-center p-2 bg-muted rounded">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">#{index + 1}</Badge>
-                          <span>{spender.name}</span>
+                {/* Top Spenders */}
+                <Card className="flex-1">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">Top Spenders</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {reportData.topSpenders.slice(0, 6).map((spender, index) => (
+                        <div key={spender.name} className="flex justify-between items-center text-xs p-1 bg-muted rounded">
+                          <div className="flex items-center gap-1">
+                            <Badge variant="outline" className="text-xs px-1">#{index + 1}</Badge>
+                            <span className="truncate max-w-20">{spender.name}</span>
+                          </div>
+                          <div className="flex gap-2 text-xs">
+                            <span className="text-green-600">Rs. {spender.amount.toFixed(0)}</span>
+                            {spender.outstanding > 0 && (
+                              <span className="text-red-600">(-{spender.outstanding.toFixed(0)})</span>
+                            )}
+                          </div>
                         </div>
-                        <span className="font-semibold">Rs. {spender.amount.toFixed(2)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             <TabsContent value="detailed" className="space-y-4">
               <Card>
-                <CardHeader>
-                  <CardTitle>Detailed Report Export</CardTitle>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Detailed Report Export</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex gap-4">
+                  <div className="flex gap-2">
                     <Button 
                       onClick={() => exportToPDF('detailed')}
                       disabled={exporting}
+                      size="sm"
                       className="flex items-center gap-2"
                     >
                       <FileText className="w-4 h-4" />
-                      Export PDF
+                      PDF
                     </Button>
                     <Button 
                       onClick={() => exportToExcel('detailed')}
                       disabled={exporting}
                       variant="outline"
+                      size="sm"
                       className="flex items-center gap-2"
                     >
                       <FileSpreadsheet className="w-4 h-4" />
-                      Export Excel
+                      Excel
                     </Button>
                   </div>
                 </CardContent>
@@ -579,38 +736,39 @@ const ReportsAnalytics = () => {
 
             <TabsContent value="individual" className="space-y-4">
               <Card>
-                <CardHeader>
-                  <CardTitle>Individual User Reports</CardTitle>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Individual User Reports</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {Object.keys(reportData.expensesByUser).map(userName => (
-                      <div key={userName} className="flex justify-between items-center p-4 border rounded">
-                        <div>
-                          <h4 className="font-medium">{userName}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            Expenses: Rs. {reportData.expensesByUser[userName].toFixed(2)} | 
-                            Payments: Rs. {(reportData.paymentsByUser[userName] || 0).toFixed(2)} | 
-                            Outstanding: Rs. {(reportData.expensesByUser[userName] - (reportData.paymentsByUser[userName] || 0)).toFixed(2)}
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {Object.keys(reportData.expensesByUser).slice(0, 10).map(userName => (
+                      <div key={userName} className="flex justify-between items-center p-2 border rounded text-xs">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium truncate">{userName}</h4>
+                          <p className="text-muted-foreground">
+                            Exp: Rs. {reportData.expensesByUser[userName].toFixed(0)} | 
+                            Pay: Rs. {(reportData.paymentsByUser[userName] || 0).toFixed(0)} | 
+                            Rem: Rs. {(reportData.expensesByUser[userName] - (reportData.paymentsByUser[userName] || 0)).toFixed(0)}
                           </p>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-1">
                           <Button 
                             size="sm"
+                            variant="outline"
                             onClick={() => exportToPDF('individual', userName)}
                             disabled={exporting}
+                            className="text-xs px-2 py-1 h-auto"
                           >
-                            <FileText className="w-4 h-4 mr-1" />
-                            PDF
+                            <FileText className="w-3 h-3" />
                           </Button>
                           <Button 
                             size="sm"
                             variant="outline"
                             onClick={() => exportToExcel('individual', userName)}
                             disabled={exporting}
+                            className="text-xs px-2 py-1 h-auto"
                           >
-                            <FileSpreadsheet className="w-4 h-4 mr-1" />
-                            Excel
+                            <FileSpreadsheet className="w-3 h-3" />
                           </Button>
                         </div>
                       </div>
@@ -620,6 +778,35 @@ const ReportsAnalytics = () => {
               </Card>
             </TabsContent>
           </Tabs>
+
+          {/* Recent Activity */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Recent Activity</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-1 max-h-32 overflow-y-auto">
+                {reportData.recentTransactions.slice(0, 8).map((transaction, index) => (
+                  <div key={transaction.id || index} className="flex justify-between items-center text-xs p-1 rounded hover:bg-muted">
+                    <div className="flex items-center gap-2">
+                      <Badge variant={transaction.type === 'expense' ? 'destructive' : 'default'} className="text-xs px-1">
+                        {transaction.type === 'expense' ? 'EXP' : 'PAY'}
+                      </Badge>
+                      <span className="truncate max-w-24">{transaction.user_name}</span>
+                      <span className="text-muted-foreground">
+                        {format(new Date(transaction.expense_date || transaction.payment_date), 'MMM dd')}
+                      </span>
+                    </div>
+                    <span className={cn("font-medium", 
+                      transaction.type === 'expense' ? "text-red-600" : "text-green-600"
+                    )}>
+                      Rs. {parseFloat(transaction.amount.toString()).toFixed(0)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </CardContent>
       </Card>
     </div>
