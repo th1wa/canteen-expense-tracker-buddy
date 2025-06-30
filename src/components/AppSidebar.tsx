@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Calendar, Users, TrendingUp, PlusCircle, Settings, LogOut, FileBarChart } from "lucide-react";
+import { Calendar, Users, TrendingUp, PlusCircle, Settings, LogOut, FileBarChart, UserCheck, Activity } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -17,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
+import UserApprovalNotification from "@/components/UserApprovalNotification";
 
 interface AppSidebarProps {
   activeTab: string;
@@ -30,6 +30,8 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
   const canManageExpenses = profile && (profile.role === 'admin' || profile.role === 'canteen');
   const canAccessBackup = profile && profile.role === 'admin';
   const canAccessSummary = profile && (profile.role === 'admin' || profile.role === 'hr');
+  const canManageUsers = profile && profile.role === 'admin';
+  const canViewActivity = profile && (profile.role === 'admin' || profile.role === 'hr');
   const isBasicUser = profile && profile.role === 'user';
 
   const menuItems = [
@@ -38,6 +40,12 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
       title: "Add Expense",
       icon: PlusCircle,
       description: "Record new expenses"
+    }] : []),
+    ...(canManageUsers ? [{
+      id: "user-management",
+      title: "User Management",
+      icon: UserCheck,
+      description: "Manage user roles and permissions"
     }] : []),
     {
       id: "users",
@@ -51,6 +59,12 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
       icon: Calendar,
       description: isBasicUser ? "Your transactions" : "Transaction history"
     },
+    ...(canViewActivity ? [{
+      id: "user-activity",
+      title: "User Activity",
+      icon: Activity,
+      description: "View user login/logout activity"
+    }] : []),
     {
       id: "dashboard",
       title: "Analytics",

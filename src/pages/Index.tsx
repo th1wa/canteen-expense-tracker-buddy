@@ -8,6 +8,7 @@ import TabContent from "@/components/TabContent";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTabManagement } from "@/hooks/useTabManagement";
 import { useGlobalProfileListener } from "@/hooks/useGlobalProfileListener";
+import { useActivityTracker } from "@/hooks/useActivityTracker";
 
 const Index = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -16,6 +17,9 @@ const Index = () => {
 
   // Set up global real-time listener for profile changes
   useGlobalProfileListener();
+  
+  // Track user activity for login/logout monitoring
+  useActivityTracker();
 
   const handleExpenseAdded = () => {
     setRefreshTrigger(prev => prev + 1);
