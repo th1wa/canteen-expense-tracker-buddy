@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { QueryClient } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
 import { Toaster } from "@/components/ui/toaster"
 
@@ -10,9 +11,11 @@ import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SummaryReport from "./pages/SummaryReport";
 
+const queryClient = new QueryClient();
+
 function App() {
   return (
-    <QueryClient>
+    <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <BrowserRouter>
           <div className="min-h-screen bg-background">
@@ -34,7 +37,7 @@ function App() {
           </div>
         </BrowserRouter>
       </AuthProvider>
-    </QueryClient>
+    </QueryClientProvider>
   );
 }
 
