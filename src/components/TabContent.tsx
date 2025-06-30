@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { PlusCircle, Users, Calendar, TrendingUp, Settings, FileBarChart, UserCheck, Activity } from "lucide-react";
 import { DashboardCard } from "@/components/DashboardCard";
@@ -7,7 +8,7 @@ import DashboardStats from "@/components/DashboardStats";
 import ExpenseHistory from "@/components/ExpenseHistory";
 import LocalBackupSystem from "@/components/LocalBackupSystem";
 import UserExpenseSummary from "@/components/UserExpenseSummary";
-import UserApprovalNotification from "@/components/UserApprovalNotification";
+import UserManagement from "@/components/UserManagement";
 import UserActivity from "@/components/UserActivity";
 
 interface TabContentProps {
@@ -71,54 +72,10 @@ const TabContent: React.FC<TabContentProps> = ({
       );
 
     case 'user-management':
-      if (!canManageUsers) {
-        return (
-          <DashboardCard
-            title="Access Denied"
-            description="You don't have permission to manage users"
-            icon={UserCheck}
-          >
-            <div className="text-center py-4 sm:py-6 md:py-8">
-              <h2 className="text-lg sm:text-xl font-semibold text-destructive mb-2">Access Denied</h2>
-              <p className="text-sm sm:text-base text-muted-foreground">Only admin users can manage user roles and permissions.</p>
-            </div>
-          </DashboardCard>
-        );
-      }
-      return (
-        <DashboardCard
-          title="User Management"
-          description="Manage user roles and permissions"
-          icon={UserCheck}
-        >
-          <UserApprovalNotification />
-        </DashboardCard>
-      );
+      return <UserManagement />;
 
     case 'user-activity':
-      if (!canViewActivity) {
-        return (
-          <DashboardCard
-            title="Access Denied"
-            description="You don't have permission to view user activity"
-            icon={Activity}
-          >
-            <div className="text-center py-4 sm:py-6 md:py-8">
-              <h2 className="text-lg sm:text-xl font-semibold text-destructive mb-2">Access Denied</h2>
-              <p className="text-sm sm:text-base text-muted-foreground">Only admin and HR users can view user activity.</p>
-            </div>
-          </DashboardCard>
-        );
-      }
-      return (
-        <DashboardCard
-          title="User Activity Monitor"
-          description="Track user login/logout activity and session information"
-          icon={Activity}
-        >
-          <UserActivity />
-        </DashboardCard>
-      );
+      return <UserActivity />;
 
     case 'users':
       return (
