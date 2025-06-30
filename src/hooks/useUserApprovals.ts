@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,6 +10,13 @@ interface PendingUser {
   role: 'admin' | 'hr' | 'canteen' | 'user';
   first_name: string | null;
   last_name: string | null;
+  phone_number: string | null;
+  department: string | null;
+  employee_id: string | null;
+  join_date: string | null;
+  address: string | null;
+  emergency_contact: string | null;
+  notes: string | null;
 }
 
 export const useUserApprovals = () => {
