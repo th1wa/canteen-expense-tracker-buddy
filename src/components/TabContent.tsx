@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import ExpenseHistory from "./ExpenseHistory";
 import PaymentHistory from "./PaymentHistory";
-import UsersList from "./UsersList";
 import DashboardStats from "./DashboardStats";
 import UserActivity from "./UserActivity";
 import BackupSystem from "./BackupSystem";
@@ -69,47 +68,6 @@ const TabContent: React.FC<TabContentProps> = ({
               refreshTrigger={refreshTrigger + localRefreshTrigger} 
               onExpenseAdded={handleExpenseAdded}
             />
-          </div>
-        );
-      
-      case 'payments':
-        // HR users should not access user balances
-        if (profile?.role === 'hr') {
-          return (
-            <div className="text-center py-8 animate-fade-in">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Access Denied
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300">
-                HR users don't have permission to view user balances.
-              </p>
-            </div>
-          );
-        }
-        return (
-          <div className="animate-fade-in">
-            <UsersList refreshTrigger={refreshTrigger + localRefreshTrigger} />
-          </div>
-        );
-      
-      case 'users':
-        // This tab shows UsersList for admin/canteen users to manage user balances and payments
-        // For canteen users, this should show user balances with payment management capabilities
-        if (profile?.role === 'hr') {
-          return (
-            <div className="text-center py-8 animate-fade-in">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Access Denied
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300">
-                HR users don't have permission to view user balances.
-              </p>
-            </div>
-          );
-        }
-        return (
-          <div className="animate-fade-in">
-            <UsersList refreshTrigger={refreshTrigger + localRefreshTrigger} />
           </div>
         );
 

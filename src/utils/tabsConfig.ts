@@ -1,5 +1,5 @@
 
-import { PlusCircle, Users, Calendar, TrendingUp, Settings, FileBarChart } from "lucide-react";
+import { PlusCircle, Calendar, TrendingUp, Settings, FileBarChart, CreditCard } from "lucide-react";
 
 export interface TabConfig {
   id: string;
@@ -17,7 +17,6 @@ export const getTabsConfig = (profile: any): TabConfig[] => {
 
   const canManageExpenses = profile.role === 'admin' || profile.role === 'canteen';
   const canAccessBackup = profile.role === 'admin';
-  const canAccessSummary = profile.role === 'admin' || profile.role === 'hr';
   const canAccessReports = profile.role === 'admin' || profile.role === 'hr';
   const canAccessPaymentHistory = profile.role === 'admin' || profile.role === 'hr' || profile.role === 'canteen';
   const isBasicUser = profile.role === 'user';
@@ -25,10 +24,10 @@ export const getTabsConfig = (profile: any): TabConfig[] => {
 
   const tabs: TabConfig[] = [];
 
-  // Switched order: Add Expense comes first
+  // Add Expense comes first for canteen and admin users
   if (canManageExpenses) {
     tabs.push({
-      id: 'add-expense',
+      id: 'expenses',
       title: 'Add New Expense', 
       description: 'Record a payment made by a canteen user',
       icon: PlusCircle
@@ -47,25 +46,13 @@ export const getTabsConfig = (profile: any): TabConfig[] => {
     });
   }
 
-  // HR users should not see user balances
-  if (!isHRUser) {
-    tabs.push({
-      id: 'users',
-      title: isBasicUser ? 'My Payment Status' : 'Users & Payment Status',
-      description: isBasicUser 
-        ? 'View your spending, payments, and outstanding balance' 
-        : 'View all users with their spending, payments, and outstanding balances',
-      icon: Users
-    });
-  }
-
   // Payment History - available for admin, HR, and canteen users
   if (canAccessPaymentHistory) {
     tabs.push({
       id: 'payment-history',
       title: 'Payment History',
       description: 'View payment records and transactions',
-      icon: Calendar
+      icon: CreditCard
     });
   }
 
@@ -87,15 +74,6 @@ export const getTabsConfig = (profile: any): TabConfig[] => {
     });
   }
 
-  if (canAccessSummary) {
-    tabs.push({
-      id: 'summary',
-      title: 'User Expense & Payment Summary',
-      description: 'Monthly breakdown of all users\' expenses and payments',
-      icon: FileBarChart
-    });
-  }
-
   if (canAccessBackup) {
     tabs.push({
       id: 'backup',
@@ -109,7 +87,7 @@ export const getTabsConfig = (profile: any): TabConfig[] => {
 };
 
 export const getDefaultTab = (profile: any): string => {
-  if (!profile) return 'users';
+  if (!profile) return 'payment-history';
   
   const isBasicUser = profile.role === 'user';
   const canManageExpenses = profile.role === 'admin' || profile.role === 'canteen';
@@ -120,16 +98,16 @@ export const getDefaultTab = (profile: any): string => {
     return 'payment-history';
   }
   
-  // Canteen users default to add expense (switched order)
+  // Canteen users default to add expense
   if (profile.role === 'canteen') {
-    return 'add-expense';
+    return 'expenses';
   }
   
   if (isBasicUser) {
-    return 'users';
+    return 'history';
   } else if (canManageExpenses) {
-    return 'add-expense';
+    return 'expenses';
   }
   
-  return 'users';
+  return 'payment-history';
 };

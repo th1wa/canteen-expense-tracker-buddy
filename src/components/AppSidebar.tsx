@@ -51,15 +51,9 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
       icon: History,
       description: isBasicUser ? "Your expense history" : "All expense records"
     }] : []),
-    // HR users should NOT see user balances
-    ...(!isHRUser ? [{
-      id: "payments",
-      title: isBasicUser ? "My Balance" : "User Balances",
-      icon: Users,
-      description: isBasicUser ? "View your balance" : "View user balances and manage payments"
-    }] : []),
+    // Removed User Balances tab for all users
     ...(canAccessPaymentHistory ? [{
-      id: "users",
+      id: "payment-history",
       title: isBasicUser ? "My Payments" : "Payment History",
       icon: CreditCard,
       description: isBasicUser ? "Your payment records" : "All payment records"
