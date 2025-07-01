@@ -6,12 +6,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { Calendar as CalendarIcon, Search, Filter, Download, RefreshCw, User, FileText } from "lucide-react";
+import { Calendar as CalendarIcon, Search, Filter, Download, RefreshCw, User, FileText, Plus } from "lucide-react";
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBasicUserExport } from "@/hooks/useBasicUserExport";
+import PaymentModal from "./PaymentModal";
 import { cn } from "@/lib/utils";
 
 interface Payment {
@@ -37,12 +38,15 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
   const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>();
   const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
   const [uniqueUsers, setUniqueUsers] = useState<string[]>([]);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedUserForPayment, setSelectedUserForPayment] = useState<string>('');
   const { toast } = useToast();
   const { profile } = useAuth();
   const { isExporting: isBasicUserExporting, exportToExcel: exportBasicUserToExcel, exportToPDF: exportBasicUserToPDF } = useBasicUserExport(profile?.username || '');
 
   const hasAccess = profile?.role === 'admin' || profile?.role === 'hr' || profile?.role === 'canteen' || profile?.role === 'user';
   const isBasicUser = profile?.role === 'user';
+  const canAddPayments = profile?.role === 'admin' || profile?.role === 'canteen';
 
   const fetchPayments = async () => {
     try {
@@ -89,7 +93,7 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
 
   useEffect(() => {
     fetchPayments();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, profile]);
 
   useEffect(() => {
     let filtered = [...payments];
@@ -183,6 +187,22 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
     setCustomDateTo(undefined);
   };
 
+  const handleAddPayment = (userName?: string) => {
+    if (userName) {
+      setSelectedUserForPayment(userName);
+    } else {
+      // For general add payment, use the first user or empty
+      setSelectedUserForPayment(uniqueUsers[0] || '');
+    }
+    setShowPaymentModal(true);
+  };
+
+  const handlePaymentAdded = () => {
+    // Refresh payments when a new payment is added
+    fetchPayments();
+    setShowPaymentModal(false);
+  };
+
   const exportToExcel = async (exportType: 'all' | 'filtered' | string) => {
     setIsExporting(true);
     try {
@@ -269,6 +289,18 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
               </CardDescription>
             </div>
             <div className="flex gap-2">
+              {canAddPayments && (
+                <Button
+                  onClick={() => handleAddPayment()}
+                  variant="default"
+                  size="sm"
+                  className="h-8 px-3 text-xs bg-green-600 hover:bg-green-700"
+                >
+                  <Plus className="w-3 h-3 mr-1" />
+                  Add Payment
+                </Button>
+              )}
+              
               <Button
                 onClick={fetchPayments}
                 disabled={isLoading}
@@ -330,7 +362,6 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
                   </PopoverContent>
                 </Popover>
               ) : (
-                
                 <div className="relative">
                   <Popover>
                     <PopoverTrigger asChild>
@@ -542,6 +573,17 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
                 <p className="text-xs text-muted-foreground">
                   {payments.length === 0 ? "No payments found" : "No payments match the current filters"}
                 </p>
+                {canAddPayments && payments.length === 0 && (
+                  <Button
+                    onClick={() => handleAddPayment()}
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                  >
+                    <Plus className="w-3 h-3 mr-1" />
+                    Add First Payment
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="max-h-80 overflow-y-auto space-y-1 border rounded-lg">
@@ -556,6 +598,17 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
                         <Badge variant="outline" className="text-xs px-1">
                           #{(filteredPayments.length - index).toString().padStart(3, '0')}
                         </Badge>
+                        {canAddPayments && !isBasicUser && (
+                          <Button
+                            onClick={() => handleAddPayment(payment.user_name)}
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs"
+                          >
+                            <Plus className="w-3 h-3 mr-1" />
+                            Add
+                          </Button>
+                        )}
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {format(new Date(payment.payment_date), 'MMM dd, yyyy')} • {format(new Date(payment.created_at), 'HH:mm')}
@@ -576,6 +629,17 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Payment Modal */}
+      {showPaymentModal && (
+        <PaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          userName={selectedUserForPayment}
+          totalExpense={0} // Will be calculated in the modal
+          onPaymentAdded={handlePaymentAdded}
+        />
+      )}
     </div>
   );
 };
