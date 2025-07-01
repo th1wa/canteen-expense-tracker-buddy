@@ -117,7 +117,7 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
   const canManagePayments = profile?.role === 'admin' || profile?.role === 'canteen';
 
   return (
-    <div className="w-full max-w-none space-y-6 p-0">
+    <div className="w-full space-y-6">
       {/* Filter Controls */}
       <div className="w-full">
         <UserFilters

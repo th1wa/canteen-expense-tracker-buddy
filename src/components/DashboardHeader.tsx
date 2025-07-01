@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { LogOut, Coffee } from "lucide-react";
 import ThemeToggle from './ThemeToggle';
 import { Badge } from "@/components/ui/badge";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 const DashboardHeader = () => {
   const { profile, signOut } = useAuth();
@@ -30,10 +31,11 @@ const DashboardHeader = () => {
   };
 
   return (
-    <header className="bg-white dark:bg-gray-800 shadow-sm border-b">
-      <div className="max-w-7xl mx-auto container-mobile">
+    <header className="bg-white dark:bg-gray-800 shadow-sm border-b sticky top-0 z-10">
+      <div className="max-w-full mx-auto px-4 sm:px-6 md:px-8">
         <div className="flex justify-between items-center h-12 sm:h-14 md:h-16">
           <div className="flex items-center min-w-0 flex-1">
+            <SidebarTrigger className="mr-2 md:hidden" />
             <Coffee className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-orange-600 mr-2 sm:mr-3 flex-shrink-0" />
             <h1 className="text-base sm:text-lg md:text-2xl font-bold text-gray-900 dark:text-white truncate">
               <span className="hidden sm:inline">Canteen Buddy</span>
@@ -58,7 +60,7 @@ const DashboardHeader = () => {
               variant="outline"
               size="sm"
               onClick={signOut}
-              className="flex items-center space-x-1 sm:space-x-2 btn-mobile text-xs sm:text-sm"
+              className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm"
             >
               <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Sign Out</span>
