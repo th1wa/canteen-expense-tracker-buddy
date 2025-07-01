@@ -9,6 +9,7 @@ import BackupSystem from "./BackupSystem";
 import UserManagement from "./UserManagement";
 import AddExpenseForm from "./AddExpenseForm";
 import ReportsAnalytics from "./ReportsAnalytics";
+import AddUserForm from "./AddUserForm";
 
 interface TabContentProps {
   activeTab: string;
@@ -114,6 +115,25 @@ const TabContent: React.FC<TabContentProps> = ({
         return (
           <div className="animate-fade-in">
             <UserActivity />
+          </div>
+        );
+      
+      case 'add-user':
+        if (!profile || profile.role !== 'admin') {
+          return (
+            <div className="text-center py-8 animate-fade-in">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Access Denied
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                Only administrators can add new users.
+              </p>
+            </div>
+          );
+        }
+        return (
+          <div className="animate-fade-in">
+            <AddUserForm />
           </div>
         );
       

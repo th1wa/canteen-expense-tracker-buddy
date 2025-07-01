@@ -1,5 +1,5 @@
 
-import { PlusCircle, Calendar, TrendingUp, Settings, FileBarChart, CreditCard } from "lucide-react";
+import { PlusCircle, Calendar, TrendingUp, Settings, FileBarChart, CreditCard, UserPlus } from "lucide-react";
 
 export interface TabConfig {
   id: string;
@@ -21,6 +21,7 @@ export const getTabsConfig = (profile: any): TabConfig[] => {
   const canAccessPaymentHistory = profile.role === 'admin' || profile.role === 'hr' || profile.role === 'canteen';
   const isBasicUser = profile.role === 'user';
   const isHRUser = profile.role === 'hr';
+  const isAdmin = profile.role === 'admin';
 
   const tabs: TabConfig[] = [];
 
@@ -86,6 +87,16 @@ export const getTabsConfig = (profile: any): TabConfig[] => {
       title: 'Reports & Analytics',
       description: 'Comprehensive sales reports with downloadable PDF and Excel exports',
       icon: FileBarChart
+    });
+  }
+
+  // Add User tab - only for admins
+  if (isAdmin) {
+    tabs.push({
+      id: 'add-user',
+      title: 'Add User',
+      description: 'Add new users to the system',
+      icon: UserPlus
     });
   }
 

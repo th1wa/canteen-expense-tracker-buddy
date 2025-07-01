@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Calendar, Users, PlusCircle, Settings, LogOut, UserCheck, Activity, History, CreditCard, FileBarChart, Menu } from "lucide-react";
+import { Calendar, Users, PlusCircle, Settings, LogOut, UserCheck, Activity, History, CreditCard, FileBarChart, Menu, UserPlus } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -75,6 +74,14 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
       title: "User Activity",
       icon: Activity,
       description: "View detailed user activity logs"
+    }] : []),
+    
+    // Admin can add users
+    ...(canManageUsers ? [{
+      id: "add-user",
+      title: "Add User",
+      icon: UserPlus,
+      description: "Add new users to the system"
     }] : []),
     
     ...(canManageUsers ? [{
