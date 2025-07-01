@@ -88,16 +88,22 @@ const TabContent: React.FC<TabContentProps> = ({
         }
         return (
           <div className="animate-fade-in">
-            <PaymentHistory refreshTrigger={refreshTrigger + localRefreshTrigger} />
+            <UsersList refreshTrigger={refreshTrigger + localRefreshTrigger} />
           </div>
         );
       
       case 'users':
-        // For canteen users, this shows payment history where they can add payments
-        if (profile?.role === 'canteen') {
+        // This tab shows UsersList for admin/canteen users to manage user balances and payments
+        // For canteen users, this should show user balances with payment management capabilities
+        if (profile?.role === 'hr') {
           return (
-            <div className="animate-fade-in">
-              <PaymentHistory refreshTrigger={refreshTrigger + localRefreshTrigger} />
+            <div className="text-center py-8 animate-fade-in">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Access Denied
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                HR users don't have permission to view user balances.
+              </p>
             </div>
           );
         }
