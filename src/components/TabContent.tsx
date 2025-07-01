@@ -93,9 +93,24 @@ const TabContent: React.FC<TabContentProps> = ({
         );
       
       case 'users':
+        // For canteen users, this shows payment history where they can add payments
+        if (profile?.role === 'canteen') {
+          return (
+            <div className="animate-fade-in">
+              <PaymentHistory refreshTrigger={refreshTrigger + localRefreshTrigger} />
+            </div>
+          );
+        }
         return (
           <div className="animate-fade-in">
             <UsersList refreshTrigger={refreshTrigger + localRefreshTrigger} />
+          </div>
+        );
+
+      case 'payment-history':
+        return (
+          <div className="animate-fade-in">
+            <PaymentHistory refreshTrigger={refreshTrigger + localRefreshTrigger} />
           </div>
         );
       
@@ -181,7 +196,7 @@ const TabContent: React.FC<TabContentProps> = ({
         if (profile?.role === 'hr') {
           return (
             <div className="animate-fade-in">
-              <UsersList refreshTrigger={refreshTrigger + localRefreshTrigger} />
+              <PaymentHistory refreshTrigger={refreshTrigger + localRefreshTrigger} />
             </div>
           );
         }

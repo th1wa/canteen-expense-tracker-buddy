@@ -19,29 +19,19 @@ export const getTabsConfig = (profile: any): TabConfig[] => {
   const canAccessBackup = profile.role === 'admin';
   const canAccessSummary = profile.role === 'admin' || profile.role === 'hr';
   const canAccessReports = profile.role === 'admin' || profile.role === 'hr';
+  const canAccessPaymentHistory = profile.role === 'admin' || profile.role === 'hr' || profile.role === 'canteen';
   const isBasicUser = profile.role === 'user';
   const isHRUser = profile.role === 'hr';
 
   const tabs: TabConfig[] = [];
 
+  // Switched order: Add Expense comes first
   if (canManageExpenses) {
     tabs.push({
       id: 'add-expense',
-      title: 'Add New Expense',
+      title: 'Add New Expense', 
       description: 'Record a payment made by a canteen user',
       icon: PlusCircle
-    });
-  }
-
-  // HR users should not see user balances
-  if (!isHRUser) {
-    tabs.push({
-      id: 'users',
-      title: isBasicUser ? 'My Payment Status' : 'Users & Payment Status',
-      description: isBasicUser 
-        ? 'View your spending, payments, and outstanding balance' 
-        : 'View all users with their spending, payments, and outstanding balances',
-      icon: Users
     });
   }
 
@@ -57,13 +47,27 @@ export const getTabsConfig = (profile: any): TabConfig[] => {
     });
   }
 
-  // Payment History - available for all including HR
-  tabs.push({
-    id: 'payment-history',
-    title: 'Payment History',
-    description: 'View payment records and transactions',
-    icon: Calendar
-  });
+  // HR users should not see user balances
+  if (!isHRUser) {
+    tabs.push({
+      id: 'users',
+      title: isBasicUser ? 'My Payment Status' : 'Users & Payment Status',
+      description: isBasicUser 
+        ? 'View your spending, payments, and outstanding balance' 
+        : 'View all users with their spending, payments, and outstanding balances',
+      icon: Users
+    });
+  }
+
+  // Payment History - available for admin, HR, and canteen users
+  if (canAccessPaymentHistory) {
+    tabs.push({
+      id: 'payment-history',
+      title: 'Payment History',
+      description: 'View payment records and transactions',
+      icon: Calendar
+    });
+  }
 
   if (!isBasicUser) {
     tabs.push({
@@ -113,7 +117,12 @@ export const getDefaultTab = (profile: any): string => {
   
   // HR users default to payment history
   if (isHRUser) {
-    return 'users'; // This will show payment history for HR
+    return 'payment-history';
+  }
+  
+  // Canteen users default to add expense (switched order)
+  if (profile.role === 'canteen') {
+    return 'add-expense';
   }
   
   if (isBasicUser) {

@@ -33,22 +33,23 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
   const canManageUsers = profile && profile.role === 'admin';
   const canViewActivity = profile && profile.role === 'admin'; // Removed HR access
   const canAccessReports = profile && (profile.role === 'admin' || profile.role === 'hr');
+  const canAccessPaymentHistory = profile && (profile.role === 'admin' || profile.role === 'hr' || profile.role === 'canteen');
   const isBasicUser = profile && profile.role === 'user';
   const isHRUser = profile && profile.role === 'hr';
 
   const menuItems = [
     // HR users should NOT see expense history
     ...(!isHRUser ? [{
-      id: "history",
-      title: isBasicUser ? "My History" : "Expense History",
-      icon: History,
-      description: isBasicUser ? "Your expense history" : "All expense records"
-    }] : []),
-    ...(canManageExpenses ? [{
       id: "expenses",
       title: "Add Expense",
       icon: PlusCircle,
       description: "Record new expenses"
+    }] : []),
+    ...(!isHRUser ? [{
+      id: "history",
+      title: isBasicUser ? "My History" : "Expense History",
+      icon: History,
+      description: isBasicUser ? "Your expense history" : "All expense records"
     }] : []),
     // HR users should NOT see user balances
     ...(!isHRUser ? [{
@@ -57,12 +58,12 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
       icon: Users,
       description: isBasicUser ? "View your balance" : "View user balances and manage payments"
     }] : []),
-    {
+    ...(canAccessPaymentHistory ? [{
       id: "users",
       title: isBasicUser ? "My Payments" : "Payment History",
       icon: CreditCard,
       description: isBasicUser ? "Your payment records" : "All payment records"
-    },
+    }] : []),
     ...(canAccessReports ? [{
       id: "reports",
       title: "Reports & Analytics",
