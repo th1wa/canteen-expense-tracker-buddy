@@ -8,6 +8,8 @@ export interface UserProfile {
   id: string;
   username: string;
   role: 'admin' | 'hr' | 'canteen' | 'user';
+  first_name?: string;
+  last_name?: string;
 }
 
 interface AuthContextType {

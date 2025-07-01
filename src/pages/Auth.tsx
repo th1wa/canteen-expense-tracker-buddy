@@ -13,6 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -74,6 +76,26 @@ const Auth = () => {
     }
   };
 
+  const validateUserExists = async (firstName: string, lastName: string) => {
+    try {
+      const { data: existingUser, error } = await supabase
+        .from('users')
+        .select('user_name, first_name, last_name')
+        .eq('first_name', firstName.trim())
+        .eq('last_name', lastName.trim())
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      return existingUser;
+    } catch (error) {
+      console.error('Error validating user:', error);
+      return null;
+    }
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -81,14 +103,40 @@ const Auth = () => {
     try {
       // Clean up any existing auth state
       cleanupAuthState();
+
+      // Validate that user exists in database with matching first and last name
+      if (!firstName.trim() || !lastName.trim()) {
+        toast({
+          title: "Validation Error",
+          description: "First name and last name are required to register.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      const existingUser = await validateUserExists(firstName, lastName);
       
-      // Attempt to sign up with default role 'user'
+      if (!existingUser) {
+        toast({
+          title: "Registration Failed",
+          description: "No user found with the provided first name and last name. Please contact your administrator.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Attempt to sign up with user data including the matched username
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            role: 'user'  // Default role for all new signups
+            role: 'user',
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
+            username: existingUser.user_name // Link to the existing user record
           },
           emailRedirectTo: `${window.location.origin}/`
         }
@@ -98,8 +146,15 @@ const Auth = () => {
       
       toast({
         title: "Registration successful!",
-        description: "Please check your email to confirm your registration before signing in.",
+        description: `Account linked to ${existingUser.user_name}. Please check your email to confirm your registration before signing in.`,
       });
+
+      // Clear form
+      setFirstName('');
+      setLastName('');
+      setEmail('');
+      setPassword('');
+      
     } catch (error: any) {
       toast({
         title: "Sign up failed",
@@ -209,6 +264,32 @@ const Auth = () => {
               </CardHeader>
               <form onSubmit={handleSignUp}>
                 <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-firstname" className="text-sm sm:text-base">First Name *</Label>
+                      <Input 
+                        id="signup-firstname" 
+                        type="text" 
+                        placeholder="First name" 
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        className="h-10 sm:h-11 text-sm sm:text-base focus:ring-2 focus:ring-orange-500 transition-all"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-lastname" className="text-sm sm:text-base">Last Name *</Label>
+                      <Input 
+                        id="signup-lastname" 
+                        type="text" 
+                        placeholder="Last name" 
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        className="h-10 sm:h-11 text-sm sm:text-base focus:ring-2 focus:ring-orange-500 transition-all"
+                        required
+                      />
+                    </div>
+                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-email" className="text-sm sm:text-base">Email</Label>
                     <Input 
@@ -219,7 +300,6 @@ const Auth = () => {
                       onChange={(e) => setEmail(e.target.value)}
                       className="h-10 sm:h-11 text-sm sm:text-base focus:ring-2 focus:ring-orange-500 transition-all"
                       required
-                      autoFocus
                     />
                   </div>
                   <div className="space-y-2">
@@ -235,7 +315,7 @@ const Auth = () => {
                     />
                   </div>
                   <div className="text-xs sm:text-sm text-muted-foreground bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md">
-                    <p><strong>Note:</strong> New accounts will be created with basic user permissions. Admin access must be granted separately.</p>
+                    <p><strong>Important:</strong> Your first name and last name must match an existing user record in our database. If they don't match, registration will fail.</p>
                   </div>
                 </CardContent>
                 <CardFooter>
