@@ -37,14 +37,21 @@ const ExpenseHistory = ({ refreshTrigger, onExpenseAdded }: ExpenseHistoryProps)
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [uniqueUsers, setUniqueUsers] = useState<string[]>([]);
-  const { profile } = useAuth();
+  const { profile, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const isMountedRef = useRef(true);
   const { isExporting, exportToExcel, exportToPDF } = useBasicUserExport(profile?.username || '');
 
   const fetchExpenses = async () => {
+    // Wait for auth to finish loading
+    if (authLoading) {
+      return;
+    }
+
+    // If no profile after auth loading is complete, show appropriate message
     if (!profile) {
       setLoading(false);
+      setError('Please log in to view expense history.');
       return;
     }
 
@@ -52,12 +59,16 @@ const ExpenseHistory = ({ refreshTrigger, onExpenseAdded }: ExpenseHistoryProps)
     setError(null);
     
     try {
+      console.log('Fetching expenses for profile:', profile);
+      
       let query = supabase
         .from('expenses')
         .select('*')
         .order('created_at', { ascending: false });
 
+      // For basic users, only show their own expenses
       if (profile.role === 'user' && profile.username) {
+        console.log('Filtering expenses for user:', profile.username);
         query = query.eq('user_name', profile.username);
       }
 
@@ -78,6 +89,7 @@ const ExpenseHistory = ({ refreshTrigger, onExpenseAdded }: ExpenseHistoryProps)
         expense.expense_date
       );
 
+      console.log('Fetched expenses:', validExpenses.length);
       setExpenses(validExpenses);
       setFilteredExpenses(validExpenses);
       
@@ -110,7 +122,7 @@ const ExpenseHistory = ({ refreshTrigger, onExpenseAdded }: ExpenseHistoryProps)
     return () => {
       isMountedRef.current = false;
     };
-  }, [refreshTrigger, profile]);
+  }, [refreshTrigger, profile, authLoading]);
 
   useEffect(() => {
     if (!Array.isArray(expenses)) {
@@ -204,6 +216,12 @@ const ExpenseHistory = ({ refreshTrigger, onExpenseAdded }: ExpenseHistoryProps)
     return sum + amount;
   }, 0);
 
+  // Show loading while auth is loading
+  if (authLoading) {
+    return <div className="text-center py-6 text-sm">Loading...</div>;
+  }
+
+  // Show login message if no profile
   if (!profile) {
     return (
       <div className="text-center py-6">

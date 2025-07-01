@@ -16,7 +16,7 @@ export const useUsersData = (refreshTrigger: number, hasAccess: boolean = true) 
     totalOutstanding: number;
   } | null>(null);
   
-  const { profile } = useAuth();
+  const { profile, loading: authLoading } = useAuth();
   const abortControllerRef = useRef<AbortController | null>(null);
   const isMountedRef = useRef(true);
   const channelRef = useRef<any>(null);
@@ -33,9 +33,8 @@ export const useUsersData = (refreshTrigger: number, hasAccess: boolean = true) 
     // Reset error state
     setError(null);
     
-    // Don't fetch if profile is not loaded yet
-    if (profile === undefined) {
-      setLoading(true);
+    // Wait for auth to finish loading
+    if (authLoading) {
       return;
     }
 
@@ -44,7 +43,7 @@ export const useUsersData = (refreshTrigger: number, hasAccess: boolean = true) 
       if (isMountedRef.current) {
         setUsers([]);
         setLoading(false);
-        setError(null); // Clear error for unauthenticated state
+        setError(null);
       }
       return;
     }
@@ -65,6 +64,8 @@ export const useUsersData = (refreshTrigger: number, hasAccess: boolean = true) 
     try {
       // For basic users, only fetch their own data. For admin, HR, and canteen users, fetch all data
       const isBasicUser = profile.role === 'user';
+      
+      console.log('Fetching data for profile:', profile);
       
       // Check if request was aborted before making API calls
       if (abortControllerRef.current?.signal.aborted) {
@@ -111,6 +112,8 @@ export const useUsersData = (refreshTrigger: number, hasAccess: boolean = true) 
       const userMap = createUserMap(safeUsersData, safeExpenses, safePayments);
       const { usersArray, stats } = calculateUserStats(userMap);
 
+      console.log('Processed users data:', usersArray.length, 'users');
+
       if (isMountedRef.current && !abortControllerRef.current?.signal.aborted) {
         setUsers(usersArray);
         setTotalStats(stats);
@@ -134,7 +137,7 @@ export const useUsersData = (refreshTrigger: number, hasAccess: boolean = true) 
         setLoading(false);
       }
     }
-  }, [profile, hasAccess]);
+  }, [profile, hasAccess, authLoading]);
 
   useEffect(() => {
     fetchUsersWithPayments();
