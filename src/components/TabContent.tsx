@@ -36,33 +36,47 @@ const TabContent: React.FC<TabContentProps> = ({
   const renderTabContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <DashboardStats refreshTrigger={refreshTrigger + localRefreshTrigger} />;
+        return (
+          <div className="animate-fade-in">
+            <DashboardStats refreshTrigger={refreshTrigger + localRefreshTrigger} />
+          </div>
+        );
       
       case 'expenses':
         return (
-          <AddExpenseForm 
-            onExpenseAdded={handleExpenseAdded}
-          />
+          <div className="animate-fade-in">
+            <AddExpenseForm onExpenseAdded={handleExpenseAdded} />
+          </div>
         );
       
       case 'history':
         return (
-          <ExpenseHistory 
-            refreshTrigger={refreshTrigger + localRefreshTrigger} 
-            onExpenseAdded={handleExpenseAdded}
-          />
+          <div className="animate-fade-in">
+            <ExpenseHistory 
+              refreshTrigger={refreshTrigger + localRefreshTrigger} 
+              onExpenseAdded={handleExpenseAdded}
+            />
+          </div>
         );
       
       case 'payments':
-        return <PaymentHistory refreshTrigger={refreshTrigger + localRefreshTrigger} />;
+        return (
+          <div className="animate-fade-in">
+            <PaymentHistory refreshTrigger={refreshTrigger + localRefreshTrigger} />
+          </div>
+        );
       
       case 'users':
-        return <UsersList refreshTrigger={refreshTrigger + localRefreshTrigger} />;
+        return (
+          <div className="animate-fade-in">
+            <UsersList refreshTrigger={refreshTrigger + localRefreshTrigger} />
+          </div>
+        );
       
       case 'reports':
         if (!profile || (profile.role !== 'admin' && profile.role !== 'hr')) {
           return (
-            <div className="text-center py-8">
+            <div className="text-center py-8 animate-fade-in">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 Access Denied
               </h3>
@@ -72,12 +86,16 @@ const TabContent: React.FC<TabContentProps> = ({
             </div>
           );
         }
-        return <ReportsAnalytics />;
+        return (
+          <div className="animate-fade-in">
+            <ReportsAnalytics />
+          </div>
+        );
       
       case 'activity':
         if (!profile || (profile.role !== 'admin' && profile.role !== 'hr')) {
           return (
-            <div className="text-center py-8">
+            <div className="text-center py-8 animate-fade-in">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 Access Denied
               </h3>
@@ -87,12 +105,16 @@ const TabContent: React.FC<TabContentProps> = ({
             </div>
           );
         }
-        return <UserActivity />;
+        return (
+          <div className="animate-fade-in">
+            <UserActivity />
+          </div>
+        );
       
       case 'user-management':
         if (!profile || profile.role !== 'admin') {
           return (
-            <div className="text-center py-8">
+            <div className="text-center py-8 animate-fade-in">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 Access Denied
               </h3>
@@ -102,12 +124,16 @@ const TabContent: React.FC<TabContentProps> = ({
             </div>
           );
         }
-        return <UserManagement />;
+        return (
+          <div className="animate-fade-in">
+            <UserManagement />
+          </div>
+        );
       
       case 'backup':
         if (!profile || profile.role !== 'admin') {
           return (
-            <div className="text-center py-8">
+            <div className="text-center py-8 animate-fade-in">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 Access Denied
               </h3>
@@ -117,21 +143,27 @@ const TabContent: React.FC<TabContentProps> = ({
             </div>
           );
         }
-        return <BackupSystem />;
+        return (
+          <div className="animate-fade-in">
+            <BackupSystem />
+          </div>
+        );
       
       default:
         // Default to expense history for most users
         return (
-          <ExpenseHistory 
-            refreshTrigger={refreshTrigger + localRefreshTrigger} 
-            onExpenseAdded={handleExpenseAdded}
-          />
+          <div className="animate-fade-in">
+            <ExpenseHistory 
+              refreshTrigger={refreshTrigger + localRefreshTrigger} 
+              onExpenseAdded={handleExpenseAdded}
+            />
+          </div>
         );
     }
   };
 
   return (
-    <div className="w-full min-h-full">
+    <div className="w-full min-h-full transition-all duration-300 ease-in-out">
       {renderTabContent()}
     </div>
   );

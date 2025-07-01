@@ -94,48 +94,131 @@
   }
 }
 
-/* Smooth transitions for theme changes */
+/* Enhanced smooth transitions for all elements */
 * {
-  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Custom scrollbar for dark mode */
-.dark ::-webkit-scrollbar {
-  width: 6px;
-}
-
-.dark ::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground));
-  border-radius: 4px;
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--accent-foreground));
-}
-
-/* Light mode scrollbar */
+/* Smooth scrollbar for all modes */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
   background: hsl(var(--muted));
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
   background: hsl(var(--muted-foreground));
   border-radius: 4px;
+  transition: background-color 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--accent-foreground));
 }
 
-/* Mobile-first responsive utilities */
+::-webkit-scrollbar-corner {
+  background: hsl(var(--muted));
+}
+
+/* Enhanced animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bounce-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) translateY(-20px);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05) translateY(-5px);
+  }
+  70% {
+    transform: scale(0.9) translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Animation delays */
+.animation-delay-100 { animation-delay: 100ms; }
+.animation-delay-200 { animation-delay: 200ms; }
+.animation-delay-300 { animation-delay: 300ms; }
+.animation-delay-400 { animation-delay: 400ms; }
+.animation-delay-500 { animation-delay: 500ms; }
+
+/* Mobile-first responsive utilities with enhanced touch targets */
 @layer utilities {
   /* Typography responsive utilities */
   .text-responsive-xs {
@@ -162,7 +245,7 @@
     @apply text-xl sm:text-2xl md:text-3xl lg:text-4xl;
   }
   
-  /* Spacing responsive utilities */
+  /* Enhanced spacing responsive utilities */
   .spacing-responsive-sm {
     @apply p-2 sm:p-3 md:p-4;
   }
@@ -195,22 +278,29 @@
     @apply gap-4 sm:gap-6 md:gap-8;
   }
 
-  /* Mobile-first button utilities */
+  /* Enhanced mobile-first button utilities */
   .btn-mobile {
-    @apply min-h-[44px] min-w-[44px] text-sm sm:text-base px-3 py-2 sm:px-4 sm:py-2;
+    @apply min-h-[44px] min-w-[44px] text-sm sm:text-base px-3 py-2 sm:px-4 sm:py-2 
+           transition-all duration-200 ease-in-out
+           hover:scale-105 active:scale-95
+           focus:ring-2 focus:ring-offset-2 focus:ring-primary/50;
   }
 
-  /* Form responsive utilities */
+  /* Enhanced form responsive utilities */
   .form-mobile {
-    @apply text-sm px-3 py-2 sm:px-4 sm:py-3;
+    @apply text-sm px-3 py-2 sm:px-4 sm:py-3
+           transition-all duration-200 ease-in-out
+           focus:ring-2 focus:ring-offset-2 focus:ring-primary/50;
   }
 
-  /* Card responsive utilities */
+  /* Enhanced card responsive utilities */
   .card-mobile {
-    @apply p-3 sm:p-4 md:p-6;
+    @apply p-3 sm:p-4 md:p-6 
+           transition-all duration-200 ease-in-out
+           hover:shadow-lg hover:scale-[1.02];
   }
 
-  /* Grid responsive utilities */
+  /* Enhanced grid responsive utilities */
   .grid-mobile {
     @apply gap-2 sm:gap-3 md:gap-4;
   }
@@ -219,37 +309,40 @@
     @apply gap-3 sm:gap-4 md:gap-6;
   }
 
-  /* Container responsive utilities */
+  /* Enhanced container responsive utilities */
   .container-mobile {
-    @apply px-4 sm:px-6 md:px-8 max-w-full;
+    @apply px-3 sm:px-4 md:px-6 lg:px-8 max-w-full;
   }
   
-  /* Height responsive utilities */
+  /* Enhanced height responsive utilities */
   .min-h-mobile {
-    @apply min-h-[40px] sm:min-h-[44px] md:min-h-[48px];
+    @apply min-h-[44px] sm:min-h-[48px] md:min-h-[52px];
   }
   
-  /* Modal responsive utilities */
+  /* Enhanced modal responsive utilities */
   .modal-mobile {
-    @apply w-[95vw] max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl;
+    @apply w-[95vw] max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl
+           transition-all duration-300 ease-in-out;
   }
   
   .modal-content-mobile {
-    @apply max-h-[85vh] sm:max-h-[90vh] overflow-y-auto;
+    @apply max-h-[85vh] sm:max-h-[90vh] overflow-y-auto
+           transition-all duration-300 ease-in-out;
   }
   
-  /* Sidebar responsive utilities */
+  /* Enhanced sidebar responsive utilities */
   .sidebar-mobile {
-    @apply w-[280px] sm:w-[320px] md:w-[360px];
+    @apply transition-all duration-300 ease-in-out;
   }
   
-  /* Table responsive utilities */
+  /* Enhanced table responsive utilities */
   .table-mobile {
     @apply text-xs sm:text-sm;
   }
   
   .table-cell-mobile {
-    @apply p-2 sm:p-3 md:p-4;
+    @apply p-2 sm:p-3 md:p-4 
+           transition-all duration-200 ease-in-out;
   }
   
   /* Safe area utilities for mobile devices */
@@ -269,13 +362,30 @@
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
   }
+
+  /* Enhanced interactive elements */
+  .interactive-element {
+    @apply transition-all duration-200 ease-in-out
+           hover:scale-105 active:scale-95
+           focus:ring-2 focus:ring-offset-2 focus:ring-primary/50;
+  }
+
+  /* Smooth hover effects */
+  .hover-lift {
+    @apply transition-all duration-200 ease-in-out hover:shadow-lg hover:-translate-y-1;
+  }
+
+  .hover-glow {
+    @apply transition-all duration-200 ease-in-out hover:shadow-lg hover:shadow-primary/25;
+  }
 }
 
-/* Additional mobile optimizations */
+/* Enhanced mobile optimizations */
 @media (max-width: 640px) {
-  /* Improve touch targets on mobile */
-  button, a, input, select, textarea {
+  /* Improved touch targets on mobile */
+  button, a, input, select, textarea, [role="button"] {
     min-height: 44px;
+    min-width: 44px;
   }
   
   /* Prevent zoom on input focus */
@@ -288,6 +398,11 @@
     margin: 1rem;
     max-height: calc(100vh - 2rem);
   }
+
+  /* Enhanced touch feedback */
+  button:active, [role="button"]:active {
+    transform: scale(0.95);
+  }
 }
 
 /* Landscape phone optimizations */
@@ -298,6 +413,11 @@
   
   .spacing-responsive {
     @apply p-2;
+  }
+
+  /* Adjust header height for landscape */
+  header {
+    height: 3rem;
   }
 }
 
@@ -313,5 +433,50 @@
   
   .text-responsive-xl {
     @apply text-lg;
+  }
+
+  /* Adjust spacing for very small screens */
+  .spacing-responsive {
+    @apply p-2;
+  }
+}
+
+/* High resolution screens */
+@media (min-width: 1920px) {
+  .container-mobile {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Focus styles for accessibility */
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  * {
+    background: transparent !important;
+    color: black !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
   }
 }
