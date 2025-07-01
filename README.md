@@ -182,7 +182,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 For support and questions:
-- 📧 Email: support@canteenbuddy.com
+- 📧 Email: thiwanka@chandanalepa.lk
 - 💬 Discord: [Join our community](https://discord.gg/canteenbuddy)
 - 📖 Documentation: [docs.canteenbuddy.com](https://docs.canteenbuddy.com)
 
