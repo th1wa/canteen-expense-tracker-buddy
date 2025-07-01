@@ -63,7 +63,7 @@ export const useUsersData = (refreshTrigger: number, hasAccess: boolean = true) 
     setLoading(true);
     
     try {
-      // For basic users, only fetch their own data
+      // For basic users, only fetch their own data. For admin, HR, and canteen users, fetch all data
       const isBasicUser = profile.role === 'user';
       
       // Check if request was aborted before making API calls

@@ -22,7 +22,8 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
   const [localRefreshTrigger, setLocalRefreshTrigger] = useState(0);
   
   const { profile } = useAuth();
-  const hasAccess = profile?.role === 'admin' || profile?.role === 'hr';
+  // Updated to include canteen users
+  const hasAccess = profile?.role === 'admin' || profile?.role === 'hr' || profile?.role === 'canteen';
   
   const { users, loading, error, totalStats } = useUsersData(refreshTrigger + localRefreshTrigger, hasAccess);
 
