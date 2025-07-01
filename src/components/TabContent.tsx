@@ -120,7 +120,13 @@ const TabContent: React.FC<TabContentProps> = ({
         return <BackupSystem />;
       
       default:
-        return <DashboardStats refreshTrigger={refreshTrigger + localRefreshTrigger} />;
+        // Default to expense history for most users
+        return (
+          <ExpenseHistory 
+            refreshTrigger={refreshTrigger + localRefreshTrigger} 
+            onExpenseAdded={handleExpenseAdded}
+          />
+        );
     }
   };
 

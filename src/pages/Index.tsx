@@ -27,11 +27,11 @@ const Index = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen w-full bg-gradient-to-br from-orange-50 to-amber-50 dark:from-gray-900 dark:to-gray-800 transition-colors">
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-orange-50 to-amber-50 dark:from-gray-900 dark:to-gray-800">
         <AppSidebar activeTab={activeTab} onTabChange={setActiveTab} />
-        <SidebarInset className="flex flex-col min-h-screen">
+        <SidebarInset className="flex-1 flex flex-col min-h-screen">
           <DashboardHeader />
-          <main className="flex-1 p-4 sm:p-6 md:p-8 w-full">
+          <main className="flex-1 p-4 sm:p-6 overflow-auto">
             <div className="w-full max-w-7xl mx-auto space-y-4">
               <BasicUserBanner />
               <TabContent

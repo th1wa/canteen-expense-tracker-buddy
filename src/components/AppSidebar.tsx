@@ -106,11 +106,11 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
   };
 
   return (
-    <Sidebar className="border-r bg-sidebar" collapsible="icon">
+    <Sidebar className="border-r bg-sidebar w-64">
       <SidebarHeader className="p-4 border-b">
         <div className="flex items-center gap-3">
           <span className="text-2xl flex-shrink-0">🧡</span>
-          <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+          <div className="min-w-0 flex-1">
             <h2 className="text-lg font-bold text-orange-800 dark:text-orange-200 truncate">
               Canteen Buddy
             </h2>
@@ -125,7 +125,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
 
       <SidebarContent className="px-3 py-4">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sm px-2 mb-2 group-data-[collapsible=icon]:hidden">Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sm px-2 mb-2">Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
               {menuItems.map((item) => (
@@ -137,7 +137,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
                     className="text-sm py-3 px-3 w-full justify-start hover:bg-sidebar-accent"
                   >
                     <item.icon className="w-5 h-5 flex-shrink-0" />
-                    <span className="truncate min-w-0 ml-3 group-data-[collapsible=icon]:hidden">{item.title}</span>
+                    <span className="truncate min-w-0 ml-3">{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -149,7 +149,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
       <SidebarFooter className="p-4 border-t">
         <SidebarSeparator className="mb-4" />
         {profile && (
-          <div className="mb-3 text-sm text-muted-foreground group-data-[collapsible=icon]:hidden">
+          <div className="mb-3 text-sm text-muted-foreground">
             <div className="font-medium text-foreground">Welcome back!</div>
             <div className="truncate">{profile.username}</div>
           </div>
@@ -161,7 +161,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
           className="w-full flex items-center gap-2 text-sm py-2 px-3"
         >
           <LogOut className="w-4 h-4" />
-          <span className="group-data-[collapsible=icon]:hidden">Sign Out</span>
+          <span>Sign Out</span>
         </Button>
       </SidebarFooter>
     </Sidebar>
