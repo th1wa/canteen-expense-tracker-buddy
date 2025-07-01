@@ -33,37 +33,42 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
   const canManageUsers = profile && profile.role === 'admin';
   const canViewActivity = profile && profile.role === 'admin'; // Removed HR access
   const canAccessReports = profile && (profile.role === 'admin' || profile.role === 'hr');
-  const canAccessPaymentHistory = profile && (profile.role === 'admin' || profile.role === 'hr' || profile.role === 'canteen');
+  const canAccessPaymentHistory = profile && (profile.role === 'admin' || profile.role === 'hr' || profile.role === 'canteen' || profile.role === 'user');
   const isBasicUser = profile && profile.role === 'user';
   const isHRUser = profile && profile.role === 'hr';
 
   const menuItems = [
-    // HR users should NOT see expense history
-    ...(!isHRUser ? [{
+    // Admin and canteen users can add expenses
+    ...(canManageExpenses ? [{
       id: "expenses",
       title: "Add Expense",
       icon: PlusCircle,
       description: "Record new expenses"
     }] : []),
+    
+    // Basic users see their own history, others see all (except HR)
     ...(!isHRUser ? [{
       id: "history",
-      title: isBasicUser ? "My History" : "Expense History",
+      title: isBasicUser ? "My Expense History" : "Expense History",
       icon: History,
-      description: isBasicUser ? "Your expense history" : "All expense records"
+      description: isBasicUser ? "Your expense history with export options" : "All expense records"
     }] : []),
-    // Removed User Balances tab for all users
+    
+    // Payment history for all permitted users including basic users
     ...(canAccessPaymentHistory ? [{
       id: "payment-history",
-      title: isBasicUser ? "My Payments" : "Payment History",
+      title: isBasicUser ? "My Payment History" : "Payment History",
       icon: CreditCard,
-      description: isBasicUser ? "Your payment records" : "All payment records"
+      description: isBasicUser ? "Your payment records with export options" : "All payment records"
     }] : []),
+    
     ...(canAccessReports ? [{
       id: "reports",
       title: "Reports & Analytics",
       icon: FileBarChart,
       description: "Comprehensive reports with downloadable exports"
     }] : []),
+    
     // HR users should NOT see user activity (only admin)
     ...(canViewActivity ? [{
       id: "activity",
@@ -71,12 +76,14 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
       icon: Activity,
       description: "View detailed user activity logs"
     }] : []),
+    
     ...(canManageUsers ? [{
       id: "user-management",
       title: "User Management",
       icon: UserCheck,
       description: "Manage user roles and permissions"
     }] : []),
+    
     ...(canAccessBackup ? [{
       id: "backup",
       title: "Backup & Settings",

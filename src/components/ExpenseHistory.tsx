@@ -3,12 +3,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Calendar, User, DollarSign, Filter, FilterX } from "lucide-react";
+import { Search, Calendar, User, DollarSign, Filter, FilterX, Download, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useBasicUserExport } from "@/hooks/useBasicUserExport";
 
 interface Expense {
   id: string;
@@ -38,6 +40,7 @@ const ExpenseHistory = ({ refreshTrigger, onExpenseAdded }: ExpenseHistoryProps)
   const { profile } = useAuth();
   const { toast } = useToast();
   const isMountedRef = useRef(true);
+  const { isExporting, exportToExcel, exportToPDF } = useBasicUserExport(profile?.username || '');
 
   const fetchExpenses = async () => {
     if (!profile) {
@@ -162,6 +165,30 @@ const ExpenseHistory = ({ refreshTrigger, onExpenseAdded }: ExpenseHistoryProps)
     setFilteredExpenses(filtered);
   }, [searchTerm, dateFilter, userFilter, amountFilter, noteFilter, expenses]);
 
+  const handleExportToExcel = () => {
+    const exportData = filteredExpenses.map(expense => ({
+      id: expense.id,
+      user_name: expense.user_name,
+      amount: expense.amount,
+      date: expense.expense_date,
+      note: expense.note,
+      type: 'expense' as const
+    }));
+    exportToExcel(exportData, 'expenses');
+  };
+
+  const handleExportToPDF = () => {
+    const exportData = filteredExpenses.map(expense => ({
+      id: expense.id,
+      user_name: expense.user_name,
+      amount: expense.amount,
+      date: expense.expense_date,
+      note: expense.note,
+      type: 'expense' as const
+    }));
+    exportToPDF(exportData, 'expenses');
+  };
+
   const clearAllFilters = () => {
     setSearchTerm('');
     setDateFilter('');
@@ -204,8 +231,61 @@ const ExpenseHistory = ({ refreshTrigger, onExpenseAdded }: ExpenseHistoryProps)
     );
   }
 
+  const isBasicUser = profile.role === 'user';
+
   return (
     <div className="space-y-3">
+      {/* Header with Export Options for Basic Users */}
+      {isBasicUser && (
+        <Card className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950 dark:to-amber-950 border-orange-200 dark:border-orange-800">
+          <CardContent className="p-3">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="font-medium text-sm">My Expense History</h3>
+              <div className="flex gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      disabled={isExporting || filteredExpenses.length === 0}
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-3 text-xs"
+                    >
+                      <Download className="w-3 h-3 mr-1" />
+                      Export
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-48" align="end">
+                    <div className="space-y-2">
+                      <div className="text-xs font-medium mb-2">Export Options</div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start text-xs h-8"
+                        onClick={handleExportToExcel}
+                        disabled={isExporting}
+                      >
+                        <FileText className="w-3 h-3 mr-2" />
+                        Export to Excel
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start text-xs h-8"
+                        onClick={handleExportToPDF}
+                        disabled={isExporting}
+                      >
+                        <FileText className="w-3 h-3 mr-2" />
+                        Export to PDF
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Compact Filter Controls */}
       <Card className="border-dashed">
         <CardContent className="p-3">
@@ -245,17 +325,19 @@ const ExpenseHistory = ({ refreshTrigger, onExpenseAdded }: ExpenseHistoryProps)
               className="h-8 text-xs"
             />
 
-            <Select value={userFilter} onValueChange={setUserFilter}>
-              <SelectTrigger className="h-8 text-xs">
-                <SelectValue placeholder="All users" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All users</SelectItem>
-                {uniqueUsers.map(user => (
-                  <SelectItem key={user} value={user}>{user}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {!isBasicUser && (
+              <Select value={userFilter} onValueChange={setUserFilter}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="All users" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All users</SelectItem>
+                  {uniqueUsers.map(user => (
+                    <SelectItem key={user} value={user}>{user}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
             <Select value={amountFilter} onValueChange={setAmountFilter}>
               <SelectTrigger className="h-8 text-xs">
@@ -310,10 +392,12 @@ const ExpenseHistory = ({ refreshTrigger, onExpenseAdded }: ExpenseHistoryProps)
               <CardContent className="p-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <User className="w-3 h-3 text-gray-500 flex-shrink-0" />
-                      <span className="font-medium text-sm truncate">{expense.user_name || 'Unknown'}</span>
-                    </div>
+                    {!isBasicUser && (
+                      <div className="flex items-center gap-2 min-w-0">
+                        <User className="w-3 h-3 text-gray-500 flex-shrink-0" />
+                        <span className="font-medium text-sm truncate">{expense.user_name || 'Unknown'}</span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2 text-xs text-gray-600">
                       <Calendar className="w-3 h-3" />
                       <span>{format(new Date(expense.expense_date), 'MMM dd')}</span>

@@ -34,26 +34,41 @@ export const getTabsConfig = (profile: any): TabConfig[] => {
     });
   }
 
-  // HR users should not see expense history
-  if (!isHRUser) {
+  // Basic users see their expense history
+  if (isBasicUser) {
     tabs.push({
       id: 'history',
-      title: isBasicUser ? 'My Expense History' : 'Expense History',
-      description: isBasicUser 
-        ? 'View your transaction history' 
-        : 'View all transactions with search and filter options',
+      title: 'My Expense History',
+      description: 'View your transaction history with download options',
       icon: Calendar
     });
-  }
-
-  // Payment History - available for admin, HR, and canteen users
-  if (canAccessPaymentHistory) {
+    
     tabs.push({
       id: 'payment-history',
-      title: 'Payment History',
-      description: 'View payment records and transactions',
+      title: 'My Payment History',
+      description: 'View your payment records with download options',
       icon: CreditCard
     });
+  } else {
+    // HR users should not see expense history
+    if (!isHRUser) {
+      tabs.push({
+        id: 'history',
+        title: 'Expense History',
+        description: 'View all transactions with search and filter options',
+        icon: Calendar
+      });
+    }
+
+    // Payment History - available for admin, HR, and canteen users
+    if (canAccessPaymentHistory) {
+      tabs.push({
+        id: 'payment-history',
+        title: 'Payment History',
+        description: 'View payment records and transactions',
+        icon: CreditCard
+      });
+    }
   }
 
   if (!isBasicUser) {
@@ -98,14 +113,17 @@ export const getDefaultTab = (profile: any): string => {
     return 'payment-history';
   }
   
+  // Basic users default to their expense history
+  if (isBasicUser) {
+    return 'history';
+  }
+  
   // Canteen users default to add expense
   if (profile.role === 'canteen') {
     return 'expenses';
   }
   
-  if (isBasicUser) {
-    return 'history';
-  } else if (canManageExpenses) {
+  if (canManageExpenses) {
     return 'expenses';
   }
   

@@ -6,11 +6,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { Calendar as CalendarIcon, Search, Filter, Download, RefreshCw, User } from "lucide-react";
+import { Calendar as CalendarIcon, Search, Filter, Download, RefreshCw, User, FileText } from "lucide-react";
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useBasicUserExport } from "@/hooks/useBasicUserExport";
 import { cn } from "@/lib/utils";
 
 interface Payment {
@@ -38,16 +39,25 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
   const [uniqueUsers, setUniqueUsers] = useState<string[]>([]);
   const { toast } = useToast();
   const { profile } = useAuth();
+  const { isExporting: isBasicUserExporting, exportToExcel: exportBasicUserToExcel, exportToPDF: exportBasicUserToPDF } = useBasicUserExport(profile?.username || '');
 
-  const hasAccess = profile?.role === 'admin' || profile?.role === 'hr' || profile?.role === 'canteen';
+  const hasAccess = profile?.role === 'admin' || profile?.role === 'hr' || profile?.role === 'canteen' || profile?.role === 'user';
+  const isBasicUser = profile?.role === 'user';
 
   const fetchPayments = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from('payments')
         .select('*')
         .order('payment_date', { ascending: false });
+
+      // Filter to user's own payments if basic user
+      if (isBasicUser && profile?.username) {
+        query = query.eq('user_name', profile.username);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching payments:', error);
@@ -138,6 +148,28 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
 
     setFilteredPayments(filtered);
   }, [payments, searchTerm, selectedUser, dateRange, customDateFrom, customDateTo]);
+
+  const handleBasicUserExportToExcel = () => {
+    const exportData = filteredPayments.map(payment => ({
+      id: payment.id,
+      user_name: payment.user_name,
+      amount: payment.amount,
+      date: payment.payment_date,
+      type: 'payment' as const
+    }));
+    exportBasicUserToExcel(exportData, 'payments');
+  };
+
+  const handleBasicUserExportToPDF = () => {
+    const exportData = filteredPayments.map(payment => ({
+      id: payment.id,
+      user_name: payment.user_name,
+      amount: payment.amount,
+      date: payment.payment_date,
+      type: 'payment' as const
+    }));
+    exportBasicUserToPDF(exportData, 'payments');
+  };
 
   const getTotalAmount = () => {
     return filteredPayments.reduce((sum, payment) => sum + payment.amount, 0);
@@ -230,10 +262,10 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
               <CardTitle className="flex items-center gap-2 text-lg">
-                💳 Payment History
+                💳 {isBasicUser ? 'My Payment History' : 'Payment History'}
               </CardTitle>
               <CardDescription className="text-xs">
-                Complete record of all payments
+                {isBasicUser ? 'Your payment records' : 'Complete record of all payments'}
               </CardDescription>
             </div>
             <div className="flex gap-2">
@@ -257,12 +289,12 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
                 )}
               </Button>
               
-              {/* Export Dropdown */}
-              <div className="relative">
+              {/* Export Options */}
+              {isBasicUser ? (
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
-                      disabled={isExporting || filteredPayments.length === 0}
+                      disabled={isBasicUserExporting || filteredPayments.length === 0}
                       variant="outline"
                       size="sm"
                       className="h-8 px-3 text-xs"
@@ -271,54 +303,96 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
                       Export
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-56" align="end">
+                  <PopoverContent className="w-48" align="end">
                     <div className="space-y-2">
                       <div className="text-xs font-medium mb-2">Export Options</div>
                       <Button
                         variant="ghost"
                         size="sm"
                         className="w-full justify-start text-xs h-8"
-                        onClick={() => exportToExcel('all')}
-                        disabled={isExporting}
+                        onClick={handleBasicUserExportToExcel}
+                        disabled={isBasicUserExporting}
                       >
-                        All Payments ({payments.length})
+                        <FileText className="w-3 h-3 mr-2" />
+                        Export to Excel
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
                         className="w-full justify-start text-xs h-8"
-                        onClick={() => exportToExcel('filtered')}
-                        disabled={isExporting}
+                        onClick={handleBasicUserExportToPDF}
+                        disabled={isBasicUserExporting}
                       >
-                        Filtered Payments ({filteredPayments.length})
+                        <FileText className="w-3 h-3 mr-2" />
+                        Export to PDF
                       </Button>
-                      <div className="border-t pt-2">
-                        <div className="text-xs text-muted-foreground mb-1">By User:</div>
-                        <div className="max-h-32 overflow-y-auto space-y-1">
-                          {uniqueUsers.slice(0, 10).map(user => (
-                            <Button
-                              key={user}
-                              variant="ghost"
-                              size="sm"
-                              className="w-full justify-start text-xs h-7"
-                              onClick={() => exportToExcel(user)}
-                              disabled={isExporting}
-                            >
-                              <User className="w-3 h-3 mr-1" />
-                              {user}
-                            </Button>
-                          ))}
-                          {uniqueUsers.length > 10 && (
-                            <div className="text-xs text-muted-foreground text-center">
-                              +{uniqueUsers.length - 10} more users
-                            </div>
-                          )}
-                        </div>
-                      </div>
                     </div>
                   </PopoverContent>
                 </Popover>
-              </div>
+              ) : (
+                
+                <div className="relative">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        disabled={isExporting || filteredPayments.length === 0}
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-3 text-xs"
+                      >
+                        <Download className="w-3 h-3 mr-1" />
+                        Export
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-56" align="end">
+                      <div className="space-y-2">
+                        <div className="text-xs font-medium mb-2">Export Options</div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-start text-xs h-8"
+                          onClick={() => exportToExcel('all')}
+                          disabled={isExporting}
+                        >
+                          All Payments ({payments.length})
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-start text-xs h-8"
+                          onClick={() => exportToExcel('filtered')}
+                          disabled={isExporting}
+                        >
+                          Filtered Payments ({filteredPayments.length})
+                        </Button>
+                        <div className="border-t pt-2">
+                          <div className="text-xs text-muted-foreground mb-1">By User:</div>
+                          <div className="max-h-32 overflow-y-auto space-y-1">
+                            {uniqueUsers.slice(0, 10).map(user => (
+                              <Button
+                                key={user}
+                                variant="ghost"
+                                size="sm"
+                                className="w-full justify-start text-xs h-7"
+                                onClick={() => exportToExcel(user)}
+                                disabled={isExporting}
+                              >
+                                <User className="w-3 h-3 mr-1" />
+                                {user}
+                              </Button>
+                            ))}
+                            {uniqueUsers.length > 10 && (
+                              <div className="text-xs text-muted-foreground text-center">
+                                +{uniqueUsers.length - 10} more users
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -331,24 +405,26 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
                 <div className="relative">
                   <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3" />
                   <Input
-                    placeholder="Search user..."
+                    placeholder={isBasicUser ? "Search..." : "Search user..."}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-7 h-8 text-xs"
                   />
                 </div>
 
-                <Select value={selectedUser} onValueChange={setSelectedUser}>
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue placeholder="All users" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Users</SelectItem>
-                    {uniqueUsers.map(user => (
-                      <SelectItem key={user} value={user}>{user}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {!isBasicUser && (
+                  <Select value={selectedUser} onValueChange={setSelectedUser}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="All users" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Users</SelectItem>
+                      {uniqueUsers.map(user => (
+                        <SelectItem key={user} value={user}>{user}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
 
                 <Select value={dateRange} onValueChange={setDateRange}>
                   <SelectTrigger className="h-8 text-xs">
@@ -448,7 +524,7 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
             </Card>
             <Card>
               <CardContent className="p-3">
-                <div className="text-lg font-bold">{uniqueUsers.length}</div>
+                <div className="text-lg font-bold">{isBasicUser ? 1 : uniqueUsers.length}</div>
                 <p className="text-xs text-muted-foreground">Users</p>
               </CardContent>
             </Card>
@@ -476,7 +552,7 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-sm">{payment.user_name}</span>
+                        {!isBasicUser && <span className="font-medium text-sm">{payment.user_name}</span>}
                         <Badge variant="outline" className="text-xs px-1">
                           #{(filteredPayments.length - index).toString().padStart(3, '0')}
                         </Badge>
