@@ -83,7 +83,7 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
 
   if (!profile) {
     return (
-      <div className="text-center py-6 sm:py-8 container-mobile">
+      <div className="text-center py-6 sm:py-8 px-4">
         <div className="text-sm text-muted-foreground">Please log in to view users.</div>
       </div>
     );
@@ -91,7 +91,7 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
 
   if (!hasAccess) {
     return (
-      <div className="text-center py-6 sm:py-8 container-mobile">
+      <div className="text-center py-6 sm:py-8 px-4">
         <div className="text-sm text-muted-foreground">You don't have permission to view all users.</div>
       </div>
     );
@@ -99,7 +99,7 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
 
   if (loading) {
     return (
-      <div className="text-center py-6 sm:py-8 container-mobile">
+      <div className="text-center py-6 sm:py-8 px-4">
         <div className="text-sm text-muted-foreground">Loading users...</div>
       </div>
     );
@@ -107,7 +107,7 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
 
   if (error) {
     return (
-      <div className="text-center py-6 sm:py-8 container-mobile">
+      <div className="text-center py-6 sm:py-8 px-4">
         <div className="text-destructive mb-2 text-sm">Error: {error}</div>
       </div>
     );
@@ -117,7 +117,7 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
   const canManagePayments = profile?.role === 'admin' || profile?.role === 'canteen';
 
   return (
-    <div className="space-y-3 sm:space-y-4 container-mobile">
+    <div className="w-full max-w-full space-y-4 px-4 sm:px-6">
       {/* Filter Controls */}
       <div className="w-full">
         <UserFilters
