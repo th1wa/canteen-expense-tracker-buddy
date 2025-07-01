@@ -50,6 +50,19 @@ const TabContent: React.FC<TabContentProps> = ({
         );
       
       case 'history':
+        // HR users should not access expense history
+        if (profile?.role === 'hr') {
+          return (
+            <div className="text-center py-8 animate-fade-in">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Access Denied
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                HR users don't have permission to view expense history.
+              </p>
+            </div>
+          );
+        }
         return (
           <div className="animate-fade-in">
             <ExpenseHistory 
@@ -60,6 +73,19 @@ const TabContent: React.FC<TabContentProps> = ({
         );
       
       case 'payments':
+        // HR users should not access user balances
+        if (profile?.role === 'hr') {
+          return (
+            <div className="text-center py-8 animate-fade-in">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Access Denied
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                HR users don't have permission to view user balances.
+              </p>
+            </div>
+          );
+        }
         return (
           <div className="animate-fade-in">
             <PaymentHistory refreshTrigger={refreshTrigger + localRefreshTrigger} />
@@ -93,14 +119,15 @@ const TabContent: React.FC<TabContentProps> = ({
         );
       
       case 'activity':
-        if (!profile || (profile.role !== 'admin' && profile.role !== 'hr')) {
+        // Only admin can access user activity (HR removed)
+        if (!profile || profile.role !== 'admin') {
           return (
             <div className="text-center py-8 animate-fade-in">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 Access Denied
               </h3>
               <p className="text-gray-600 dark:text-gray-300">
-                You don't have permission to view user activity.
+                Only administrators can view user activity.
               </p>
             </div>
           );
@@ -150,7 +177,14 @@ const TabContent: React.FC<TabContentProps> = ({
         );
       
       default:
-        // Default to expense history for most users
+        // Default to payment history for HR users, expense history for others
+        if (profile?.role === 'hr') {
+          return (
+            <div className="animate-fade-in">
+              <UsersList refreshTrigger={refreshTrigger + localRefreshTrigger} />
+            </div>
+          );
+        }
         return (
           <div className="animate-fade-in">
             <ExpenseHistory 

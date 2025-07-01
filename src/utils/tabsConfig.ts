@@ -20,6 +20,7 @@ export const getTabsConfig = (profile: any): TabConfig[] => {
   const canAccessSummary = profile.role === 'admin' || profile.role === 'hr';
   const canAccessReports = profile.role === 'admin' || profile.role === 'hr';
   const isBasicUser = profile.role === 'user';
+  const isHRUser = profile.role === 'hr';
 
   const tabs: TabConfig[] = [];
 
@@ -32,21 +33,35 @@ export const getTabsConfig = (profile: any): TabConfig[] => {
     });
   }
 
-  tabs.push({
-    id: 'users',
-    title: isBasicUser ? 'My Payment Status' : 'Users & Payment Status',
-    description: isBasicUser 
-      ? 'View your spending, payments, and outstanding balance' 
-      : 'View all users with their spending, payments, and outstanding balances',
-    icon: Users
-  });
+  // HR users should not see user balances
+  if (!isHRUser) {
+    tabs.push({
+      id: 'users',
+      title: isBasicUser ? 'My Payment Status' : 'Users & Payment Status',
+      description: isBasicUser 
+        ? 'View your spending, payments, and outstanding balance' 
+        : 'View all users with their spending, payments, and outstanding balances',
+      icon: Users
+    });
+  }
 
+  // HR users should not see expense history
+  if (!isHRUser) {
+    tabs.push({
+      id: 'history',
+      title: isBasicUser ? 'My Expense History' : 'Expense History',
+      description: isBasicUser 
+        ? 'View your transaction history' 
+        : 'View all transactions with search and filter options',
+      icon: Calendar
+    });
+  }
+
+  // Payment History - available for all including HR
   tabs.push({
-    id: 'history',
-    title: isBasicUser ? 'My Expense History' : 'Expense History',
-    description: isBasicUser 
-      ? 'View your transaction history' 
-      : 'View all transactions with search and filter options',
+    id: 'payment-history',
+    title: 'Payment History',
+    description: 'View payment records and transactions',
     icon: Calendar
   });
 
@@ -94,6 +109,12 @@ export const getDefaultTab = (profile: any): string => {
   
   const isBasicUser = profile.role === 'user';
   const canManageExpenses = profile.role === 'admin' || profile.role === 'canteen';
+  const isHRUser = profile.role === 'hr';
+  
+  // HR users default to payment history
+  if (isHRUser) {
+    return 'users'; // This will show payment history for HR
+  }
   
   if (isBasicUser) {
     return 'users';

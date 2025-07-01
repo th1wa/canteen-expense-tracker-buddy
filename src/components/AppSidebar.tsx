@@ -31,29 +31,32 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
   const canManageExpenses = profile && (profile.role === 'admin' || profile.role === 'canteen');
   const canAccessBackup = profile && profile.role === 'admin';
   const canManageUsers = profile && profile.role === 'admin';
-  const canViewActivity = profile && (profile.role === 'admin' || profile.role === 'hr');
+  const canViewActivity = profile && profile.role === 'admin'; // Removed HR access
   const canAccessReports = profile && (profile.role === 'admin' || profile.role === 'hr');
   const isBasicUser = profile && profile.role === 'user';
+  const isHRUser = profile && profile.role === 'hr';
 
   const menuItems = [
-    {
+    // HR users should NOT see expense history
+    ...(!isHRUser ? [{
       id: "history",
       title: isBasicUser ? "My History" : "Expense History",
       icon: History,
       description: isBasicUser ? "Your expense history" : "All expense records"
-    },
+    }] : []),
     ...(canManageExpenses ? [{
       id: "expenses",
       title: "Add Expense",
       icon: PlusCircle,
       description: "Record new expenses"
     }] : []),
-    {
+    // HR users should NOT see user balances
+    ...(!isHRUser ? [{
       id: "payments",
       title: isBasicUser ? "My Balance" : "User Balances",
       icon: Users,
       description: isBasicUser ? "View your balance" : "View user balances and manage payments"
-    },
+    }] : []),
     {
       id: "users",
       title: isBasicUser ? "My Payments" : "Payment History",
@@ -66,6 +69,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
       icon: FileBarChart,
       description: "Comprehensive reports with downloadable exports"
     }] : []),
+    // HR users should NOT see user activity (only admin)
     ...(canViewActivity ? [{
       id: "activity",
       title: "User Activity",
