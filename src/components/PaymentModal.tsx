@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar as CalendarIcon, CreditCard, DollarSign, User } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -39,7 +38,6 @@ const PaymentModal = ({ isOpen, onClose, userName, totalExpense, onPaymentAdded 
   const [actualTotalExpense, setActualTotalExpense] = useState(totalExpense);
   const { toast } = useToast();
 
-  // Fetch available users and calculate total expense
   useEffect(() => {
     if (isOpen) {
       fetchAvailableUsers();
@@ -49,7 +47,6 @@ const PaymentModal = ({ isOpen, onClose, userName, totalExpense, onPaymentAdded 
     }
   }, [isOpen, selectedUserName]);
 
-  // Update selected user when userName prop changes
   useEffect(() => {
     setSelectedUserName(userName);
   }, [userName]);
@@ -77,7 +74,6 @@ const PaymentModal = ({ isOpen, onClose, userName, totalExpense, onPaymentAdded 
     if (!userNameToFetch) return;
 
     try {
-      // Fetch total expenses for the user
       const { data: expensesData, error: expensesError } = await supabase
         .from('expenses')
         .select('amount')
@@ -88,7 +84,6 @@ const PaymentModal = ({ isOpen, onClose, userName, totalExpense, onPaymentAdded 
         return;
       }
 
-      // Fetch total payments for the user
       const { data: paymentsData, error: paymentsError } = await supabase
         .from('payments')
         .select('amount')
@@ -158,7 +153,6 @@ const PaymentModal = ({ isOpen, onClose, userName, totalExpense, onPaymentAdded 
       setPaymentDate(new Date());
       setRefreshTrigger(prev => prev + 1);
       
-      // Call the onPaymentAdded callback if provided
       if (onPaymentAdded) {
         onPaymentAdded();
       }
@@ -178,104 +172,143 @@ const PaymentModal = ({ isOpen, onClose, userName, totalExpense, onPaymentAdded 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto p-0">
-        <div className="p-4 sm:p-6">
-          <DialogHeader className="pb-4">
-            <DialogTitle className="text-lg sm:text-xl flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                💳
+      <DialogContent className="w-[95vw] max-w-5xl max-h-[90vh] overflow-hidden p-0 gap-0">
+        <div className="flex flex-col h-full">
+          <DialogHeader className="px-6 py-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+            <DialogTitle className="text-xl sm:text-2xl flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
+                <CreditCard className="w-5 h-5 text-white" />
               </div>
-              Record Payment {selectedUserName && `for ${selectedUserName}`}
+              <div>
+                <div className="font-bold">Record Payment</div>
+                {selectedUserName && (
+                  <div className="text-sm text-muted-foreground font-normal">
+                    for {selectedUserName}
+                  </div>
+                )}
+              </div>
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 sm:space-y-6">
-            {actualTotalExpense > 0 && (
-              <div className="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 p-4 rounded-lg border border-red-200 dark:border-red-700">
-                <p className="text-xs sm:text-sm text-red-700 dark:text-red-300 mb-1">
-                  Total Outstanding Expense {selectedUserName && `for ${selectedUserName}`}
-                </p>
-                <p className="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400">
-                  Rs. {actualTotalExpense.toFixed(2)}
-                </p>
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="user-select" className="text-sm font-medium">Select User</Label>
-                  <Select value={selectedUserName} onValueChange={handleUserChange}>
-                    <SelectTrigger id="user-select" className="h-10">
-                      <SelectValue placeholder="Select user" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableUsers.map(user => (
-                        <SelectItem key={user} value={user}>{user}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-6 space-y-6">
+              {actualTotalExpense > 0 && (
+                <div className="relative overflow-hidden bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 dark:from-red-950/30 dark:via-orange-950/30 dark:to-yellow-950/30 p-6 rounded-2xl border-2 border-red-200/50 dark:border-red-700/50 shadow-lg">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-red-200/20 to-orange-200/20 rounded-full -translate-y-16 translate-x-16"></div>
+                  <div className="relative">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center">
+                        <DollarSign className="w-4 h-4 text-white" />
+                      </div>
+                      <p className="text-sm font-medium text-red-700 dark:text-red-300">
+                        Outstanding Balance {selectedUserName && `for ${selectedUserName}`}
+                      </p>
+                    </div>
+                    <p className="text-3xl font-bold text-red-600 dark:text-red-400">
+                      Rs. {actualTotalExpense.toLocaleString()}
+                    </p>
+                  </div>
                 </div>
+              )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="amount" className="text-sm font-medium">Payment Amount</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    step="0.01"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="Enter payment amount"
-                    required
-                    className="h-10"
-                  />
-                </div>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="space-y-3">
+                    <Label htmlFor="user-select" className="text-sm font-semibold flex items-center gap-2">
+                      <User className="w-4 h-4" />
+                      Select User
+                    </Label>
+                    <Select value={selectedUserName} onValueChange={handleUserChange}>
+                      <SelectTrigger id="user-select" className="h-12 bg-white dark:bg-gray-900 border-2 hover:border-blue-300 focus:border-blue-500 transition-colors">
+                        <SelectValue placeholder="Select user" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableUsers.map(user => (
+                          <SelectItem key={user} value={user} className="py-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                {user.charAt(0).toUpperCase()}
+                              </div>
+                              {user}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Payment Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal h-10",
-                          !paymentDate && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
-                        {paymentDate ? format(paymentDate, "PPP") : <span>Pick a date</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={paymentDate}
-                        onSelect={(date) => date && setPaymentDate(date)}
-                        initialFocus
+                  <div className="space-y-3">
+                    <Label htmlFor="amount" className="text-sm font-semibold flex items-center gap-2">
+                      <DollarSign className="w-4 h-4" />
+                      Payment Amount
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="amount"
+                        type="number"
+                        step="0.01"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        placeholder="Enter payment amount"
+                        required
+                        className="h-12 pl-8 bg-white dark:bg-gray-900 border-2 hover:border-green-300 focus:border-green-500 transition-colors text-lg font-medium"
                       />
-                    </PopoverContent>
-                  </Popover>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">₹</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold flex items-center gap-2">
+                      <CalendarIcon className="w-4 h-4" />
+                      Payment Date
+                    </Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-medium h-12 bg-white dark:bg-gray-900 border-2 hover:border-purple-300 focus:border-purple-500 transition-colors",
+                            !paymentDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-3 h-4 w-4 flex-shrink-0" />
+                          {paymentDate ? format(paymentDate, "PPP") : <span>Pick a date</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={paymentDate}
+                          onSelect={(date) => date && setPaymentDate(date)}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
+
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting || !selectedUserName} 
+                  className="w-full h-14 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] disabled:hover:scale-100"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>
+                      Recording Payment...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="w-5 h-5 mr-3" />
+                      Record Payment
+                    </>
+                  )}
+                </Button>
+              </form>
+
+              <div className="border-t-2 border-dashed pt-6">
+                <PaymentHistory refreshTrigger={refreshTrigger} />
               </div>
-
-              <Button 
-                type="submit" 
-                disabled={isSubmitting || !selectedUserName} 
-                className="w-full h-11 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Recording Payment...
-                  </>
-                ) : (
-                  "Record Payment"
-                )}
-              </Button>
-            </form>
-
-            <div className="border-t pt-4">
-              <PaymentHistory refreshTrigger={refreshTrigger} />
             </div>
           </div>
         </div>

@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { Calendar as CalendarIcon, Search, Filter, Download, RefreshCw, User, FileText, Plus } from "lucide-react";
+import { Calendar as CalendarIcon, Search, Filter, Download, RefreshCw, User, FileText, Plus, CreditCard, TrendingUp, Users, DollarSign } from "lucide-react";
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -191,14 +191,12 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
     if (userName) {
       setSelectedUserForPayment(userName);
     } else {
-      // For general add payment, use the first user or empty
       setSelectedUserForPayment(uniqueUsers[0] || '');
     }
     setShowPaymentModal(true);
   };
 
   const handlePaymentAdded = () => {
-    // Refresh payments when a new payment is added
     fetchPayments();
     setShowPaymentModal(false);
   };
@@ -269,34 +267,42 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
 
   if (!hasAccess) {
     return (
-      <div className="text-center py-8">
+      <div className="text-center py-12">
+        <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <CreditCard className="w-8 h-8 text-red-500" />
+        </div>
+        <div className="text-lg font-medium mb-2">Access Denied</div>
         <div className="text-sm text-muted-foreground">You don't have permission to view payment history.</div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <div>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                💳 {isBasicUser ? 'My Payment History' : 'Payment History'}
-              </CardTitle>
-              <CardDescription className="text-xs">
-                {isBasicUser ? 'Your payment records' : 'Complete record of all payments'}
-              </CardDescription>
+    <div className="space-y-6">
+      <Card className="overflow-hidden bg-gradient-to-br from-white to-blue-50/30 dark:from-gray-900 dark:to-blue-950/20 border-2 shadow-xl">
+        <CardHeader className="pb-4 bg-gradient-to-r from-blue-500/5 to-purple-500/5 border-b">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
+                <CreditCard className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-xl sm:text-2xl font-bold">
+                  {isBasicUser ? 'My Payment History' : 'Payment History'}
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  {isBasicUser ? 'Your payment records and transactions' : 'Complete record of all payments and transactions'}
+                </CardDescription>
+              </div>
             </div>
-            <div className="flex gap-2">
+            
+            <div className="flex flex-wrap gap-2">
               {canAddPayments && (
                 <Button
                   onClick={() => handleAddPayment()}
-                  variant="default"
-                  size="sm"
-                  className="h-8 px-3 text-xs bg-green-600 hover:bg-green-700"
+                  className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                 >
-                  <Plus className="w-3 h-3 mr-1" />
+                  <Plus className="w-4 h-4 mr-2" />
                   Add Payment
                 </Button>
               )}
@@ -305,160 +311,161 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
                 onClick={fetchPayments}
                 disabled={isLoading}
                 variant="outline"
-                size="sm"
-                className="h-8 px-3 text-xs"
+                className="border-2 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-all duration-300"
               >
                 {isLoading ? (
                   <>
-                    <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                     Loading
                   </>
                 ) : (
                   <>
-                    <RefreshCw className="w-3 h-3 mr-1" />
+                    <RefreshCw className="w-4 h-4 mr-2" />
                     Refresh
                   </>
                 )}
               </Button>
               
-              {/* Export Options */}
               {isBasicUser ? (
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       disabled={isBasicUserExporting || filteredPayments.length === 0}
                       variant="outline"
-                      size="sm"
-                      className="h-8 px-3 text-xs"
+                      className="border-2 hover:border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/20 transition-all duration-300"
                     >
-                      <Download className="w-3 h-3 mr-1" />
+                      <Download className="w-4 h-4 mr-2" />
                       Export
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-48" align="end">
-                    <div className="space-y-2">
-                      <div className="text-xs font-medium mb-2">Export Options</div>
+                  <PopoverContent className="w-56" align="end">
+                    <div className="space-y-3">
+                      <div className="font-medium mb-3">Export Options</div>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="w-full justify-start text-xs h-8"
+                        className="w-full justify-start hover:bg-blue-50 dark:hover:bg-blue-950/20"
                         onClick={handleBasicUserExportToExcel}
                         disabled={isBasicUserExporting}
                       >
-                        <FileText className="w-3 h-3 mr-2" />
+                        <FileText className="w-4 h-4 mr-3" />
                         Export to Excel
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="w-full justify-start text-xs h-8"
+                        className="w-full justify-start hover:bg-green-50 dark:hover:bg-green-950/20"
                         onClick={handleBasicUserExportToPDF}
                         disabled={isBasicUserExporting}
                       >
-                        <FileText className="w-3 h-3 mr-2" />
+                        <FileText className="w-4 h-4 mr-3" />
                         Export to PDF
                       </Button>
                     </div>
                   </PopoverContent>
                 </Popover>
               ) : (
-                <div className="relative">
-                  <Popover>
-                    <PopoverTrigger asChild>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      disabled={isExporting || filteredPayments.length === 0}
+                      variant="outline"
+                      className="border-2 hover:border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/20 transition-all duration-300"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Export
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64" align="end">
+                    <div className="space-y-3">
+                      <div className="font-medium mb-3">Export Options</div>
                       <Button
-                        disabled={isExporting || filteredPayments.length === 0}
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
-                        className="h-8 px-3 text-xs"
+                        className="w-full justify-start hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                        onClick={() => exportToExcel('all')}
+                        disabled={isExporting}
                       >
-                        <Download className="w-3 h-3 mr-1" />
-                        Export
+                        All Payments ({payments.length})
                       </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-56" align="end">
-                      <div className="space-y-2">
-                        <div className="text-xs font-medium mb-2">Export Options</div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="w-full justify-start text-xs h-8"
-                          onClick={() => exportToExcel('all')}
-                          disabled={isExporting}
-                        >
-                          All Payments ({payments.length})
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="w-full justify-start text-xs h-8"
-                          onClick={() => exportToExcel('filtered')}
-                          disabled={isExporting}
-                        >
-                          Filtered Payments ({filteredPayments.length})
-                        </Button>
-                        <div className="border-t pt-2">
-                          <div className="text-xs text-muted-foreground mb-1">By User:</div>
-                          <div className="max-h-32 overflow-y-auto space-y-1">
-                            {uniqueUsers.slice(0, 10).map(user => (
-                              <Button
-                                key={user}
-                                variant="ghost"
-                                size="sm"
-                                className="w-full justify-start text-xs h-7"
-                                onClick={() => exportToExcel(user)}
-                                disabled={isExporting}
-                              >
-                                <User className="w-3 h-3 mr-1" />
-                                {user}
-                              </Button>
-                            ))}
-                            {uniqueUsers.length > 10 && (
-                              <div className="text-xs text-muted-foreground text-center">
-                                +{uniqueUsers.length - 10} more users
-                              </div>
-                            )}
-                          </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start hover:bg-green-50 dark:hover:bg-green-950/20"
+                        onClick={() => exportToExcel('filtered')}
+                        disabled={isExporting}
+                      >
+                        Filtered Payments ({filteredPayments.length})
+                      </Button>
+                      <div className="border-t pt-2">
+                        <div className="text-xs text-muted-foreground mb-2 font-medium">By User:</div>
+                        <div className="max-h-40 overflow-y-auto space-y-1">
+                          {uniqueUsers.slice(0, 10).map(user => (
+                            <Button
+                              key={user}
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start text-xs h-8 hover:bg-purple-50 dark:hover:bg-purple-950/20"
+                              onClick={() => exportToExcel(user)}
+                              disabled={isExporting}
+                            >
+                              <User className="w-3 h-3 mr-2" />
+                              {user}
+                            </Button>
+                          ))}
+                          {uniqueUsers.length > 10 && (
+                            <div className="text-xs text-muted-foreground text-center py-1">
+                              +{uniqueUsers.length - 10} more users
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </PopoverContent>
-                  </Popover>
-                </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               )}
             </div>
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-4">
-          {/* Compact Filters */}
-          <Card className="border-dashed">
-            <CardContent className="p-3">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+        <CardContent className="space-y-6 p-6">
+          {/* Enhanced Filters */}
+          <Card className="border-2 border-dashed border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20">
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="relative">
-                  <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
                     placeholder={isBasicUser ? "Search..." : "Search user..."}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-7 h-8 text-xs"
+                    className="pl-10 h-11 border-2 hover:border-blue-300 focus:border-blue-500 transition-colors"
                   />
                 </div>
 
                 {!isBasicUser && (
                   <Select value={selectedUser} onValueChange={setSelectedUser}>
-                    <SelectTrigger className="h-8 text-xs">
+                    <SelectTrigger className="h-11 border-2 hover:border-green-300 focus:border-green-500 transition-colors">
                       <SelectValue placeholder="All users" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Users</SelectItem>
                       {uniqueUsers.map(user => (
-                        <SelectItem key={user} value={user}>{user}</SelectItem>
+                        <SelectItem key={user} value={user}>
+                          <div className="flex items-center gap-2">
+                            <div className="w-5 h-5 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                              {user.charAt(0).toUpperCase()}
+                            </div>
+                            {user}
+                          </div>
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 )}
 
                 <Select value={dateRange} onValueChange={setDateRange}>
-                  <SelectTrigger className="h-8 text-xs">
+                  <SelectTrigger className="h-11 border-2 hover:border-purple-300 focus:border-purple-500 transition-colors">
                     <SelectValue placeholder="All time" />
                   </SelectTrigger>
                   <SelectContent>
@@ -473,30 +480,27 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
 
                 <Button
                   onClick={clearFilters}
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 px-3 text-xs"
+                  variant="outline"
+                  className="h-11 border-2 hover:border-red-300 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all duration-300"
                 >
-                  <Filter className="w-3 h-3 mr-1" />
-                  Clear
+                  <Filter className="w-4 h-4 mr-2" />
+                  Clear Filters
                 </Button>
               </div>
 
-              {/* Custom Date Range */}
               {dateRange === 'custom' && (
-                <div className="grid grid-cols-2 gap-2 mt-2 p-2 bg-blue-50 dark:bg-blue-950/20 rounded border border-blue-200 dark:border-blue-800">
+                <div className="grid grid-cols-2 gap-4 mt-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-xl border border-purple-200 dark:border-purple-800">
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
-                        size="sm"
                         className={cn(
-                          "h-8 justify-start text-xs font-normal",
+                          "h-11 justify-start font-normal border-2 hover:border-purple-300 transition-colors",
                           !customDateFrom && "text-muted-foreground"
                         )}
                       >
-                        <CalendarIcon className="mr-1 h-3 w-3" />
-                        {customDateFrom ? format(customDateFrom, "MMM dd") : "From"}
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {customDateFrom ? format(customDateFrom, "MMM dd, yyyy") : "From date"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -513,14 +517,13 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
-                        size="sm"
                         className={cn(
-                          "h-8 justify-start text-xs font-normal",
+                          "h-11 justify-start font-normal border-2 hover:border-purple-300 transition-colors",
                           !customDateTo && "text-muted-foreground"
                         )}
                       >
-                        <CalendarIcon className="mr-1 h-3 w-3" />
-                        {customDateTo ? format(customDateTo, "MMM dd") : "To"}
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {customDateTo ? format(customDateTo, "MMM dd, yyyy") : "To date"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -537,65 +540,103 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
             </CardContent>
           </Card>
 
-          {/* Compact Summary */}
-          <div className="grid grid-cols-3 gap-2">
-            <Card>
-              <CardContent className="p-3">
-                <div className="text-lg font-bold">{filteredPayments.length}</div>
-                <p className="text-xs text-muted-foreground">Payments</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-3">
-                <div className="text-lg font-bold text-green-600">
-                  Rs. {getTotalAmount().toFixed(2)}
+          {/* Enhanced Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30 border-2 border-blue-200 dark:border-blue-800">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                      {filteredPayments.length}
+                    </div>
+                    <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">Total Payments</p>
+                  </div>
+                  <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center shadow-lg">
+                    <TrendingUp className="w-6 h-6 text-white" />
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground">Total Amount</p>
               </CardContent>
             </Card>
-            <Card>
-              <CardContent className="p-3">
-                <div className="text-lg font-bold">{isBasicUser ? 1 : uniqueUsers.length}</div>
-                <p className="text-xs text-muted-foreground">Users</p>
+
+            <Card className="overflow-hidden bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/30 border-2 border-green-200 dark:border-green-800">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-3xl font-bold text-green-600 dark:text-green-400">
+                      Rs. {getTotalAmount().toLocaleString()}
+                    </div>
+                    <p className="text-sm text-green-700 dark:text-green-300 font-medium">Total Amount</p>
+                  </div>
+                  <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center shadow-lg">
+                    <DollarSign className="w-6 h-6 text-white" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30 border-2 border-purple-200 dark:border-purple-800">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                      {isBasicUser ? 1 : uniqueUsers.length}
+                    </div>
+                    <p className="text-sm text-purple-700 dark:text-purple-300 font-medium">Active Users</p>
+                  </div>
+                  <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center shadow-lg">
+                    <Users className="w-6 h-6 text-white" />
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Compact Payment List */}
-          <div className="space-y-2">
+          {/* Enhanced Payment List */}
+          <div>
             {isLoading ? (
-              <div className="text-center py-6">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
-                <p className="text-xs text-muted-foreground mt-2">Loading payments...</p>
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
+                <p className="text-lg font-medium text-muted-foreground">Loading payments...</p>
               </div>
             ) : filteredPayments.length === 0 ? (
-              <div className="text-center py-6 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                <p className="text-xs text-muted-foreground">
+              <div className="text-center py-16 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-700">
+                <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CreditCard className="w-8 h-8 text-gray-400" />
+                </div>
+                <p className="text-lg font-medium mb-2">
                   {payments.length === 0 ? "No payments found" : "No payments match the current filters"}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {payments.length === 0 ? "Start by adding your first payment" : "Try adjusting your filters to see more results"}
                 </p>
                 {canAddPayments && payments.length === 0 && (
                   <Button
                     onClick={() => handleAddPayment()}
-                    variant="outline"
-                    size="sm"
-                    className="mt-2"
+                    className="mt-4 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                   >
-                    <Plus className="w-3 h-3 mr-1" />
+                    <Plus className="w-4 h-4 mr-2" />
                     Add First Payment
                   </Button>
                 )}
               </div>
             ) : (
-              <div className="max-h-80 overflow-y-auto space-y-1 border rounded-lg">
+              <div className="space-y-3 max-h-96 overflow-y-auto border-2 rounded-xl bg-white dark:bg-gray-900 p-2">
                 {filteredPayments.map((payment, index) => (
                   <div
                     key={payment.id}
-                    className="flex justify-between items-center p-3 bg-card border-b last:border-b-0 hover:bg-muted/50 transition-colors"
+                    className="flex justify-between items-center p-4 bg-gradient-to-r from-white to-blue-50/30 dark:from-gray-800 dark:to-blue-950/20 rounded-xl border border-gray-200 dark:border-gray-700 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 group"
                   >
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        {!isBasicUser && <span className="font-medium text-sm">{payment.user_name}</span>}
-                        <Badge variant="outline" className="text-xs px-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        {!isBasicUser && (
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                              {payment.user_name.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="font-semibold text-lg">{payment.user_name}</span>
+                          </div>
+                        )}
+                        <Badge variant="outline" className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300">
                           #{(filteredPayments.length - index).toString().padStart(3, '0')}
                         </Badge>
                         {canAddPayments && !isBasicUser && (
@@ -603,22 +644,24 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
                             onClick={() => handleAddPayment(payment.user_name)}
                             variant="ghost"
                             size="sm"
-                            className="h-6 px-2 text-xs"
+                            className="h-8 px-3 bg-green-50 hover:bg-green-100 dark:bg-green-950/20 dark:hover:bg-green-950/40 text-green-700 dark:text-green-300 opacity-0 group-hover:opacity-100 transition-all duration-300"
                           >
                             <Plus className="w-3 h-3 mr-1" />
-                            Add
+                            Add More
                           </Button>
                         )}
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-sm text-muted-foreground flex items-center gap-2">
+                        <CalendarIcon className="w-4 h-4" />
                         {format(new Date(payment.payment_date), 'MMM dd, yyyy')} • {format(new Date(payment.created_at), 'HH:mm')}
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-bold text-green-600">
-                        Rs. {payment.amount.toFixed(2)}
+                      <div className="text-xl font-bold text-green-600 dark:text-green-400 mb-1">
+                        Rs. {payment.amount.toLocaleString()}
                       </div>
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge className="bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800">
+                        <CreditCard className="w-3 h-3 mr-1" />
                         Paid
                       </Badge>
                     </div>
@@ -630,13 +673,12 @@ const PaymentHistory = ({ refreshTrigger = 0 }: PaymentHistoryProps) => {
         </CardContent>
       </Card>
 
-      {/* Payment Modal */}
       {showPaymentModal && (
         <PaymentModal
           isOpen={showPaymentModal}
           onClose={() => setShowPaymentModal(false)}
           userName={selectedUserForPayment}
-          totalExpense={0} // Will be calculated in the modal
+          totalExpense={0}
           onPaymentAdded={handlePaymentAdded}
         />
       )}
