@@ -23,18 +23,10 @@ import {
   CreditCard,
   AlertCircle
 } from "lucide-react";
-import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, subDays, isToday, isYesterday } from "date-fns";
+import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, subDays } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-  }
-}
 
 interface ReportData {
   totalExpenses: number;
@@ -292,6 +284,10 @@ const ReportsAnalytics = () => {
     try {
       console.log('Starting PDF export:', { reportType, userName });
       
+      // Dynamic import to avoid build issues
+      const jsPDF = (await import('jspdf')).default;
+      await import('jspdf-autotable');
+      
       const doc = new jsPDF();
       
       // Header with better error handling
@@ -324,7 +320,8 @@ const ReportsAnalytics = () => {
           ['Monthly Growth', `${(reportData.monthlyGrowth || 0).toFixed(1)}%`]
         ];
 
-        doc.autoTable({
+        // Use autoTable safely
+        (doc as any).autoTable({
           head: [['Metric', 'Value']],
           body: stats,
           startY: yPosition,
@@ -334,11 +331,11 @@ const ReportsAnalytics = () => {
 
         // Top spenders table with safety checks
         if (reportData.topSpenders && reportData.topSpenders.length > 0) {
-          yPosition = (doc as any).lastAutoTable.finalY + 20;
+          yPosition = (doc as any).lastAutoTable?.finalY ? (doc as any).lastAutoTable.finalY + 20 : yPosition + 100;
           doc.text('Top Spenders Analysis', 20, yPosition);
           yPosition += 10;
 
-          doc.autoTable({
+          (doc as any).autoTable({
             head: [['User Name', 'Total Expenses', 'Payments Made', 'Outstanding', 'Status']],
             body: reportData.topSpenders.slice(0, 10).map(spender => [
               spender.name || 'Unknown',
@@ -365,7 +362,7 @@ const ReportsAnalytics = () => {
           ['Collection Rate', `${userExpenses > 0 ? ((userPayments / userExpenses) * 100).toFixed(1) : 0}%`]
         ];
 
-        doc.autoTable({
+        (doc as any).autoTable({
           head: [['Metric', 'Value']],
           body: userStats,
           startY: yPosition,
@@ -384,7 +381,7 @@ const ReportsAnalytics = () => {
         ]);
 
         if (userReportData.length > 0) {
-          doc.autoTable({
+          (doc as any).autoTable({
             head: [['User Name', 'Expenses', 'Payments', 'Outstanding', 'Collection %', 'Status']],
             body: userReportData,
             startY: yPosition,
