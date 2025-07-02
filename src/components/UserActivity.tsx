@@ -298,13 +298,13 @@ const UserActivity = () => {
 
   if (!profile || (profile.role !== 'admin' && profile.role !== 'hr')) {
     return (
-      <Card className="container-mobile">
+      <Card className="mx-auto max-w-4xl">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-responsive-base">
-            <Activity className="w-4 h-4 sm:w-5 sm:h-5" />
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Activity className="w-5 h-5" />
             Access Denied
           </CardTitle>
-          <CardDescription className="text-responsive-sm">
+          <CardDescription>
             You don't have permission to view user activity.
           </CardDescription>
         </CardHeader>
@@ -313,135 +313,147 @@ const UserActivity = () => {
   }
 
   return (
-    <div className="space-y-3 sm:space-y-4 lg:space-y-6 container-mobile">
-      {/* Enhanced Stats Dashboard - Responsive Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 xl:grid-cols-6 gap-2 sm:gap-3 lg:gap-4">
-        <Card className="border-l-4 border-l-green-500">
-          <CardContent className="p-2 sm:p-3">
-            <div className="flex items-center gap-1 sm:gap-2">
-              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
-              <div className="min-w-0">
-                <div className="text-sm sm:text-lg font-bold truncate">{stats.todayLogins}</div>
-                <p className="text-xs text-muted-foreground hidden sm:block">Today's Logins</p>
-                <p className="text-xs text-muted-foreground sm:hidden">Today</p>
+    <div className="space-y-6 mx-auto max-w-7xl p-4">
+      {/* Enhanced Stats Dashboard */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <Card className="overflow-hidden bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/20 border-l-4 border-l-green-500 hover:shadow-lg transition-all duration-300">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg">
+                <TrendingUp className="w-5 h-5 text-white" />
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-blue-500">
-          <CardContent className="p-2 sm:p-3">
-            <div className="flex items-center gap-1 sm:gap-2">
-              <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500 flex-shrink-0" />
-              <div className="min-w-0">
-                <div className="text-sm sm:text-lg font-bold truncate">{stats.totalLogins}</div>
-                <p className="text-xs text-muted-foreground hidden sm:block">Total Logins</p>
-                <p className="text-xs text-muted-foreground sm:hidden">Total</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-purple-500">
-          <CardContent className="p-2 sm:p-3">
-            <div className="flex items-center gap-1 sm:gap-2">
-              <Users className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500 flex-shrink-0" />
-              <div className="min-w-0">
-                <div className="text-sm sm:text-lg font-bold truncate">{stats.uniqueUsers}</div>
-                <p className="text-xs text-muted-foreground hidden sm:block">Unique Users</p>
-                <p className="text-xs text-muted-foreground sm:hidden">Users</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-orange-500">
-          <CardContent className="p-2 sm:p-3">
-            <div className="flex items-center gap-1 sm:gap-2">
-              <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-orange-500 flex-shrink-0" />
-              <div className="min-w-0">
-                <div className="text-sm sm:text-lg font-bold truncate">{stats.avgSessionDuration}</div>
-                <p className="text-xs text-muted-foreground hidden sm:block">Avg Session</p>
-                <p className="text-xs text-muted-foreground sm:hidden">Session</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-pink-500 col-span-2 sm:col-span-1">
-          <CardContent className="p-2 sm:p-3">
-            <div className="flex items-center gap-1 sm:gap-2">
-              <User className="w-3 h-3 sm:w-4 sm:h-4 text-pink-500 flex-shrink-0" />
               <div className="min-w-0 flex-1">
-                <div className="text-xs sm:text-sm font-bold truncate">{stats.mostActiveUser || 'N/A'}</div>
-                <p className="text-xs text-muted-foreground">Most Active</p>
+                <div className="text-2xl font-bold text-green-900 dark:text-green-100">{stats.todayLogins}</div>
+                <p className="text-sm text-green-700 dark:text-green-300 font-medium">Today's Logins</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-indigo-500 col-span-2 sm:col-span-3 lg:col-span-1">
-          <CardContent className="p-2 sm:p-3">
-            <div className="flex items-center gap-1 sm:gap-2">
-              <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-indigo-500 flex-shrink-0" />
-              <div className="min-w-0">
-                <div className="text-sm sm:text-lg font-bold">{stats.peakHour || 'N/A'}</div>
-                <p className="text-xs text-muted-foreground">Peak Hour</p>
+        <Card className="overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 border-l-4 border-l-blue-500 hover:shadow-lg transition-all duration-300">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                <BarChart3 className="w-5 h-5 text-white" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{stats.totalLogins}</div>
+                <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">Total Logins</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20 border-l-4 border-l-purple-500 hover:shadow-lg transition-all duration-300">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                <Users className="w-5 h-5 text-white" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">{stats.uniqueUsers}</div>
+                <p className="text-sm text-purple-700 dark:text-purple-300 font-medium">Unique Users</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/20 dark:to-orange-900/20 border-l-4 border-l-orange-500 hover:shadow-lg transition-all duration-300">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
+                <Clock className="w-5 h-5 text-white" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-2xl font-bold text-orange-900 dark:text-orange-100">{stats.avgSessionDuration}</div>
+                <p className="text-sm text-orange-700 dark:text-orange-300 font-medium">Avg Session</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden bg-gradient-to-br from-pink-50 to-pink-100 dark:from-pink-950/20 dark:to-pink-900/20 border-l-4 border-l-pink-500 hover:shadow-lg transition-all duration-300 lg:col-span-1 col-span-2 sm:col-span-1">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl flex items-center justify-center shadow-lg">
+                <User className="w-5 h-5 text-white" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-lg font-bold text-pink-900 dark:text-pink-100 truncate">{stats.mostActiveUser || 'N/A'}</div>
+                <p className="text-sm text-pink-700 dark:text-pink-300 font-medium">Most Active</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-950/20 dark:to-indigo-900/20 border-l-4 border-l-indigo-500 hover:shadow-lg transition-all duration-300 lg:col-span-1 col-span-2 sm:col-span-2">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                <Calendar className="w-5 h-5 text-white" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-2xl font-bold text-indigo-900 dark:text-indigo-100">{stats.peakHour || 'N/A'}</div>
+                <p className="text-sm text-indigo-700 dark:text-indigo-300 font-medium">Peak Hour</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Browser & Device Analytics - Responsive Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-        <Card>
-          <CardHeader className="pb-2 sm:pb-3">
-            <CardTitle className="text-sm sm:text-base flex items-center gap-2">
-              <Monitor className="w-3 h-3 sm:w-4 sm:h-4" />
+      {/* Browser & Device Analytics */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="overflow-hidden bg-gradient-to-br from-white to-blue-50/30 dark:from-gray-900 dark:to-blue-950/20 border-2 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardHeader className="pb-4 bg-gradient-to-r from-blue-500/5 to-purple-500/5 border-b">
+            <CardTitle className="text-lg font-bold flex items-center gap-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+                <Monitor className="w-4 h-4 text-white" />
+              </div>
               Browser Usage
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-1 sm:space-y-2">
+          <CardContent className="p-6 space-y-4">
             {Object.entries(stats.browserStats).slice(0, 5).map(([browser, count]) => (
-              <div key={browser} className="flex justify-between items-center">
-                <span className="text-xs sm:text-sm truncate flex-1 mr-2">{browser}</span>
-                <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-                  <div className="w-12 sm:w-16 h-1.5 sm:h-2 bg-muted rounded-full overflow-hidden">
+              <div key={browser} className="flex justify-between items-center p-3 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-950/10 dark:to-purple-950/10 rounded-lg hover:shadow-md transition-all duration-300">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate flex-1 mr-4">{browser}</span>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
                     <div 
-                      className="h-full bg-blue-500" 
+                      className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-500" 
                       style={{ width: `${(count / stats.totalLogins) * 100}%` }}
                     />
                   </div>
-                  <span className="text-xs font-medium w-6 text-right">{count}</span>
+                  <span className="text-sm font-bold text-gray-900 dark:text-gray-100 w-8 text-right">{count}</span>
                 </div>
               </div>
             ))}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2 sm:pb-3">
-            <CardTitle className="text-sm sm:text-base flex items-center gap-2">
-              <Smartphone className="w-3 h-3 sm:w-4 sm:h-4" />
+        <Card className="overflow-hidden bg-gradient-to-br from-white to-green-50/30 dark:from-gray-900 dark:to-green-950/20 border-2 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardHeader className="pb-4 bg-gradient-to-r from-green-500/5 to-emerald-500/5 border-b">
+            <CardTitle className="text-lg font-bold flex items-center gap-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
+                <Smartphone className="w-4 h-4 text-white" />
+              </div>
               Device Types
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-1 sm:space-y-2">
+          <CardContent className="p-6 space-y-4">
             {Object.entries(stats.deviceStats).slice(0, 5).map(([device, count]) => (
-              <div key={device} className="flex justify-between items-center">
-                <div className="flex items-center gap-1 sm:gap-2 flex-1 min-w-0">
+              <div key={device} className="flex justify-between items-center p-3 bg-gradient-to-r from-green-50/50 to-emerald-50/50 dark:from-green-950/10 dark:to-emerald-950/10 rounded-lg hover:shadow-md transition-all duration-300">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
                   {getDeviceIcon(device)}
-                  <span className="text-xs sm:text-sm truncate">{device}</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">{device}</span>
                 </div>
-                <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-                  <div className="w-12 sm:w-16 h-1.5 sm:h-2 bg-muted rounded-full overflow-hidden">
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
                     <div 
-                      className="h-full bg-green-500" 
+                      className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition-all duration-500" 
                       style={{ width: `${(count / stats.totalLogins) * 100}%` }}
                     />
                   </div>
-                  <span className="text-xs font-medium w-6 text-right">{count}</span>
+                  <span className="text-sm font-bold text-gray-900 dark:text-gray-100 w-8 text-right">{count}</span>
                 </div>
               </div>
             ))}
@@ -449,177 +461,222 @@ const UserActivity = () => {
         </Card>
       </div>
 
-      {/* Filters Section - Mobile Optimized */}
-      <Card>
-        <CardHeader className="pb-2 sm:pb-3">
-          <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-            <Filter className="w-3 h-3 sm:w-4 sm:h-4" />
-            Activity Filters
-          </CardTitle>
+      {/* Activity Filters */}
+      <Card className="overflow-hidden bg-gradient-to-br from-white to-purple-50/30 dark:from-gray-900 dark:to-purple-950/20 border-2 shadow-lg hover:shadow-xl transition-all duration-300">
+        <CardHeader className="pb-4 bg-gradient-to-r from-purple-500/5 to-pink-500/5 border-b">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
+                <Filter className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  Activity Filters
+                </CardTitle>
+                <CardDescription className="text-sm text-muted-foreground mt-1">
+                  Filter and search activity data
+                </CardDescription>
+              </div>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3">
-            <div className="space-y-1">
-              <label className="text-xs font-medium">Search</label>
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="space-y-2 group">
+              <label className="text-sm font-semibold flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                <Search className="w-4 h-4" />
+                Search
+              </label>
               <div className="relative">
-                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
                 <Input
                   placeholder="Search username..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-7 h-8 text-xs form-mobile"
+                  className="h-10 pl-10 bg-white dark:bg-gray-900 border-2 hover:border-purple-300 focus:border-purple-500 transition-all duration-300 font-medium group-hover:shadow-md"
                 />
+                <div className="absolute inset-0 rounded-md bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
               </div>
             </div>
             
-            <div className="space-y-1">
-              <label className="text-xs font-medium">Activity Type</label>
-              <Select value={activityFilter} onValueChange={setActivityFilter}>
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="All activities" />
-                </SelectTrigger>
-                <SelectContent className="bg-background border shadow-lg z-50">
-                  <SelectItem value="all">All Activities</SelectItem>
-                  <SelectItem value="login">Login</SelectItem>
-                  <SelectItem value="logout">Logout</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="space-y-2 group">
+              <label className="text-sm font-semibold flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                <Activity className="w-4 h-4" />
+                Activity Type
+              </label>
+              <div className="relative">
+                <Select value={activityFilter} onValueChange={setActivityFilter}>
+                  <SelectTrigger className="h-10 bg-white dark:bg-gray-900 border-2 hover:border-blue-300 focus:border-blue-500 transition-all duration-300 font-medium group-hover:shadow-md">
+                    <SelectValue placeholder="All activities" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white dark:bg-gray-900 border-2 shadow-xl z-50">
+                    <SelectItem value="all" className="py-3 hover:bg-blue-50 dark:hover:bg-blue-950/20">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                        All Activities
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="login" className="py-3 hover:bg-green-50 dark:hover:bg-green-950/20">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                        Login
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="logout" className="py-3 hover:bg-red-50 dark:hover:bg-red-950/20">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                        Logout
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="absolute inset-0 rounded-md bg-gradient-to-r from-blue-500/10 to-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+              </div>
             </div>
             
-            <div className="space-y-1">
-              <label className="text-xs font-medium">Time Period</label>
-              <Select value={dateFilter} onValueChange={setDateFilter}>
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="All time" />
-                </SelectTrigger>
-                <SelectContent className="bg-background border shadow-lg z-50">
-                  <SelectItem value="all">All Time</SelectItem>
-                  <SelectItem value="today">Today</SelectItem>
-                  <SelectItem value="week">Last 7 Days</SelectItem>
-                  <SelectItem value="month">Last 30 Days</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="space-y-2 group">
+              <label className="text-sm font-semibold flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                <Calendar className="w-4 h-4" />
+                Time Period
+              </label>
+              <div className="relative">
+                <Select value={dateFilter} onValueChange={setDateFilter}>
+                  <SelectTrigger className="h-10 bg-white dark:bg-gray-900 border-2 hover:border-green-300 focus:border-green-500 transition-all duration-300 font-medium group-hover:shadow-md">
+                    <SelectValue placeholder="All time" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white dark:bg-gray-900 border-2 shadow-xl z-50">
+                    <SelectItem value="all" className="py-3 hover:bg-blue-50 dark:hover:bg-blue-950/20">All Time</SelectItem>
+                    <SelectItem value="today" className="py-3 hover:bg-green-50 dark:hover:bg-green-950/20">Today</SelectItem>
+                    <SelectItem value="week" className="py-3 hover:bg-orange-50 dark:hover:bg-orange-950/20">Last 7 Days</SelectItem>
+                    <SelectItem value="month" className="py-3 hover:bg-purple-50 dark:hover:bg-purple-950/20">Last 30 Days</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="absolute inset-0 rounded-md bg-gradient-to-r from-green-500/10 to-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+              </div>
             </div>
             
-            <div className="space-y-1">
-              <label className="text-xs font-medium">Actions</label>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                <RefreshCw className="w-4 h-4" />
+                Actions
+              </label>
               <Button
                 onClick={fetchActivities}
                 disabled={loading}
-                className="w-full h-8 btn-mobile"
-                variant="outline"
+                className="w-full h-10 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 disabled:hover:scale-100"
                 size="sm"
               >
-                <RefreshCw className={`w-3 h-3 mr-1 ${loading ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">Refresh</span>
-                <span className="sm:hidden">↻</span>
+                <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
               </Button>
             </div>
 
-            <div className="space-y-1 sm:col-span-2 lg:col-span-1">
-              <label className="text-xs font-medium">Results</label>
-              <div className="text-xs text-muted-foreground bg-muted/30 p-2 rounded border">
-                <span className="hidden sm:inline">{filteredActivities.length} of {activities.length} activities</span>
-                <span className="sm:hidden">{filteredActivities.length}/{activities.length}</span>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                <BarChart3 className="w-4 h-4" />
+                Results
+              </label>
+              <div className="h-10 flex items-center px-3 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-md">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {filteredActivities.length} of {activities.length} activities
+                </span>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Activities List - Mobile Optimized */}
-      <Card>
-        <CardHeader className="pb-2 sm:pb-3">
-          <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-            <Activity className="w-3 h-3 sm:w-4 sm:h-4" />
+      {/* Activities List */}
+      <Card className="overflow-hidden bg-gradient-to-br from-white to-blue-50/30 dark:from-gray-900 dark:to-blue-950/20 border-2 shadow-lg hover:shadow-xl transition-all duration-300">
+        <CardHeader className="pb-4 bg-gradient-to-r from-blue-500/5 to-purple-500/5 border-b">
+          <CardTitle className="text-xl font-bold flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
+              <Activity className="w-5 h-5 text-white" />
+            </div>
             Recent Activity Log
           </CardTitle>
-          <CardDescription className="text-xs sm:text-sm">
-            <span className="hidden sm:inline">Real-time user activity monitoring with enhanced tracking data</span>
-            <span className="sm:hidden">Real-time activity monitoring</span>
+          <CardDescription>
+            Real-time user activity monitoring with enhanced tracking data
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           {loading ? (
-            <div className="text-center py-4 sm:py-6">
-              <RefreshCw className="w-4 h-4 sm:w-6 sm:h-6 animate-spin mx-auto mb-2 sm:mb-3 text-muted-foreground" />
-              <p className="text-xs sm:text-sm text-muted-foreground">Loading activities...</p>
+            <div className="text-center py-8">
+              <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-sm text-muted-foreground">Loading activities...</p>
             </div>
           ) : filteredActivities.length === 0 ? (
-            <div className="text-center py-4 sm:py-6 text-muted-foreground">
-              <Activity className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 sm:mb-3 opacity-50" />
-              <p className="text-xs sm:text-sm">No activities found matching your filters.</p>
+            <div className="text-center py-8 text-muted-foreground">
+              <Activity className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p className="text-sm">No activities found matching your filters.</p>
             </div>
           ) : (
-            <div className="space-y-1 sm:space-y-2 max-h-60 sm:max-h-80 lg:max-h-96 overflow-y-auto">
+            <div className="space-y-4 max-h-96 overflow-y-auto">
               {filteredActivities.map((activity, index) => (
                 <div key={activity.id}>
-                  <div className="flex items-start justify-between space-x-2 sm:space-x-3 p-2 sm:p-3 rounded-lg hover:bg-muted/30 transition-colors">
-                    <div className="flex items-start space-x-2 sm:space-x-3 flex-1 min-w-0">
-                      <div className="mt-0.5 sm:mt-1 flex-shrink-0">
+                  <div className="flex items-start justify-between space-x-4 p-4 rounded-lg hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 dark:hover:from-blue-950/10 dark:hover:to-purple-950/10 transition-all duration-300 group">
+                    <div className="flex items-start space-x-4 flex-1 min-w-0">
+                      <div className="mt-1 flex-shrink-0">
                         {getActivityIcon(activity.activity_type)}
                       </div>
-                      <div className="flex-1 space-y-1 sm:space-y-2 min-w-0">
-                        <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
-                          <span className="font-medium text-xs sm:text-sm truncate">{activity.username}</span>
-                          <Badge variant={getActivityBadgeVariant(activity.activity_type)} className="text-xs">
+                      <div className="flex-1 space-y-3 min-w-0">
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <span className="font-semibold text-gray-900 dark:text-gray-100 truncate">{activity.username}</span>
+                          <Badge variant={getActivityBadgeVariant(activity.activity_type)} className="text-xs font-medium">
                             {activity.activity_type}
                           </Badge>
                           {activity.device_type && (
                             <Badge variant="outline" className="text-xs flex items-center gap-1">
                               {getDeviceIcon(activity.device_type)}
-                              <span className="hidden sm:inline">{activity.device_type}</span>
+                              <span>{activity.device_type}</span>
                             </Badge>
                           )}
                         </div>
                         
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-2 text-xs text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Clock className="w-3 h-3 flex-shrink-0" />
-                            <span className="hidden sm:inline">{format(new Date(activity.timestamp), 'MMM dd, HH:mm:ss')}</span>
-                            <span className="sm:hidden">{format(new Date(activity.timestamp), 'dd/MM HH:mm')}</span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate">{format(new Date(activity.timestamp), 'MMM dd, HH:mm:ss')}</span>
                             <span className="text-xs opacity-75 hidden lg:inline">
                               ({formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })})
                             </span>
                           </div>
 
                           {activity.ip_address && (
-                            <div className="flex items-center gap-1">
-                              <Globe className="w-3 h-3 flex-shrink-0" />
+                            <div className="flex items-center gap-2">
+                              <Globe className="w-4 h-4 flex-shrink-0" />
                               <span className="truncate">{activity.ip_address}</span>
                             </div>
                           )}
                           
                           {(activity.browser_name || activity.user_agent) && (
-                            <div className="flex items-center gap-1">
-                              <Monitor className="w-3 h-3 flex-shrink-0" />
+                            <div className="flex items-center gap-2">
+                              <Monitor className="w-4 h-4 flex-shrink-0" />
                               <span className="truncate">{activity.browser_name || getBrowserInfo(activity.user_agent)}</span>
                             </div>
                           )}
 
                           {activity.screen_resolution && (
-                            <div className="flex items-center gap-1 hidden sm:flex">
-                              <Monitor className="w-3 h-3 flex-shrink-0" />
+                            <div className="flex items-center gap-2">
+                              <Monitor className="w-4 h-4 flex-shrink-0" />
                               <span className="truncate">{activity.screen_resolution}</span>
                             </div>
                           )}
                           
                           {activity.session_duration && (
-                            <div className="flex items-center gap-1">
-                              <Clock className="w-3 h-3 flex-shrink-0" />
+                            <div className="flex items-center gap-2 sm:col-span-2">
+                              <Clock className="w-4 h-4 flex-shrink-0" />
                               <span className="truncate">
-                                <span className="hidden sm:inline">Session: </span>
-                                {formatSessionDuration(activity.session_duration)}
+                                Session: {formatSessionDuration(activity.session_duration)}
                               </span>
                             </div>
                           )}
 
                           {activity.page_url && (
-                            <div className="flex items-center gap-1 col-span-full">
-                              <Globe className="w-3 h-3 flex-shrink-0" />
+                            <div className="flex items-center gap-2 sm:col-span-2">
+                              <Globe className="w-4 h-4 flex-shrink-0" />
                               <span className="truncate">
-                                <span className="hidden sm:inline">Page: </span>
-                                {activity.page_url}
+                                Page: {activity.page_url}
                               </span>
                             </div>
                           )}
@@ -628,7 +685,7 @@ const UserActivity = () => {
                     </div>
                   </div>
                   
-                  {index < filteredActivities.length - 1 && <Separator className="mt-1 sm:mt-2" />}
+                  {index < filteredActivities.length - 1 && <Separator className="mt-4" />}
                 </div>
               ))}
             </div>
