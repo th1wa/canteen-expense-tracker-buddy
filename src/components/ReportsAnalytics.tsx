@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -107,7 +106,9 @@ const ReportsAnalytics = () => {
       const startDateStr = format(startDate, 'yyyy-MM-dd');
       const endDateStr = format(endDate, 'yyyy-MM-dd');
 
-      // Fetch current period data
+      console.log('Fetching data for date range:', { startDateStr, endDateStr });
+
+      // Fetch current period data with better error handling
       const [expensesResult, paymentsResult] = await Promise.all([
         supabase
           .from('expenses')
@@ -123,7 +124,17 @@ const ReportsAnalytics = () => {
           .order('payment_date', { ascending: false })
       ]);
 
-      // Fetch previous period for growth comparison
+      if (expensesResult.error) {
+        console.error('Expenses fetch error:', expensesResult.error);
+        throw expensesResult.error;
+      }
+
+      if (paymentsResult.error) {
+        console.error('Payments fetch error:', paymentsResult.error);
+        throw paymentsResult.error;
+      }
+
+      // Fetch previous period for growth comparison with error handling
       const prevStartDate = new Date(startDate);
       prevStartDate.setMonth(prevStartDate.getMonth() - 1);
       const prevEndDate = new Date(endDate);
@@ -141,66 +152,79 @@ const ReportsAnalytics = () => {
       const payments = paymentsResult.data || [];
       const prevExpenses = prevExpensesResult.data || [];
 
-      // Calculate totals
-      const totalExpenses = expenses.reduce((sum, exp) => sum + parseFloat(exp.amount.toString()), 0);
-      const totalPayments = payments.reduce((sum, pay) => sum + parseFloat(pay.amount.toString()), 0);
+      console.log('Fetched data:', { expenses: expenses.length, payments: payments.length });
+
+      // Calculate totals with better null handling
+      const totalExpenses = expenses.reduce((sum, exp) => sum + (parseFloat(exp.amount?.toString() || '0') || 0), 0);
+      const totalPayments = payments.reduce((sum, pay) => sum + (parseFloat(pay.amount?.toString() || '0') || 0), 0);
       const outstandingAmount = totalExpenses - totalPayments;
-      const prevTotalExpenses = prevExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount.toString()), 0);
+      const prevTotalExpenses = prevExpenses.reduce((sum, exp) => sum + (parseFloat(exp.amount?.toString() || '0') || 0), 0);
       const monthlyGrowth = prevTotalExpenses > 0 ? ((totalExpenses - prevTotalExpenses) / prevTotalExpenses) * 100 : 0;
 
-      // Get unique users
-      const allUsers = new Set([
-        ...expenses.map(e => e.user_name),
-        ...payments.map(p => p.user_name)
-      ]);
+      // Get unique users with better handling
+      const expenseUsers = expenses.map(e => e.user_name).filter(Boolean);
+      const paymentUsers = payments.map(p => p.user_name).filter(Boolean);
+      const allUsers = new Set([...expenseUsers, ...paymentUsers]);
       const totalUsers = allUsers.size;
-      const activeUsers = new Set(expenses.map(e => e.user_name)).size;
+      const activeUsers = new Set(expenseUsers).size;
 
-      // Calculate rates and averages
+      // Calculate rates and averages with safety checks
       const averageExpensePerUser = totalUsers > 0 ? totalExpenses / totalUsers : 0;
       const collectionRate = totalExpenses > 0 ? (totalPayments / totalExpenses) * 100 : 0;
       const settlementRate = totalUsers > 0 ? (Array.from(allUsers).filter(user => {
-        const userExpenses = expenses.filter(e => e.user_name === user).reduce((sum, e) => sum + parseFloat(e.amount.toString()), 0);
-        const userPayments = payments.filter(p => p.user_name === user).reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
+        const userExpenses = expenses.filter(e => e.user_name === user).reduce((sum, e) => sum + (parseFloat(e.amount?.toString() || '0') || 0), 0);
+        const userPayments = payments.filter(p => p.user_name === user).reduce((sum, p) => sum + (parseFloat(p.amount?.toString() || '0') || 0), 0);
         return userExpenses <= userPayments;
       }).length / totalUsers) * 100 : 0;
 
-      // Calculate daily average
+      // Calculate daily average with safety
       const daysDiff = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24)));
       const dailyAverage = totalExpenses / daysDiff;
 
-      // Expenses by user
+      // Expenses by user with better handling
       const expensesByUser: { [key: string]: number } = {};
       expenses.forEach(exp => {
-        expensesByUser[exp.user_name] = (expensesByUser[exp.user_name] || 0) + parseFloat(exp.amount.toString());
+        if (exp.user_name && exp.amount) {
+          expensesByUser[exp.user_name] = (expensesByUser[exp.user_name] || 0) + (parseFloat(exp.amount.toString()) || 0);
+        }
       });
 
-      // Payments by user
+      // Payments by user with better handling
       const paymentsByUser: { [key: string]: number } = {};
       payments.forEach(pay => {
-        paymentsByUser[pay.user_name] = (paymentsByUser[pay.user_name] || 0) + parseFloat(pay.amount.toString());
+        if (pay.user_name && pay.amount) {
+          paymentsByUser[pay.user_name] = (paymentsByUser[pay.user_name] || 0) + (parseFloat(pay.amount.toString()) || 0);
+        }
       });
 
-      // Daily expenses and payments
+      // Daily expenses and payments with better handling
       const dailyExpenseMap: { [key: string]: number } = {};
       const dailyPaymentMap: { [key: string]: number } = {};
 
       expenses.forEach(exp => {
-        dailyExpenseMap[exp.expense_date] = (dailyExpenseMap[exp.expense_date] || 0) + parseFloat(exp.amount.toString());
+        if (exp.expense_date && exp.amount) {
+          dailyExpenseMap[exp.expense_date] = (dailyExpenseMap[exp.expense_date] || 0) + (parseFloat(exp.amount.toString()) || 0);
+        }
       });
 
       payments.forEach(pay => {
-        dailyPaymentMap[pay.payment_date] = (dailyPaymentMap[pay.payment_date] || 0) + parseFloat(pay.amount.toString());
+        if (pay.payment_date && pay.amount) {
+          dailyPaymentMap[pay.payment_date] = (dailyPaymentMap[pay.payment_date] || 0) + (parseFloat(pay.amount.toString()) || 0);
+        }
       });
 
       const dailyExpenses = Object.entries(dailyExpenseMap).map(([date, amount]) => ({ date, amount }));
       const dailyPayments = Object.entries(dailyPaymentMap).map(([date, amount]) => ({ date, amount }));
 
-      // Find peak days
-      const peakExpenseDay = dailyExpenses.reduce((max, day) => day.amount > max.amount ? day : max, { date: '', amount: 0 });
-      const peakPaymentDay = dailyPayments.reduce((max, day) => day.amount > max.amount ? day : max, { date: '', amount: 0 });
+      // Find peak days with safety
+      const peakExpenseDay = dailyExpenses.length > 0 
+        ? dailyExpenses.reduce((max, day) => day.amount > max.amount ? day : max, { date: '', amount: 0 })
+        : { date: '', amount: 0 };
+      const peakPaymentDay = dailyPayments.length > 0 
+        ? dailyPayments.reduce((max, day) => day.amount > max.amount ? day : max, { date: '', amount: 0 })
+        : { date: '', amount: 0 };
 
-      // Enhanced top spenders with more details
+      // Enhanced top spenders with better safety
       const topSpenders = Object.entries(expensesByUser)
         .sort(([,a], [,b]) => b - a)
         .slice(0, 15)
@@ -211,11 +235,11 @@ const ReportsAnalytics = () => {
           outstanding: amount - (paymentsByUser[name] || 0)
         }));
 
-      // Recent transactions (combine expenses and payments)
+      // Recent transactions with better handling
       const recentTransactions = [
         ...expenses.slice(0, 15).map(exp => ({ ...exp, type: 'expense' })),
         ...payments.slice(0, 15).map(pay => ({ ...pay, type: 'payment' }))
-      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 30);
+      ].sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()).slice(0, 30);
 
       setReportData({
         totalExpenses,
@@ -242,7 +266,7 @@ const ReportsAnalytics = () => {
       console.error('Error fetching report data:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch report data",
+        description: "Failed to fetch report data. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -254,17 +278,26 @@ const ReportsAnalytics = () => {
     fetchReportData();
   }, [dateRange, customDateFrom, customDateTo]);
 
-  const exportToPDF = (reportType: 'summary' | 'detailed' | 'individual', userName?: string) => {
-    if (!reportData) return;
+  const exportToPDF = async (reportType: 'summary' | 'detailed' | 'individual', userName?: string) => {
+    if (!reportData) {
+      toast({
+        title: "No Data",
+        description: "No report data available to export.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setExporting(true);
     try {
+      console.log('Starting PDF export:', { reportType, userName });
+      
       const doc = new jsPDF();
       
-      // Header
+      // Header with better error handling
       doc.setFontSize(20);
       const title = reportType === 'summary' ? 'Sales Summary Report' : 
-                   reportType === 'individual' ? `Individual Report - ${userName}` : 
+                   reportType === 'individual' ? `Individual Report - ${userName || 'Unknown'}` : 
                    'Detailed Sales Report';
       doc.text(title, 20, 20);
       
@@ -277,18 +310,18 @@ const ReportsAnalytics = () => {
       let yPosition = 60;
 
       if (reportType === 'summary') {
-        // Enhanced summary statistics
+        // Enhanced summary statistics with safety checks
         const stats = [
-          ['Total Expenses', `Rs. ${reportData.totalExpenses.toFixed(2)}`],
-          ['Total Payments', `Rs. ${reportData.totalPayments.toFixed(2)}`],
-          ['Outstanding Amount', `Rs. ${reportData.outstandingAmount.toFixed(2)}`],
-          ['Total Users', reportData.totalUsers.toString()],
-          ['Active Users', reportData.activeUsers.toString()],
-          ['Collection Rate', `${reportData.collectionRate.toFixed(1)}%`],
-          ['Settlement Rate', `${reportData.settlementRate.toFixed(1)}%`],
-          ['Average per User', `Rs. ${reportData.averageExpensePerUser.toFixed(2)}`],
-          ['Daily Average', `Rs. ${reportData.dailyAverage.toFixed(2)}`],
-          ['Monthly Growth', `${reportData.monthlyGrowth.toFixed(1)}%`]
+          ['Total Expenses', `Rs. ${(reportData.totalExpenses || 0).toFixed(2)}`],
+          ['Total Payments', `Rs. ${(reportData.totalPayments || 0).toFixed(2)}`],
+          ['Outstanding Amount', `Rs. ${(reportData.outstandingAmount || 0).toFixed(2)}`],
+          ['Total Users', (reportData.totalUsers || 0).toString()],
+          ['Active Users', (reportData.activeUsers || 0).toString()],
+          ['Collection Rate', `${(reportData.collectionRate || 0).toFixed(1)}%`],
+          ['Settlement Rate', `${(reportData.settlementRate || 0).toFixed(1)}%`],
+          ['Average per User', `Rs. ${(reportData.averageExpensePerUser || 0).toFixed(2)}`],
+          ['Daily Average', `Rs. ${(reportData.dailyAverage || 0).toFixed(2)}`],
+          ['Monthly Growth', `${(reportData.monthlyGrowth || 0).toFixed(1)}%`]
         ];
 
         doc.autoTable({
@@ -299,24 +332,26 @@ const ReportsAnalytics = () => {
           headStyles: { fillColor: [41, 128, 185] }
         });
 
-        // Top spenders table
-        yPosition = (doc as any).lastAutoTable.finalY + 20;
-        doc.text('Top Spenders Analysis', 20, yPosition);
-        yPosition += 10;
+        // Top spenders table with safety checks
+        if (reportData.topSpenders && reportData.topSpenders.length > 0) {
+          yPosition = (doc as any).lastAutoTable.finalY + 20;
+          doc.text('Top Spenders Analysis', 20, yPosition);
+          yPosition += 10;
 
-        doc.autoTable({
-          head: [['User Name', 'Total Expenses', 'Payments Made', 'Outstanding', 'Status']],
-          body: reportData.topSpenders.slice(0, 10).map(spender => [
-            spender.name,
-            `Rs. ${spender.amount.toFixed(2)}`,
-            `Rs. ${spender.payments.toFixed(2)}`,
-            `Rs. ${spender.outstanding.toFixed(2)}`,
-            spender.outstanding <= 0 ? 'Settled' : 'Pending'
-          ]),
-          startY: yPosition,
-          styles: { fontSize: 9 },
-          headStyles: { fillColor: [41, 128, 185] }
-        });
+          doc.autoTable({
+            head: [['User Name', 'Total Expenses', 'Payments Made', 'Outstanding', 'Status']],
+            body: reportData.topSpenders.slice(0, 10).map(spender => [
+              spender.name || 'Unknown',
+              `Rs. ${(spender.amount || 0).toFixed(2)}`,
+              `Rs. ${(spender.payments || 0).toFixed(2)}`,
+              `Rs. ${(spender.outstanding || 0).toFixed(2)}`,
+              (spender.outstanding || 0) <= 0 ? 'Settled' : 'Pending'
+            ]),
+            startY: yPosition,
+            styles: { fontSize: 9 },
+            headStyles: { fillColor: [41, 128, 185] }
+          });
+        }
       } else if (reportType === 'individual' && userName) {
         const userExpenses = reportData.expensesByUser[userName] || 0;
         const userPayments = reportData.paymentsByUser[userName] || 0;
@@ -338,21 +373,25 @@ const ReportsAnalytics = () => {
           headStyles: { fillColor: [41, 128, 185] }
         });
       } else {
-        // Detailed report with all users
-        doc.autoTable({
-          head: [['User Name', 'Expenses', 'Payments', 'Outstanding', 'Collection %', 'Status']],
-          body: Object.keys(reportData.expensesByUser).map(user => [
-            user,
-            `Rs. ${reportData.expensesByUser[user].toFixed(2)}`,
-            `Rs. ${(reportData.paymentsByUser[user] || 0).toFixed(2)}`,
-            `Rs. ${(reportData.expensesByUser[user] - (reportData.paymentsByUser[user] || 0)).toFixed(2)}`,
-            `${reportData.expensesByUser[user] > 0 ? (((reportData.paymentsByUser[user] || 0) / reportData.expensesByUser[user]) * 100).toFixed(1) : 0}%`,
-            (reportData.expensesByUser[user] - (reportData.paymentsByUser[user] || 0)) <= 0 ? 'Settled' : 'Pending'
-          ]),
-          startY: yPosition,
-          styles: { fontSize: 8 },
-          headStyles: { fillColor: [41, 128, 185] }
-        });
+        // Detailed report with all users and safety checks
+        const userReportData = Object.keys(reportData.expensesByUser || {}).map(user => [
+          user,
+          `Rs. ${(reportData.expensesByUser[user] || 0).toFixed(2)}`,
+          `Rs. ${(reportData.paymentsByUser[user] || 0).toFixed(2)}`,
+          `Rs. ${((reportData.expensesByUser[user] || 0) - (reportData.paymentsByUser[user] || 0)).toFixed(2)}`,
+          `${(reportData.expensesByUser[user] || 0) > 0 ? (((reportData.paymentsByUser[user] || 0) / (reportData.expensesByUser[user] || 1)) * 100).toFixed(1) : 0}%`,
+          ((reportData.expensesByUser[user] || 0) - (reportData.paymentsByUser[user] || 0)) <= 0 ? 'Settled' : 'Pending'
+        ]);
+
+        if (userReportData.length > 0) {
+          doc.autoTable({
+            head: [['User Name', 'Expenses', 'Payments', 'Outstanding', 'Collection %', 'Status']],
+            body: userReportData,
+            startY: yPosition,
+            styles: { fontSize: 8 },
+            headStyles: { fillColor: [41, 128, 185] }
+          });
+        }
       }
 
       const filename = `${reportType}_report_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
@@ -366,7 +405,7 @@ const ReportsAnalytics = () => {
       console.error('Error generating PDF:', error);
       toast({
         title: "Error",
-        description: "Failed to generate PDF report.",
+        description: "Failed to generate PDF report. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -374,14 +413,23 @@ const ReportsAnalytics = () => {
     }
   };
 
-  const exportToExcel = (reportType: 'summary' | 'detailed' | 'individual', userName?: string) => {
-    if (!reportData) return;
+  const exportToExcel = async (reportType: 'summary' | 'detailed' | 'individual', userName?: string) => {
+    if (!reportData) {
+      toast({
+        title: "No Data",
+        description: "No report data available to export.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setExporting(true);
     try {
+      console.log('Starting Excel export:', { reportType, userName });
+      
       let csvContent = '';
       const title = reportType === 'summary' ? 'Sales Summary Report' : 
-                   reportType === 'individual' ? `Individual Report - ${userName}` : 
+                   reportType === 'individual' ? `Individual Report - ${userName || 'Unknown'}` : 
                    'Detailed Sales Report';
       
       csvContent += `${title}\n`;
@@ -391,21 +439,23 @@ const ReportsAnalytics = () => {
         dateRange.replace('-', ' ')}\n\n`;
 
       if (reportType === 'summary') {
-        csvContent += `Total Expenses,Rs. ${reportData.totalExpenses.toFixed(2)}\n`;
-        csvContent += `Total Payments,Rs. ${reportData.totalPayments.toFixed(2)}\n`;
-        csvContent += `Outstanding Amount,Rs. ${reportData.outstandingAmount.toFixed(2)}\n`;
-        csvContent += `Total Users,${reportData.totalUsers}\n`;
-        csvContent += `Active Users,${reportData.activeUsers}\n`;
-        csvContent += `Collection Rate,${reportData.collectionRate.toFixed(1)}%\n`;
-        csvContent += `Settlement Rate,${reportData.settlementRate.toFixed(1)}%\n`;
-        csvContent += `Average per User,Rs. ${reportData.averageExpensePerUser.toFixed(2)}\n`;
-        csvContent += `Daily Average,Rs. ${reportData.dailyAverage.toFixed(2)}\n`;
-        csvContent += `Monthly Growth,${reportData.monthlyGrowth.toFixed(1)}%\n\n`;
+        csvContent += `Total Expenses,Rs. ${(reportData.totalExpenses || 0).toFixed(2)}\n`;
+        csvContent += `Total Payments,Rs. ${(reportData.totalPayments || 0).toFixed(2)}\n`;
+        csvContent += `Outstanding Amount,Rs. ${(reportData.outstandingAmount || 0).toFixed(2)}\n`;
+        csvContent += `Total Users,${reportData.totalUsers || 0}\n`;
+        csvContent += `Active Users,${reportData.activeUsers || 0}\n`;
+        csvContent += `Collection Rate,${(reportData.collectionRate || 0).toFixed(1)}%\n`;
+        csvContent += `Settlement Rate,${(reportData.settlementRate || 0).toFixed(1)}%\n`;
+        csvContent += `Average per User,Rs. ${(reportData.averageExpensePerUser || 0).toFixed(2)}\n`;
+        csvContent += `Daily Average,Rs. ${(reportData.dailyAverage || 0).toFixed(2)}\n`;
+        csvContent += `Monthly Growth,${(reportData.monthlyGrowth || 0).toFixed(1)}%\n\n`;
         
-        csvContent += `User Name,Total Expenses,Payments Made,Outstanding,Status\n`;
-        reportData.topSpenders.forEach(spender => {
-          csvContent += `${spender.name},Rs. ${spender.amount.toFixed(2)},Rs. ${spender.payments.toFixed(2)},Rs. ${spender.outstanding.toFixed(2)},${spender.outstanding <= 0 ? 'Settled' : 'Pending'}\n`;
-        });
+        if (reportData.topSpenders && reportData.topSpenders.length > 0) {
+          csvContent += `User Name,Total Expenses,Payments Made,Outstanding,Status\n`;
+          reportData.topSpenders.forEach(spender => {
+            csvContent += `${spender.name || 'Unknown'},Rs. ${(spender.amount || 0).toFixed(2)},Rs. ${(spender.payments || 0).toFixed(2)},Rs. ${(spender.outstanding || 0).toFixed(2)},${(spender.outstanding || 0) <= 0 ? 'Settled' : 'Pending'}\n`;
+          });
+        }
       } else if (reportType === 'individual' && userName) {
         const userExpenses = reportData.expensesByUser[userName] || 0;
         const userPayments = reportData.paymentsByUser[userName] || 0;
@@ -415,8 +465,8 @@ const ReportsAnalytics = () => {
         csvContent += `Status,${(userExpenses - userPayments) <= 0 ? 'Settled' : 'Pending'}\n`;
       } else {
         csvContent += `User Name,Expenses,Payments,Outstanding,Collection %,Status\n`;
-        Object.keys(reportData.expensesByUser).forEach(user => {
-          const expenses = reportData.expensesByUser[user];
+        Object.keys(reportData.expensesByUser || {}).forEach(user => {
+          const expenses = reportData.expensesByUser[user] || 0;
           const payments = reportData.paymentsByUser[user] || 0;
           const outstanding = expenses - payments;
           const collectionRate = expenses > 0 ? ((payments / expenses) * 100).toFixed(1) : '0';
@@ -433,6 +483,7 @@ const ReportsAnalytics = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
       toast({
         title: "Excel Generated",
@@ -442,7 +493,7 @@ const ReportsAnalytics = () => {
       console.error('Error generating Excel:', error);
       toast({
         title: "Error",
-        description: "Failed to generate Excel report.",
+        description: "Failed to generate Excel report. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -463,6 +514,10 @@ const ReportsAnalytics = () => {
     return (
       <div className="text-center py-8">
         <p className="text-muted-foreground">No report data available</p>
+        <Button onClick={fetchReportData} className="mt-4">
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Retry
+        </Button>
       </div>
     );
   }
@@ -550,14 +605,13 @@ const ReportsAnalytics = () => {
             </Button>
           </div>
 
-          {/* Compact Summary Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
             <Card className="p-3">
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-blue-500" />
                 <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">Total Expenses</p>
-                  <p className="text-sm font-bold truncate">Rs. {reportData.totalExpenses.toFixed(0)}</p>
+                  <p className="text-sm font-bold truncate">Rs. {(reportData.totalExpenses || 0).toFixed(0)}</p>
                 </div>
               </div>
             </Card>
@@ -567,7 +621,7 @@ const ReportsAnalytics = () => {
                 <DollarSign className="w-4 h-4 text-green-500" />
                 <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">Collections</p>
-                  <p className="text-sm font-bold truncate">Rs. {reportData.totalPayments.toFixed(0)}</p>
+                  <p className="text-sm font-bold truncate">Rs. {(reportData.totalPayments || 0).toFixed(0)}</p>
                 </div>
               </div>
             </Card>
@@ -577,7 +631,7 @@ const ReportsAnalytics = () => {
                 <AlertCircle className="w-4 h-4 text-red-500" />
                 <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">Outstanding</p>
-                  <p className="text-sm font-bold truncate">Rs. {reportData.outstandingAmount.toFixed(0)}</p>
+                  <p className="text-sm font-bold truncate">Rs. {(reportData.outstandingAmount || 0).toFixed(0)}</p>
                 </div>
               </div>
             </Card>
@@ -587,7 +641,7 @@ const ReportsAnalytics = () => {
                 <Users className="w-4 h-4 text-purple-500" />
                 <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">Users</p>
-                  <p className="text-sm font-bold">{reportData.activeUsers}/{reportData.totalUsers}</p>
+                  <p className="text-sm font-bold">{reportData.activeUsers || 0}/{reportData.totalUsers || 0}</p>
                 </div>
               </div>
             </Card>
@@ -597,7 +651,7 @@ const ReportsAnalytics = () => {
                 <Target className="w-4 h-4 text-orange-500" />
                 <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">Collection Rate</p>
-                  <p className="text-sm font-bold">{reportData.collectionRate.toFixed(1)}%</p>
+                  <p className="text-sm font-bold">{(reportData.collectionRate || 0).toFixed(1)}%</p>
                 </div>
               </div>
             </Card>
@@ -607,33 +661,32 @@ const ReportsAnalytics = () => {
                 <Clock className="w-4 h-4 text-teal-500" />
                 <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">Daily Avg</p>
-                  <p className="text-sm font-bold truncate">Rs. {reportData.dailyAverage.toFixed(0)}</p>
+                  <p className="text-sm font-bold truncate">Rs. {(reportData.dailyAverage || 0).toFixed(0)}</p>
                 </div>
               </div>
             </Card>
           </div>
 
-          {/* Additional Metrics */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
             <div className="text-center p-2 bg-muted rounded-lg">
               <p className="text-xs text-muted-foreground">Settlement Rate</p>
-              <p className="text-sm font-semibold">{reportData.settlementRate.toFixed(1)}%</p>
+              <p className="text-sm font-semibold">{(reportData.settlementRate || 0).toFixed(1)}%</p>
             </div>
             <div className="text-center p-2 bg-muted rounded-lg">
               <p className="text-xs text-muted-foreground">Avg per User</p>
-              <p className="text-sm font-semibold">Rs. {reportData.averageExpensePerUser.toFixed(0)}</p>
+              <p className="text-sm font-semibold">Rs. {(reportData.averageExpensePerUser || 0).toFixed(0)}</p>
             </div>
             <div className="text-center p-2 bg-muted rounded-lg">
               <p className="text-xs text-muted-foreground">Monthly Growth</p>
               <p className={cn("text-sm font-semibold flex items-center justify-center gap-1", 
-                reportData.monthlyGrowth >= 0 ? "text-green-600" : "text-red-600")}>
-                {reportData.monthlyGrowth >= 0 ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
-                {Math.abs(reportData.monthlyGrowth).toFixed(1)}%
+                (reportData.monthlyGrowth || 0) >= 0 ? "text-green-600" : "text-red-600")}>
+                {(reportData.monthlyGrowth || 0) >= 0 ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+                {Math.abs(reportData.monthlyGrowth || 0).toFixed(1)}%
               </p>
             </div>
             <div className="text-center p-2 bg-muted rounded-lg">
               <p className="text-xs text-muted-foreground">Peak Day</p>
-              <p className="text-sm font-semibold">Rs. {reportData.peakExpenseDay.amount.toFixed(0)}</p>
+              <p className="text-sm font-semibold">Rs. {(reportData.peakExpenseDay?.amount || 0).toFixed(0)}</p>
             </div>
           </div>
 
@@ -660,7 +713,7 @@ const ReportsAnalytics = () => {
                         className="flex items-center gap-2"
                       >
                         <FileText className="w-4 h-4" />
-                        PDF
+                        {exporting ? 'Generating...' : 'PDF'}
                       </Button>
                       <Button 
                         onClick={() => exportToExcel('summary')}
@@ -670,7 +723,7 @@ const ReportsAnalytics = () => {
                         className="flex items-center gap-2"
                       >
                         <FileSpreadsheet className="w-4 h-4" />
-                        Excel
+                        {exporting ? 'Generating...' : 'Excel'}
                       </Button>
                     </div>
                   </CardContent>
@@ -683,16 +736,16 @@ const ReportsAnalytics = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-1 max-h-32 overflow-y-auto">
-                      {reportData.topSpenders.slice(0, 6).map((spender, index) => (
+                      {(reportData.topSpenders || []).slice(0, 6).map((spender, index) => (
                         <div key={spender.name} className="flex justify-between items-center text-xs p-1 bg-muted rounded">
                           <div className="flex items-center gap-1">
                             <Badge variant="outline" className="text-xs px-1">#{index + 1}</Badge>
-                            <span className="truncate max-w-20">{spender.name}</span>
+                            <span className="truncate max-w-20">{spender.name || 'Unknown'}</span>
                           </div>
                           <div className="flex gap-2 text-xs">
-                            <span className="text-green-600">Rs. {spender.amount.toFixed(0)}</span>
-                            {spender.outstanding > 0 && (
-                              <span className="text-red-600">(-{spender.outstanding.toFixed(0)})</span>
+                            <span className="text-green-600">Rs. {(spender.amount || 0).toFixed(0)}</span>
+                            {(spender.outstanding || 0) > 0 && (
+                              <span className="text-red-600">(-{(spender.outstanding || 0).toFixed(0)})</span>
                             )}
                           </div>
                         </div>
@@ -717,7 +770,7 @@ const ReportsAnalytics = () => {
                       className="flex items-center gap-2"
                     >
                       <FileText className="w-4 h-4" />
-                      PDF
+                      {exporting ? 'Generating...' : 'PDF'}
                     </Button>
                     <Button 
                       onClick={() => exportToExcel('detailed')}
@@ -727,7 +780,7 @@ const ReportsAnalytics = () => {
                       className="flex items-center gap-2"
                     >
                       <FileSpreadsheet className="w-4 h-4" />
-                      Excel
+                      {exporting ? 'Generating...' : 'Excel'}
                     </Button>
                   </div>
                 </CardContent>
@@ -741,14 +794,14 @@ const ReportsAnalytics = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {Object.keys(reportData.expensesByUser).slice(0, 10).map(userName => (
+                    {Object.keys(reportData.expensesByUser || {}).slice(0, 10).map(userName => (
                       <div key={userName} className="flex justify-between items-center p-2 border rounded text-xs">
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium truncate">{userName}</h4>
                           <p className="text-muted-foreground">
-                            Exp: Rs. {reportData.expensesByUser[userName].toFixed(0)} | 
+                            Exp: Rs. {(reportData.expensesByUser[userName] || 0).toFixed(0)} | 
                             Pay: Rs. {(reportData.paymentsByUser[userName] || 0).toFixed(0)} | 
-                            Rem: Rs. {(reportData.expensesByUser[userName] - (reportData.paymentsByUser[userName] || 0)).toFixed(0)}
+                            Rem: Rs. {((reportData.expensesByUser[userName] || 0) - (reportData.paymentsByUser[userName] || 0)).toFixed(0)}
                           </p>
                         </div>
                         <div className="flex gap-1">
@@ -786,21 +839,21 @@ const ReportsAnalytics = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-1 max-h-32 overflow-y-auto">
-                {reportData.recentTransactions.slice(0, 8).map((transaction, index) => (
+                {(reportData.recentTransactions || []).slice(0, 8).map((transaction, index) => (
                   <div key={transaction.id || index} className="flex justify-between items-center text-xs p-1 rounded hover:bg-muted">
                     <div className="flex items-center gap-2">
                       <Badge variant={transaction.type === 'expense' ? 'destructive' : 'default'} className="text-xs px-1">
                         {transaction.type === 'expense' ? 'EXP' : 'PAY'}
                       </Badge>
-                      <span className="truncate max-w-24">{transaction.user_name}</span>
+                      <span className="truncate max-w-24">{transaction.user_name || 'Unknown'}</span>
                       <span className="text-muted-foreground">
-                        {format(new Date(transaction.expense_date || transaction.payment_date), 'MMM dd')}
+                        {format(new Date(transaction.expense_date || transaction.payment_date || new Date()), 'MMM dd')}
                       </span>
                     </div>
                     <span className={cn("font-medium", 
                       transaction.type === 'expense' ? "text-red-600" : "text-green-600"
                     )}>
-                      Rs. {parseFloat(transaction.amount.toString()).toFixed(0)}
+                      Rs. {(parseFloat(transaction.amount?.toString() || '0') || 0).toFixed(0)}
                     </span>
                   </div>
                 ))}
