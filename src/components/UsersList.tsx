@@ -84,32 +84,47 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
 
   if (!profile) {
     return (
-      <div className="text-center py-8 px-4">
-        <div className="text-sm text-muted-foreground">Please log in to view users.</div>
+      <div className="flex items-center justify-center min-h-[200px] p-4">
+        <div className="text-center space-y-2">
+          <div className="text-responsive-sm text-muted-foreground">Please log in to view users.</div>
+        </div>
       </div>
     );
   }
 
   if (!hasAccess) {
     return (
-      <div className="text-center py-8 px-4">
-        <div className="text-sm text-muted-foreground">You don't have permission to view all users.</div>
+      <div className="flex items-center justify-center min-h-[200px] p-4">
+        <div className="text-center space-y-2">
+          <div className="text-responsive-sm text-muted-foreground">You don't have permission to view all users.</div>
+        </div>
       </div>
     );
   }
 
   if (loading) {
     return (
-      <div className="text-center py-8 px-4">
-        <div className="text-sm text-muted-foreground">Loading users...</div>
+      <div className="flex items-center justify-center min-h-[200px] p-4">
+        <div className="text-center space-y-2">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <div className="text-responsive-sm text-muted-foreground">Loading users...</div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center py-8 px-4">
-        <div className="text-destructive mb-2 text-sm">Error: {error}</div>
+      <div className="flex items-center justify-center min-h-[200px] p-4">
+        <div className="text-center space-y-2">
+          <div className="text-destructive text-responsive-sm font-medium">Error: {error}</div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="btn-mobile bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
@@ -118,7 +133,7 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
   const canManagePayments = profile?.role === 'admin' || profile?.role === 'canteen';
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-4 sm:space-y-6 container-mobile">
       {/* Filter Controls */}
       <div className="w-full">
         <UserFilters
