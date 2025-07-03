@@ -20,7 +20,6 @@ import {
   ArrowDown,
   Clock,
   Target,
-  CreditCard,
   AlertCircle
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, subDays } from "date-fns";
@@ -284,10 +283,31 @@ const ReportsAnalytics = () => {
     try {
       console.log('Starting PDF export:', { reportType, userName });
       
-      // Dynamic import to avoid build issues
-      const jsPDF = (await import('jspdf')).default;
-      await import('jspdf-autotable');
+      // Try to load jsPDF with multiple fallback strategies
+      let jsPDF: any;
+      let autoTableLoaded = false;
       
+      try {
+        // First attempt: dynamic import
+        const jsPDFModule = await import('jspdf');
+        jsPDF = jsPDFModule.default || jsPDFModule;
+        
+        // Try to load autoTable
+        try {
+          await import('jspdf-autotable');
+          autoTableLoaded = true;
+        } catch (autoTableError) {
+          console.warn('AutoTable plugin not available, will create simple PDF');
+        }
+      } catch (importError) {
+        console.error('Failed to import jsPDF:', importError);
+        throw new Error('PDF library not available. Please try Excel export instead.');
+      }
+
+      if (!jsPDF) {
+        throw new Error('PDF library could not be initialized');
+      }
+
       const doc = new jsPDF();
       
       // Header with better error handling
@@ -305,90 +325,135 @@ const ReportsAnalytics = () => {
 
       let yPosition = 60;
 
-      if (reportType === 'summary') {
-        // Enhanced summary statistics with safety checks
-        const stats = [
-          ['Total Expenses', `Rs. ${(reportData.totalExpenses || 0).toFixed(2)}`],
-          ['Total Payments', `Rs. ${(reportData.totalPayments || 0).toFixed(2)}`],
-          ['Outstanding Amount', `Rs. ${(reportData.outstandingAmount || 0).toFixed(2)}`],
-          ['Total Users', (reportData.totalUsers || 0).toString()],
-          ['Active Users', (reportData.activeUsers || 0).toString()],
-          ['Collection Rate', `${(reportData.collectionRate || 0).toFixed(1)}%`],
-          ['Settlement Rate', `${(reportData.settlementRate || 0).toFixed(1)}%`],
-          ['Average per User', `Rs. ${(reportData.averageExpensePerUser || 0).toFixed(2)}`],
-          ['Daily Average', `Rs. ${(reportData.dailyAverage || 0).toFixed(2)}`],
-          ['Monthly Growth', `${(reportData.monthlyGrowth || 0).toFixed(1)}%`]
-        ];
+      if (autoTableLoaded && (doc as any).autoTable) {
+        // Use autoTable if available
+        if (reportType === 'summary') {
+          const stats = [
+            ['Total Expenses', `Rs. ${(reportData.totalExpenses || 0).toFixed(2)}`],
+            ['Total Payments', `Rs. ${(reportData.totalPayments || 0).toFixed(2)}`],
+            ['Outstanding Amount', `Rs. ${(reportData.outstandingAmount || 0).toFixed(2)}`],
+            ['Total Users', (reportData.totalUsers || 0).toString()],
+            ['Active Users', (reportData.activeUsers || 0).toString()],
+            ['Collection Rate', `${(reportData.collectionRate || 0).toFixed(1)}%`],
+            ['Settlement Rate', `${(reportData.settlementRate || 0).toFixed(1)}%`],
+            ['Average per User', `Rs. ${(reportData.averageExpensePerUser || 0).toFixed(2)}`],
+            ['Daily Average', `Rs. ${(reportData.dailyAverage || 0).toFixed(2)}`],
+            ['Monthly Growth', `${(reportData.monthlyGrowth || 0).toFixed(1)}%`]
+          ];
 
-        // Use autoTable safely
-        (doc as any).autoTable({
-          head: [['Metric', 'Value']],
-          body: stats,
-          startY: yPosition,
-          styles: { fontSize: 10 },
-          headStyles: { fillColor: [41, 128, 185] }
-        });
+          try {
+            (doc as any).autoTable({
+              head: [['Metric', 'Value']],
+              body: stats,
+              startY: yPosition,
+              styles: { fontSize: 10 },
+              headStyles: { fillColor: [41, 128, 185] }
+            });
 
-        // Top spenders table with safety checks
-        if (reportData.topSpenders && reportData.topSpenders.length > 0) {
-          yPosition = (doc as any).lastAutoTable?.finalY ? (doc as any).lastAutoTable.finalY + 20 : yPosition + 100;
-          doc.text('Top Spenders Analysis', 20, yPosition);
-          yPosition += 10;
+            // Top spenders table with safety checks
+            if (reportData.topSpenders && reportData.topSpenders.length > 0) {
+              yPosition = (doc as any).lastAutoTable?.finalY ? (doc as any).lastAutoTable.finalY + 20 : yPosition + 100;
+              doc.text('Top Spenders Analysis', 20, yPosition);
+              yPosition += 10;
 
-          (doc as any).autoTable({
-            head: [['User Name', 'Total Expenses', 'Payments Made', 'Outstanding', 'Status']],
-            body: reportData.topSpenders.slice(0, 10).map(spender => [
-              spender.name || 'Unknown',
-              `Rs. ${(spender.amount || 0).toFixed(2)}`,
-              `Rs. ${(spender.payments || 0).toFixed(2)}`,
-              `Rs. ${(spender.outstanding || 0).toFixed(2)}`,
-              (spender.outstanding || 0) <= 0 ? 'Settled' : 'Pending'
-            ]),
-            startY: yPosition,
-            styles: { fontSize: 9 },
-            headStyles: { fillColor: [41, 128, 185] }
-          });
+              (doc as any).autoTable({
+                head: [['User Name', 'Total Expenses', 'Payments Made', 'Outstanding', 'Status']],
+                body: reportData.topSpenders.slice(0, 10).map(spender => [
+                  spender.name || 'Unknown',
+                  `Rs. ${(spender.amount || 0).toFixed(2)}`,
+                  `Rs. ${(spender.payments || 0).toFixed(2)}`,
+                  `Rs. ${(spender.outstanding || 0).toFixed(2)}`,
+                  (spender.outstanding || 0) <= 0 ? 'Settled' : 'Pending'
+                ]),
+                startY: yPosition,
+                styles: { fontSize: 9 },
+                headStyles: { fillColor: [41, 128, 185] }
+              });
+            }
+          } catch (tableError) {
+            console.error('Error creating table:', tableError);
+            // Fallback to simple text
+            doc.text('Summary Statistics:', 20, yPosition);
+            yPosition += 20;
+            stats.forEach(([metric, value], index) => {
+              doc.text(`${metric}: ${value}`, 20, yPosition + (index * 10));
+            });
+          }
+        } else if (reportType === 'individual' && userName) {
+          const userExpenses = reportData.expensesByUser[userName] || 0;
+          const userPayments = reportData.paymentsByUser[userName] || 0;
+          const userOutstanding = userExpenses - userPayments;
+
+          const userStats = [
+            ['User Expenses', `Rs. ${userExpenses.toFixed(2)}`],
+            ['User Payments', `Rs. ${userPayments.toFixed(2)}`],
+            ['Outstanding', `Rs. ${userOutstanding.toFixed(2)}`],
+            ['Status', userOutstanding <= 0 ? 'Settled' : 'Pending'],
+            ['Collection Rate', `${userExpenses > 0 ? ((userPayments / userExpenses) * 100).toFixed(1) : 0}%`]
+          ];
+
+          try {
+            (doc as any).autoTable({
+              head: [['Metric', 'Value']],
+              body: userStats,
+              startY: yPosition,
+              styles: { fontSize: 10 },
+              headStyles: { fillColor: [41, 128, 185] }
+            });
+          } catch (tableError) {
+            console.error('Error creating user table:', tableError);
+            // Fallback to simple text
+            userStats.forEach(([metric, value], index) => {
+              doc.text(`${metric}: ${value}`, 20, yPosition + (index * 10));
+            });
+          }
+        } else {
+          // Detailed report with all users and safety checks
+          const userReportData = Object.keys(reportData.expensesByUser || {}).map(user => [
+            user,
+            `Rs. ${(reportData.expensesByUser[user] || 0).toFixed(2)}`,
+            `Rs. ${(reportData.paymentsByUser[user] || 0).toFixed(2)}`,
+            `Rs. ${((reportData.expensesByUser[user] || 0) - (reportData.paymentsByUser[user] || 0)).toFixed(2)}`,
+            `${(reportData.expensesByUser[user] || 0) > 0 ? (((reportData.paymentsByUser[user] || 0) / (reportData.expensesByUser[user] || 1)) * 100).toFixed(1) : 0}%`,
+            ((reportData.expensesByUser[user] || 0) - (reportData.paymentsByUser[user] || 0)) <= 0 ? 'Settled' : 'Pending'
+          ]);
+
+          if (userReportData.length > 0) {
+            try {
+              (doc as any).autoTable({
+                head: [['User Name', 'Expenses', 'Payments', 'Outstanding', 'Collection %', 'Status']],
+                body: userReportData,
+                startY: yPosition,
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [41, 128, 185] }
+              });
+            } catch (tableError) {
+              console.error('Error creating detailed table:', tableError);
+              // Fallback to simple text
+              doc.text('User Details:', 20, yPosition);
+              yPosition += 20;
+              userReportData.slice(0, 10).forEach((row, index) => {
+                doc.text(`${row[0]}: Exp: ${row[1]}, Pay: ${row[2]}, Outstanding: ${row[3]}`, 20, yPosition + (index * 10));
+              });
+            }
+          }
         }
-      } else if (reportType === 'individual' && userName) {
-        const userExpenses = reportData.expensesByUser[userName] || 0;
-        const userPayments = reportData.paymentsByUser[userName] || 0;
-        const userOutstanding = userExpenses - userPayments;
-
-        const userStats = [
-          ['User Expenses', `Rs. ${userExpenses.toFixed(2)}`],
-          ['User Payments', `Rs. ${userPayments.toFixed(2)}`],
-          ['Outstanding', `Rs. ${userOutstanding.toFixed(2)}`],
-          ['Status', userOutstanding <= 0 ? 'Settled' : 'Pending'],
-          ['Collection Rate', `${userExpenses > 0 ? ((userPayments / userExpenses) * 100).toFixed(1) : 0}%`]
-        ];
-
-        (doc as any).autoTable({
-          head: [['Metric', 'Value']],
-          body: userStats,
-          startY: yPosition,
-          styles: { fontSize: 10 },
-          headStyles: { fillColor: [41, 128, 185] }
-        });
       } else {
-        // Detailed report with all users and safety checks
-        const userReportData = Object.keys(reportData.expensesByUser || {}).map(user => [
-          user,
-          `Rs. ${(reportData.expensesByUser[user] || 0).toFixed(2)}`,
-          `Rs. ${(reportData.paymentsByUser[user] || 0).toFixed(2)}`,
-          `Rs. ${((reportData.expensesByUser[user] || 0) - (reportData.paymentsByUser[user] || 0)).toFixed(2)}`,
-          `${(reportData.expensesByUser[user] || 0) > 0 ? (((reportData.paymentsByUser[user] || 0) / (reportData.expensesByUser[user] || 1)) * 100).toFixed(1) : 0}%`,
-          ((reportData.expensesByUser[user] || 0) - (reportData.paymentsByUser[user] || 0)) <= 0 ? 'Settled' : 'Pending'
-        ]);
+        // Fallback to simple text-based PDF
+        doc.text('Report Summary (Simple Format):', 20, yPosition);
+        yPosition += 20;
+        
+        const summaryText = [
+          `Total Expenses: Rs. ${(reportData.totalExpenses || 0).toFixed(2)}`,
+          `Total Payments: Rs. ${(reportData.totalPayments || 0).toFixed(2)}`,
+          `Outstanding: Rs. ${(reportData.outstandingAmount || 0).toFixed(2)}`,
+          `Users: ${reportData.totalUsers || 0}`,
+          `Collection Rate: ${(reportData.collectionRate || 0).toFixed(1)}%`
+        ];
 
-        if (userReportData.length > 0) {
-          (doc as any).autoTable({
-            head: [['User Name', 'Expenses', 'Payments', 'Outstanding', 'Collection %', 'Status']],
-            body: userReportData,
-            startY: yPosition,
-            styles: { fontSize: 8 },
-            headStyles: { fillColor: [41, 128, 185] }
-          });
-        }
+        summaryText.forEach((text, index) => {
+          doc.text(text, 20, yPosition + (index * 15));
+        });
       }
 
       const filename = `${reportType}_report_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
@@ -401,8 +466,8 @@ const ReportsAnalytics = () => {
     } catch (error) {
       console.error('Error generating PDF:', error);
       toast({
-        title: "Error",
-        description: "Failed to generate PDF report. Please try again.",
+        title: "PDF Export Failed",
+        description: error instanceof Error ? error.message : "Please try Excel export instead.",
         variant: "destructive"
       });
     } finally {
