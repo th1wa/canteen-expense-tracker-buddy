@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -176,13 +175,82 @@ const Auth = () => {
     });
   };
 
+  // Animated Background Components
+  const AnimatedBackground = () => (
+    <div className="fixed inset-0 overflow-hidden pointer-events-none">
+      {/* Gradient Wave Animation */}
+      <div className="absolute inset-0 opacity-30">
+        <div className="absolute -top-40 -left-40 w-80 h-80 bg-gradient-to-r from-orange-400 to-amber-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-amber-400 to-yellow-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-40 left-20 w-80 h-80 bg-gradient-to-r from-orange-300 to-amber-300 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
+      </div>
+
+      {/* Floating Coffee Beans */}
+      {[...Array(8)].map((_, i) => (
+        <div
+          key={i}
+          className={`absolute w-3 h-5 bg-gradient-to-br from-amber-700 to-amber-900 rounded-full opacity-60 animate-float`}
+          style={{
+            left: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 5}s`,
+            animationDuration: `${3 + Math.random() * 4}s`,
+          }}
+        />
+      ))}
+
+      {/* Steam Effects */}
+      {[...Array(6)].map((_, i) => (
+        <div
+          key={`steam-${i}`}
+          className="absolute w-1 h-8 bg-gradient-to-t from-transparent to-white opacity-40 rounded-full animate-steam"
+          style={{
+            left: `${20 + Math.random() * 60}%`,
+            bottom: `${10 + Math.random() * 30}%`,
+            animationDelay: `${Math.random() * 3}s`,
+            animationDuration: `${2 + Math.random() * 2}s`,
+          }}
+        />
+      ))}
+
+      {/* Particle Effects */}
+      {[...Array(15)].map((_, i) => (
+        <div
+          key={`particle-${i}`}
+          className="absolute w-1 h-1 bg-orange-300 rounded-full opacity-50 animate-twinkle"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 3}s`,
+            animationDuration: `${1 + Math.random() * 2}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700 p-3 sm:p-6 transition-all duration-500">
-      <div className="w-full max-w-sm sm:max-w-md animate-fade-in">
+    <div className="min-h-screen flex items-center justify-center relative bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700 p-3 sm:p-6 transition-all duration-500 overflow-hidden">
+      {/* Animated Background */}
+      <AnimatedBackground />
+      
+      <div className="w-full max-w-sm sm:max-w-md animate-fade-in relative z-10">
         {/* Header */}
         <div className="text-center mb-6 sm:mb-8 animate-slide-down">
-          <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full mb-4 shadow-lg animate-bounce">
+          <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full mb-4 shadow-lg animate-bounce relative">
             <Coffee className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+            {/* Steam animation on the coffee icon */}
+            <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
+              {[...Array(3)].map((_, i) => (
+                <div
+                  key={i}
+                  className="w-0.5 h-3 bg-white opacity-60 rounded-full animate-steam"
+                  style={{
+                    marginLeft: `${i * 2}px`,
+                    animationDelay: `${i * 0.3}s`,
+                  }}
+                />
+              ))}
+            </div>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent mb-2">
             Canteen Buddy
@@ -194,7 +262,7 @@ const Auth = () => {
         
         {/* Auth Form */}
         <Tabs defaultValue="signin" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-orange-200 dark:border-orange-700">
+          <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-orange-200 dark:border-orange-700">
             <TabsTrigger 
               value="signin" 
               className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium transition-all duration-200 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-500 data-[state=active]:text-white"
@@ -215,7 +283,7 @@ const Auth = () => {
           
           {/* Sign In Tab */}
           <TabsContent value="signin" className="animate-fade-in">
-            <Card className="shadow-xl border-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg border border-orange-100 dark:border-orange-800 overflow-hidden">
+            <Card className="shadow-2xl border-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-orange-100/50 dark:border-orange-800/50 overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 to-amber-50/50 dark:from-orange-900/10 dark:to-amber-900/10"></div>
               <div className="relative">
                 <CardHeader className="text-center pb-4 sm:pb-6 px-4 sm:px-6">
@@ -238,7 +306,7 @@ const Auth = () => {
                         placeholder="Enter your email" 
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="h-10 sm:h-11 text-sm border-orange-200 dark:border-orange-700 focus:border-orange-400 focus:ring-orange-400 transition-all duration-200"
+                        className="h-10 sm:h-11 text-sm border-orange-200 dark:border-orange-700 focus:border-orange-400 focus:ring-orange-400 transition-all duration-200 bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm"
                         required
                         autoFocus
                       />
@@ -254,7 +322,7 @@ const Auth = () => {
                           placeholder="Enter your password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className="h-10 sm:h-11 text-sm border-orange-200 dark:border-orange-700 focus:border-orange-400 focus:ring-orange-400 transition-all duration-200 pr-10"
+                          className="h-10 sm:h-11 text-sm border-orange-200 dark:border-orange-700 focus:border-orange-400 focus:ring-orange-400 transition-all duration-200 pr-10 bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm"
                           required
                         />
                         <button
@@ -297,7 +365,7 @@ const Auth = () => {
           
           {/* Sign Up Tab */}
           <TabsContent value="signup" className="animate-fade-in">
-            <Card className="shadow-xl border-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg border border-orange-100 dark:border-orange-800 overflow-hidden">
+            <Card className="shadow-2xl border-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-orange-100/50 dark:border-orange-800/50 overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 to-amber-50/50 dark:from-orange-900/10 dark:to-amber-900/10"></div>
               <div className="relative">
                 <CardHeader className="text-center pb-4 sm:pb-6 px-4 sm:px-6">
@@ -321,7 +389,7 @@ const Auth = () => {
                           placeholder="First name" 
                           value={firstName}
                           onChange={(e) => setFirstName(e.target.value)}
-                          className="h-9 sm:h-10 text-sm border-orange-200 dark:border-orange-700 focus:border-orange-400 focus:ring-orange-400 transition-all duration-200"
+                          className="h-9 sm:h-10 text-sm border-orange-200 dark:border-orange-700 focus:border-orange-400 focus:ring-orange-400 transition-all duration-200 bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm"
                           required
                         />
                       </div>
@@ -335,7 +403,7 @@ const Auth = () => {
                           placeholder="Last name" 
                           value={lastName}
                           onChange={(e) => setLastName(e.target.value)}
-                          className="h-9 sm:h-10 text-sm border-orange-200 dark:border-orange-700 focus:border-orange-400 focus:ring-orange-400 transition-all duration-200"
+                          className="h-9 sm:h-10 text-sm border-orange-200 dark:border-orange-700 focus:border-orange-400 focus:ring-orange-400 transition-all duration-200 bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm"
                           required
                         />
                       </div>
@@ -350,7 +418,7 @@ const Auth = () => {
                         placeholder="Enter your email" 
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="h-10 sm:h-11 text-sm border-orange-200 dark:border-orange-700 focus:border-orange-400 focus:ring-orange-400 transition-all duration-200"
+                        className="h-10 sm:h-11 text-sm border-orange-200 dark:border-orange-700 focus:border-orange-400 focus:ring-orange-400 transition-all duration-200 bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm"
                         required
                       />
                     </div>
@@ -365,7 +433,7 @@ const Auth = () => {
                           placeholder="Create a password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className="h-10 sm:h-11 text-sm border-orange-200 dark:border-orange-700 focus:border-orange-400 focus:ring-orange-400 transition-all duration-200 pr-10"
+                          className="h-10 sm:h-11 text-sm border-orange-200 dark:border-orange-700 focus:border-orange-400 focus:ring-orange-400 transition-all duration-200 pr-10 bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm"
                           required
                         />
                         <button
@@ -381,7 +449,7 @@ const Auth = () => {
                         </button>
                       </div>
                     </div>
-                    <div className="text-xs text-center text-gray-600 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="text-xs text-center text-gray-600 dark:text-gray-400 bg-blue-50/70 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200/50 dark:border-blue-800/50 backdrop-blur-sm">
                       <p className="font-medium mb-1">Important Notice</p>
                       <p>Your name must match our database records for successful registration.</p>
                     </div>
@@ -412,7 +480,7 @@ const Auth = () => {
         </Tabs>
       </div>
 
-      {/* Custom CSS for animations */}
+      {/* Enhanced Custom CSS for animations */}
       <style>{`
         @keyframes fade-in {
           from {
@@ -435,6 +503,56 @@ const Auth = () => {
             transform: translateY(0);
           }
         }
+
+        @keyframes blob {
+          0% {
+            transform: translate(0px, 0px) scale(1);
+          }
+          33% {
+            transform: translate(30px, -50px) scale(1.1);
+          }
+          66% {
+            transform: translate(-20px, 20px) scale(0.9);
+          }
+          100% {
+            transform: translate(0px, 0px) scale(1);
+          }
+        }
+
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-20px);
+          }
+        }
+
+        @keyframes steam {
+          0% {
+            opacity: 0;
+            transform: translateY(0px) scale(1);
+          }
+          50% {
+            opacity: 1;
+            transform: translateY(-20px) scale(1.1);
+          }
+          100% {
+            opacity: 0;
+            transform: translateY(-40px) scale(0.8);
+          }
+        }
+
+        @keyframes twinkle {
+          0%, 100% {
+            opacity: 0.3;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 1;
+            transform: scale(1.2);
+          }
+        }
         
         .animate-fade-in {
           animation: fade-in 0.6s ease-out;
@@ -442,6 +560,30 @@ const Auth = () => {
         
         .animate-slide-down {
           animation: slide-down 0.8s ease-out;
+        }
+
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+
+        .animate-float {
+          animation: float 6s ease-in-out infinite;
+        }
+
+        .animate-steam {
+          animation: steam 4s ease-in-out infinite;
+        }
+
+        .animate-twinkle {
+          animation: twinkle 3s ease-in-out infinite;
+        }
+
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+
+        .animation-delay-4000 {
+          animation-delay: 4s;
         }
         
         @media (max-width: 475px) {
