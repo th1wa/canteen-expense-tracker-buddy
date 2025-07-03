@@ -52,7 +52,7 @@ export const useExportData = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `detailed_canteen_summary_report_${selectedMonth}.csv`;
+      a.download = `comprehensive_canteen_business_analysis_${selectedMonth}.csv`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -60,13 +60,13 @@ export const useExportData = () => {
 
       toast({
         title: "Export Successful",
-        description: "Detailed summary report with comprehensive expense breakdown has been downloaded successfully.",
+        description: "Comprehensive business analysis report with detailed financial insights, customer analysis, and strategic recommendations has been downloaded successfully.",
       });
     } catch (error) {
       console.error('Export error:', error);
       toast({
         title: "Export Failed",
-        description: error instanceof Error ? error.message : "Failed to generate detailed summary report. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to generate comprehensive business analysis report. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -78,7 +78,7 @@ export const useExportData = () => {
     if (!userName) {
       toast({
         title: "Access Denied",
-        description: "Please select a user for detailed expense report.",
+        description: "Please select a user for detailed customer analysis report.",
         variant: "destructive"
       });
       return;
@@ -120,7 +120,7 @@ export const useExportData = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `detailed_user_expense_report_${userName.replace(/[^a-zA-Z0-9]/g, '_')}_${selectedMonth}.csv`;
+      a.download = `comprehensive_customer_analysis_${userName.replace(/[^a-zA-Z0-9]/g, '_')}_${selectedMonth}.csv`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -128,17 +128,17 @@ export const useExportData = () => {
 
       toast({
         title: "Export Successful",
-        description: `Comprehensive expense report for ${userName} with detailed breakdown has been downloaded successfully.`,
+        description: `Comprehensive customer analysis report for ${userName} with detailed spending patterns, risk assessment, and personalized recommendations has been downloaded successfully.`,
       });
     } catch (error) {
       console.error('Export error:', error);
       toast({
         title: "Export Failed",
-        description: error instanceof Error ? error.message : `Failed to generate detailed report for ${userName}. Please try again.`,
+        description: error instanceof Error ? error.message : `Failed to generate comprehensive customer analysis for ${userName}. Please try again.`,
         variant: "destructive"
       });
     } finally {
-      setExporting(false);
+      setIsExporting(false);
     }
   };
 
