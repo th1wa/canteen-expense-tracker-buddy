@@ -52,7 +52,7 @@ export const useExportData = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `canteen_summary_report_${selectedMonth}.csv`;
+      a.download = `detailed_canteen_summary_report_${selectedMonth}.csv`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -60,13 +60,13 @@ export const useExportData = () => {
 
       toast({
         title: "Export Successful",
-        description: "Summary report has been downloaded successfully.",
+        description: "Detailed summary report with comprehensive expense breakdown has been downloaded successfully.",
       });
     } catch (error) {
       console.error('Export error:', error);
       toast({
         title: "Export Failed",
-        description: error instanceof Error ? error.message : "Failed to generate summary report. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to generate detailed summary report. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -78,7 +78,7 @@ export const useExportData = () => {
     if (!userName) {
       toast({
         title: "Access Denied",
-        description: "Please select a user for detailed report.",
+        description: "Please select a user for detailed expense report.",
         variant: "destructive"
       });
       return;
@@ -120,7 +120,7 @@ export const useExportData = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `canteen_user_report_${userName.replace(/[^a-zA-Z0-9]/g, '_')}_${selectedMonth}.csv`;
+      a.download = `detailed_user_expense_report_${userName.replace(/[^a-zA-Z0-9]/g, '_')}_${selectedMonth}.csv`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -128,17 +128,17 @@ export const useExportData = () => {
 
       toast({
         title: "Export Successful",
-        description: `Detailed report for ${userName} has been downloaded successfully.`,
+        description: `Comprehensive expense report for ${userName} with detailed breakdown has been downloaded successfully.`,
       });
     } catch (error) {
       console.error('Export error:', error);
       toast({
         title: "Export Failed",
-        description: error instanceof Error ? error.message : `Failed to generate report for ${userName}. Please try again.`,
+        description: error instanceof Error ? error.message : `Failed to generate detailed report for ${userName}. Please try again.`,
         variant: "destructive"
       });
     } finally {
-      setIsExporting(false);
+      setExporting(false);
     }
   };
 

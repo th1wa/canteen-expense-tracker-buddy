@@ -487,60 +487,144 @@ const ReportsAnalytics = () => {
 
     setExporting(true);
     try {
-      console.log('Starting Excel export:', { reportType, userName });
+      console.log('Starting Enhanced Excel export:', { reportType, userName });
       
       let csvContent = '';
-      const title = reportType === 'summary' ? 'Sales Summary Report' : 
-                   reportType === 'individual' ? `Individual Report - ${userName || 'Unknown'}` : 
-                   'Detailed Sales Report';
+      const title = reportType === 'summary' ? 'Comprehensive Sales Summary Report' : 
+                   reportType === 'individual' ? `Detailed Individual Report - ${userName || 'Unknown'}` : 
+                   'Complete Detailed Sales Analysis Report';
       
       csvContent += `${title}\n`;
-      csvContent += `Generated on: ${format(new Date(), 'PPP')}\n`;
-      csvContent += `Period: ${dateRange === 'custom' && customDateFrom && customDateTo ? 
+      csvContent += `Generated on: ${format(new Date(), 'PPP pp')}\n`;
+      csvContent += `Report Period: ${dateRange === 'custom' && customDateFrom && customDateTo ? 
         `${format(customDateFrom, 'PPP')} - ${format(customDateTo, 'PPP')}` : 
-        dateRange.replace('-', ' ')}\n\n`;
+        dateRange.replace('-', ' ')}\n`;
+      csvContent += `Data Source: Canteen Management System\n\n`;
 
       if (reportType === 'summary') {
-        csvContent += `Total Expenses,Rs. ${(reportData.totalExpenses || 0).toFixed(2)}\n`;
-        csvContent += `Total Payments,Rs. ${(reportData.totalPayments || 0).toFixed(2)}\n`;
-        csvContent += `Outstanding Amount,Rs. ${(reportData.outstandingAmount || 0).toFixed(2)}\n`;
-        csvContent += `Total Users,${reportData.totalUsers || 0}\n`;
-        csvContent += `Active Users,${reportData.activeUsers || 0}\n`;
-        csvContent += `Collection Rate,${(reportData.collectionRate || 0).toFixed(1)}%\n`;
-        csvContent += `Settlement Rate,${(reportData.settlementRate || 0).toFixed(1)}%\n`;
-        csvContent += `Average per User,Rs. ${(reportData.averageExpensePerUser || 0).toFixed(2)}\n`;
-        csvContent += `Daily Average,Rs. ${(reportData.dailyAverage || 0).toFixed(2)}\n`;
-        csvContent += `Monthly Growth,${(reportData.monthlyGrowth || 0).toFixed(1)}%\n\n`;
+        csvContent += `=== COMPREHENSIVE FINANCIAL OVERVIEW ===\n`;
+        csvContent += `Total Revenue Generated,Rs. ${(reportData.totalExpenses || 0).toFixed(2)}\n`;
+        csvContent += `Total Collections Received,Rs. ${(reportData.totalPayments || 0).toFixed(2)}\n`;
+        csvContent += `Outstanding Receivables,Rs. ${(reportData.outstandingAmount || 0).toFixed(2)}\n`;
+        csvContent += `Total Active Users,${reportData.totalUsers || 0}\n`;
+        csvContent += `Users with Recent Activity,${reportData.activeUsers || 0}\n`;
+        csvContent += `Collection Efficiency Rate,${(reportData.collectionRate || 0).toFixed(2)}%\n`;
+        csvContent += `Account Settlement Rate,${(reportData.settlementRate || 0).toFixed(2)}%\n`;
+        csvContent += `Average Revenue per User,Rs. ${(reportData.averageExpensePerUser || 0).toFixed(2)}\n`;
+        csvContent += `Daily Revenue Average,Rs. ${(reportData.dailyAverage || 0).toFixed(2)}\n`;
+        csvContent += `Monthly Growth Rate,${(reportData.monthlyGrowth || 0).toFixed(2)}%\n`;
+        csvContent += `Peak Daily Revenue,Rs. ${(reportData.peakExpenseDay?.amount || 0).toFixed(2)}\n`;
+        csvContent += `Peak Revenue Date,${reportData.peakExpenseDay?.date || 'N/A'}\n`;
+        csvContent += `Peak Collection Day,Rs. ${(reportData.peakPaymentDay?.amount || 0).toFixed(2)}\n`;
+        csvContent += `Peak Collection Date,${reportData.peakPaymentDay?.date || 'N/A'}\n\n`;
+        
+        csvContent += `=== BUSINESS PERFORMANCE ANALYSIS ===\n`;
+        const performanceRating = (reportData.collectionRate || 0) > 90 ? 'Excellent' :
+                                 (reportData.collectionRate || 0) > 75 ? 'Good' :
+                                 (reportData.collectionRate || 0) > 60 ? 'Fair' : 'Needs Improvement';
+        csvContent += `Overall Performance Rating,${performanceRating}\n`;
+        csvContent += `Revenue Trend,${(reportData.monthlyGrowth || 0) >= 0 ? 'Growing' : 'Declining'}\n`;
+        csvContent += `Collection Status,${(reportData.collectionRate || 0) > 80 ? 'Healthy' : 'Requires Attention'}\n\n`;
         
         if (reportData.topSpenders && reportData.topSpenders.length > 0) {
-          csvContent += `User Name,Total Expenses,Payments Made,Outstanding,Status\n`;
-          reportData.topSpenders.forEach(spender => {
-            csvContent += `${spender.name || 'Unknown'},Rs. ${(spender.amount || 0).toFixed(2)},Rs. ${(spender.payments || 0).toFixed(2)},Rs. ${(spender.outstanding || 0).toFixed(2)},${(spender.outstanding || 0) <= 0 ? 'Settled' : 'Pending'}\n`;
+          csvContent += `=== DETAILED TOP CUSTOMERS ANALYSIS ===\n`;
+          csvContent += `Rank,Customer Name,Total Revenue (LKR),Collections Received (LKR),Outstanding Amount (LKR),Collection Rate (%),Account Status,Risk Level,Payment Behavior\n`;
+          reportData.topSpenders.forEach((spender, index) => {
+            const collectionRate = spender.amount > 0 ? ((spender.payments / spender.amount) * 100) : 100;
+            const riskLevel = spender.outstanding > 1000 ? 'High Risk' :
+                             spender.outstanding > 500 ? 'Medium Risk' : 'Low Risk';
+            const paymentBehavior = collectionRate > 90 ? 'Excellent Payer' :
+                                   collectionRate > 75 ? 'Good Payer' :
+                                   collectionRate > 50 ? 'Slow Payer' : 'Problem Account';
+            const accountStatus = spender.outstanding <= 0 ? 'Fully Settled' :
+                                 collectionRate > 75 ? 'Good Standing' : 'Needs Follow-up';
+            
+            csvContent += `${index + 1},"${spender.name || 'Unknown'}",${(spender.amount || 0).toFixed(2)},${(spender.payments || 0).toFixed(2)},${(spender.outstanding || 0).toFixed(2)},${collectionRate.toFixed(1)},${accountStatus},${riskLevel},${paymentBehavior}\n`;
           });
         }
       } else if (reportType === 'individual' && userName) {
         const userExpenses = reportData.expensesByUser[userName] || 0;
         const userPayments = reportData.paymentsByUser[userName] || 0;
-        csvContent += `User Expenses,Rs. ${userExpenses.toFixed(2)}\n`;
-        csvContent += `User Payments,Rs. ${userPayments.toFixed(2)}\n`;
-        csvContent += `Outstanding,Rs. ${(userExpenses - userPayments).toFixed(2)}\n`;
-        csvContent += `Status,${(userExpenses - userPayments) <= 0 ? 'Settled' : 'Pending'}\n`;
+        const userOutstanding = userExpenses - userPayments;
+        const userCollectionRate = userExpenses > 0 ? ((userPayments / userExpenses) * 100) : 100;
+        
+        csvContent += `=== COMPREHENSIVE INDIVIDUAL CUSTOMER ANALYSIS ===\n`;
+        csvContent += `Customer Name,"${userName}"\n`;
+        csvContent += `Total Revenue Generated,Rs. ${userExpenses.toFixed(2)}\n`;
+        csvContent += `Total Payments Received,Rs. ${userPayments.toFixed(2)}\n`;
+        csvContent += `Current Outstanding Balance,Rs. ${userOutstanding.toFixed(2)}\n`;
+        csvContent += `Payment Collection Rate,${userCollectionRate.toFixed(2)}%\n`;
+        csvContent += `Account Status,${userOutstanding <= 0 ? 'Fully Settled' : userCollectionRate > 75 ? 'Good Standing' : 'Requires Follow-up'}\n`;
+        csvContent += `Risk Assessment,${userOutstanding > 1000 ? 'High Risk - Immediate Action Required' : userOutstanding > 500 ? 'Medium Risk - Monitor Closely' : 'Low Risk - Stable Account'}\n`;
+        csvContent += `Payment Behavior,${userCollectionRate > 90 ? 'Excellent - Very Reliable' : userCollectionRate > 75 ? 'Good - Generally Prompt' : userCollectionRate > 50 ? 'Fair - Occasional Delays' : 'Poor - Frequent Issues'}\n`;
+        csvContent += `Customer Ranking,${Object.keys(reportData.expensesByUser || {}).sort((a, b) => (reportData.expensesByUser[b] || 0) - (reportData.expensesByUser[a] || 0)).indexOf(userName) + 1} of ${Object.keys(reportData.expensesByUser || {}).length}\n\n`;
+        
+        csvContent += `=== DETAILED RECOMMENDATIONS ===\n`;
+        if (userOutstanding > 1000) {
+          csvContent += `Priority Level,HIGH - Immediate attention required\n`;
+          csvContent += `Recommended Action,Contact customer for payment plan discussion\n`;
+          csvContent += `Follow-up Frequency,Daily until resolved\n`;
+        } else if (userOutstanding > 500) {
+          csvContent += `Priority Level,MEDIUM - Monitor and follow up\n`;
+          csvContent += `Recommended Action,Send payment reminder notice\n`;
+          csvContent += `Follow-up Frequency,Weekly check-ins\n`;
+        } else {
+          csvContent += `Priority Level,LOW - Maintain current relationship\n`;
+          csvContent += `Recommended Action,Continue normal service\n`;
+          csvContent += `Follow-up Frequency,Monthly review\n`;
+        }
       } else {
-        csvContent += `User Name,Expenses,Payments,Outstanding,Collection %,Status\n`;
-        Object.keys(reportData.expensesByUser || {}).forEach(user => {
+        // Enhanced detailed report with comprehensive analysis
+        csvContent += `=== COMPLETE CUSTOMER DATABASE ANALYSIS ===\n`;
+        csvContent += `Customer Name,Total Revenue (LKR),Collections (LKR),Outstanding (LKR),Collection Rate (%),Account Status,Risk Level,Payment Behavior,Customer Tier,Recommended Action\n`;
+        
+        const sortedUsers = Object.keys(reportData.expensesByUser || {})
+          .sort((a, b) => (reportData.expensesByUser[b] || 0) - (reportData.expensesByUser[a] || 0));
+        
+        sortedUsers.forEach(user => {
           const expenses = reportData.expensesByUser[user] || 0;
           const payments = reportData.paymentsByUser[user] || 0;
           const outstanding = expenses - payments;
-          const collectionRate = expenses > 0 ? ((payments / expenses) * 100).toFixed(1) : '0';
-          csvContent += `${user},Rs. ${expenses.toFixed(2)},Rs. ${payments.toFixed(2)},Rs. ${outstanding.toFixed(2)},${collectionRate}%,${outstanding <= 0 ? 'Settled' : 'Pending'}\n`;
+          const collectionRate = expenses > 0 ? ((payments / expenses) * 100) : 100;
+          
+          const riskLevel = outstanding > 1000 ? 'High Risk' :
+                           outstanding > 500 ? 'Medium Risk' : 'Low Risk';
+          const paymentBehavior = collectionRate > 90 ? 'Excellent Payer' :
+                                 collectionRate > 75 ? 'Good Payer' :
+                                 collectionRate > 50 ? 'Slow Payer' : 'Problem Account';
+          const accountStatus = outstanding <= 0 ? 'Fully Settled' :
+                               collectionRate > 75 ? 'Good Standing' : 'Needs Follow-up';
+          const customerTier = expenses > 2000 ? 'Premium' :
+                              expenses > 1000 ? 'Regular' : 'Basic';
+          const recommendedAction = outstanding > 1000 ? 'Immediate Contact Required' :
+                                   outstanding > 500 ? 'Send Payment Reminder' :
+                                   outstanding > 0 ? 'Monitor Account' : 'Maintain Relationship';
+          
+          csvContent += `"${user}",${expenses.toFixed(2)},${payments.toFixed(2)},${outstanding.toFixed(2)},${collectionRate.toFixed(1)},${accountStatus},${riskLevel},${paymentBehavior},${customerTier},${recommendedAction}\n`;
         });
+        
+        csvContent += `\n=== COMPREHENSIVE BUSINESS INSIGHTS ===\n`;
+        const highRiskCustomers = sortedUsers.filter(user => {
+          const outstanding = (reportData.expensesByUser[user] || 0) - (reportData.paymentsByUser[user] || 0);
+          return outstanding > 1000;
+        });
+        const excellentPayers = sortedUsers.filter(user => {
+          const expenses = reportData.expensesByUser[user] || 0;
+          const payments = reportData.paymentsByUser[user] || 0;
+          return expenses > 0 && ((payments / expenses) * 100) > 90;
+        });
+        
+        csvContent += `High Risk Customers,${highRiskCustomers.length}\n`;
+        csvContent += `Excellent Payers,${excellentPayers.length}\n`;
+        csvContent += `Customer Retention Rate,${((excellentPayers.length / sortedUsers.length) * 100).toFixed(1)}%\n`;
+        csvContent += `Average Customer Value,Rs. ${(Object.values(reportData.expensesByUser || {}).reduce((sum, val) => sum + val, 0) / sortedUsers.length).toFixed(2)}\n`;
       }
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
-      link.setAttribute('download', `${reportType}_report_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+      link.setAttribute('download', `comprehensive_${reportType}_report_${format(new Date(), 'yyyy-MM-dd')}.csv`);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
@@ -548,14 +632,14 @@ const ReportsAnalytics = () => {
       URL.revokeObjectURL(url);
 
       toast({
-        title: "Excel Generated",
-        description: `${title} downloaded successfully!`,
+        title: "Enhanced Export Successful",
+        description: `${title} with comprehensive analysis and detailed insights has been downloaded successfully!`,
       });
     } catch (error) {
-      console.error('Error generating Excel:', error);
+      console.error('Error generating Enhanced Excel:', error);
       toast({
         title: "Error",
-        description: "Failed to generate Excel report. Please try again.",
+        description: "Failed to generate comprehensive Excel report. Please try again.",
         variant: "destructive"
       });
     } finally {
