@@ -123,20 +123,20 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
 
   return (
     <Sidebar 
-      className="border-r bg-sidebar transition-all duration-300 ease-in-out safe-area-inset-y" 
+      className="border-r bg-sidebar transition-all duration-300 ease-in-out" 
       collapsible="icon"
     >
-      <SidebarHeader className="spacing-responsive-sm border-b transition-all duration-200">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <span className="text-lg sm:text-xl md:text-2xl flex-shrink-0 transition-transform duration-200 hover:scale-110">
+      <SidebarHeader className="p-4 border-b">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl flex-shrink-0">
             🧡
           </span>
-          <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden transition-all duration-200">
-            <h2 className="text-responsive-sm font-bold text-orange-800 dark:text-orange-200 truncate">
+          <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+            <h2 className="text-lg font-bold text-orange-800 dark:text-orange-200 truncate">
               Canteen Buddy
             </h2>
             {profile && (
-              <Badge variant={getRoleBadgeVariant(profile.role)} className="text-xs mt-1 animate-fade-in">
+              <Badge variant={getRoleBadgeVariant(profile.role)} className="text-xs mt-1">
                 {getRoleDisplayName(profile.role)}
               </Badge>
             )}
@@ -144,23 +144,23 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-2 sm:px-3 py-3 sm:py-4 overflow-y-auto">
+      <SidebarContent className="px-3 py-4 overflow-y-auto">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs sm:text-sm px-2 mb-2 group-data-[collapsible=icon]:hidden transition-all duration-200">
+          <SidebarGroupLabel className="text-sm px-3 mb-2 group-data-[collapsible=icon]:hidden">
             Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
               {menuItems.map((item, index) => (
-                <SidebarMenuItem key={item.id} className="animate-fade-in" style={{animationDelay: `${index * 50}ms`}}>
+                <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
                     onClick={() => onTabChange(item.id)}
                     isActive={activeTab === item.id}
                     tooltip={item.description}
-                    className="text-xs sm:text-sm py-2 sm:py-3 px-2 sm:px-3 w-full justify-start hover:bg-sidebar-accent transition-all duration-200 hover:scale-105 active:scale-95 gap-2 sm:gap-3"
+                    className="text-sm py-3 px-3 w-full justify-start hover:bg-sidebar-accent transition-all duration-200 gap-3"
                   >
-                    <item.icon className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 transition-colors duration-200" />
-                    <span className="truncate min-w-0 group-data-[collapsible=icon]:hidden transition-all duration-200">
+                    <item.icon className="w-5 h-5 flex-shrink-0" />
+                    <span className="truncate min-w-0 group-data-[collapsible=icon]:hidden">
                       {item.title}
                     </span>
                   </SidebarMenuButton>
@@ -171,21 +171,21 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="spacing-responsive-sm border-t">
-        <SidebarSeparator className="mb-3 sm:mb-4" />
+      <SidebarFooter className="p-4 border-t">
+        <SidebarSeparator className="mb-4" />
         {profile && (
-          <div className="mb-3 text-xs sm:text-sm text-muted-foreground group-data-[collapsible=icon]:hidden transition-all duration-200">
-            <div className="font-medium text-foreground text-responsive-xs">Welcome back!</div>
-            <div className="truncate text-responsive-xs">{profile.username}</div>
+          <div className="mb-3 text-sm text-muted-foreground group-data-[collapsible=icon]:hidden">
+            <div className="font-medium text-foreground">Welcome back!</div>
+            <div className="truncate">{profile.username}</div>
           </div>
         )}
         <Button
           variant="outline"
           size="sm"
           onClick={signOut}
-          className="w-full flex items-center gap-2 text-xs sm:text-sm py-2 px-2 sm:px-3 transition-all duration-200 hover:scale-105 active:scale-95 min-h-mobile"
+          className="w-full flex items-center gap-3 text-sm py-2 px-3 transition-all duration-200"
         >
-          <LogOut className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+          <LogOut className="w-4 h-4 flex-shrink-0" />
           <span className="group-data-[collapsible=icon]:hidden">Sign Out</span>
         </Button>
       </SidebarFooter>
