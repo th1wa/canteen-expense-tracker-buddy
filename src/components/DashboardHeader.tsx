@@ -31,13 +31,13 @@ const DashboardHeader = () => {
   };
 
   return (
-    <header className="bg-white dark:bg-gray-800 shadow-sm border-b sticky top-0 z-50">
-      <div className="max-w-full mx-auto px-2 sm:px-4 md:px-6">
-        <div className="flex justify-between items-center h-12 sm:h-14 md:h-16 gap-2">
+    <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-sm border-b border-border/50 sticky top-0 z-50">
+      <div className="max-w-full mx-auto px-2 sm:px-4">
+        <div className="flex justify-between items-center h-12 sm:h-14 gap-2">
           <div className="flex items-center min-w-0 flex-1 gap-2">
-            <SidebarTrigger className="hover:scale-110 active:scale-95 flex-shrink-0" />
-            <Coffee className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-orange-600 flex-shrink-0 hover:rotate-12" />
-            <h1 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-gray-900 dark:text-white truncate">
+            <SidebarTrigger className="hover:scale-110 active:scale-95 flex-shrink-0 transition-transform duration-150" />
+            <Coffee className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 dark:text-orange-400 flex-shrink-0 hover:rotate-12 transition-transform duration-200" />
+            <h1 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white truncate">
               <span className="hidden xs:inline">Canteen Buddy</span>
               <span className="xs:hidden">Canteen</span>
             </h1>
@@ -46,22 +46,22 @@ const DashboardHeader = () => {
           <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
             {profile && (
               <div className="hidden sm:flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm text-gray-600 dark:text-gray-300">
-                <span className="hidden md:inline truncate max-w-[100px] lg:max-w-none">
+                <span className="hidden md:inline truncate max-w-[100px] lg:max-w-none font-medium">
                   Welcome, {profile.username}
                 </span>
-                <span className="md:hidden truncate max-w-[80px]">
+                <span className="md:hidden truncate max-w-[80px] font-medium">
                   {profile.username}
                 </span>
                 <Badge 
                   variant={getRoleBadgeVariant(profile.role)} 
-                  className="text-xs font-medium hover:scale-105 flex-shrink-0"
+                  className="text-xs font-medium hover:scale-105 flex-shrink-0 transition-transform duration-150"
                 >
                   {getRoleDisplayName(profile.role)}
                 </Badge>
               </div>
             )}
             
-            <div className="hover:scale-110 flex-shrink-0">
+            <div className="hover:scale-110 flex-shrink-0 transition-transform duration-150">
               <ThemeToggle />
             </div>
             
@@ -69,10 +69,10 @@ const DashboardHeader = () => {
               variant="outline"
               size="sm"
               onClick={signOut}
-              className="flex items-center space-x-1 text-xs sm:text-sm hover:scale-105 active:scale-95 flex-shrink-0 min-w-0"
+              className="flex items-center space-x-1 text-xs sm:text-sm hover:scale-105 active:scale-95 flex-shrink-0 min-w-0 transition-all duration-150 border-border/50"
             >
               <LogOut className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-              <span className="hidden xs:inline">Sign Out</span>
+              <span className="hidden xs:inline font-medium">Sign Out</span>
             </Button>
           </div>
         </div>

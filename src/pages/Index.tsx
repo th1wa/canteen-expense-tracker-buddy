@@ -26,12 +26,12 @@ const Index = () => {
 
   return (
     <SidebarProvider defaultOpen={!isMobile}>
-      <div className="min-h-screen flex w-full bg-gradient-to-br from-orange-50 to-amber-50 dark:from-gray-900 dark:to-gray-800">
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-orange-50/50 to-amber-50/50 dark:from-gray-950 dark:to-slate-900">
         <AppSidebar activeTab={activeTab} onTabChange={setActiveTab} />
         <div className="flex-1 flex flex-col min-h-screen min-w-0">
           <DashboardHeader />
-          <main className="flex-1 p-2 sm:p-3 md:p-4 lg:p-6 overflow-auto">
-            <div className="w-full max-w-7xl mx-auto space-y-3 sm:space-y-4 md:space-y-6">
+          <main className="flex-1 p-2 sm:p-3 md:p-4 overflow-auto">
+            <div className="w-full max-w-7xl mx-auto space-y-3 sm:space-y-4">
               <BasicUserBanner />
               <TabContent
                 activeTab={activeTab}
