@@ -20,14 +20,14 @@ const DashboardHeader = () => {
     return roleMap[role as keyof typeof roleMap] || role;
   };
 
-  const getRoleBadgeVariant = (role: string) => {
-    const variantMap = {
+  const getRoleBadgeVariant = (role: string): "default" | "destructive" | "secondary" | "outline" => {
+    const variantMap: Record<string, "default" | "destructive" | "secondary" | "outline"> = {
       'admin': 'default',
-      'hr': 'default',
+      'hr': 'secondary',
       'canteen': 'secondary',
       'user': 'outline'
     };
-    return variantMap[role as keyof typeof variantMap] || 'secondary';
+    return variantMap[role] || 'outline';
   };
 
   return (
