@@ -22,7 +22,6 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
   const [localRefreshTrigger, setLocalRefreshTrigger] = useState(0);
   
   const { profile } = useAuth();
-  // Updated to include canteen users
   const hasAccess = profile?.role === 'admin' || profile?.role === 'hr' || profile?.role === 'canteen';
   
   const { users, loading, error, totalStats } = useUsersData(refreshTrigger + localRefreshTrigger, hasAccess);
@@ -34,7 +33,6 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
       user?.user_name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // Filter by balance range
     if (balanceFilter && balanceFilter !== 'all') {
       filtered = filtered.filter(user => {
         const balance = user?.remaining_balance || 0;
@@ -49,15 +47,10 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
       });
     }
 
-    // Filter by settlement status
     if (settlementFilter && settlementFilter !== 'all') {
       filtered = filtered.filter(user => {
         const balance = user?.remaining_balance || 0;
-        switch (settlementFilter) {
-          case 'settled': return balance === 0;
-          case 'pending': return balance > 0;
-          default: return true;
-        }
+        return settlementFilter === 'settled' ? balance === 0 : balance > 0;
       });
     }
 
@@ -78,14 +71,13 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
   };
 
   const handlePaymentAdded = () => {
-    // Refresh the data when a payment is added
     setLocalRefreshTrigger(prev => prev + 1);
   };
 
   if (!profile) {
     return (
       <div className="flex items-center justify-center min-h-[200px] p-4">
-        <div className="text-center space-y-2">
+        <div className="text-center">
           <div className="text-responsive-sm text-muted-foreground">Please log in to view users.</div>
         </div>
       </div>
@@ -95,7 +87,7 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
   if (!hasAccess) {
     return (
       <div className="flex items-center justify-center min-h-[200px] p-4">
-        <div className="text-center space-y-2">
+        <div className="text-center">
           <div className="text-responsive-sm text-muted-foreground">You don't have permission to view all users.</div>
         </div>
       </div>
@@ -129,12 +121,10 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
     );
   }
 
-  // Check if user can manage payments (admin or canteen)
   const canManagePayments = profile?.role === 'admin' || profile?.role === 'canteen';
 
   return (
     <div className="w-full space-y-4 sm:space-y-6 container-mobile">
-      {/* Filter Controls */}
       <div className="w-full">
         <UserFilters
           searchTerm={searchTerm}
@@ -148,7 +138,6 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
         />
       </div>
 
-      {/* Summary Stats */}
       {totalStats && (
         <div className="w-full">
           <UserStats
@@ -162,7 +151,6 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
         </div>
       )}
 
-      {/* Users Grid */}
       <div className="w-full">
         <UsersGrid
           users={filteredUsers}
@@ -172,7 +160,6 @@ const UsersList = ({ refreshTrigger }: UsersListProps) => {
         />
       </div>
 
-      {/* Payment Modal */}
       {selectedUser && (
         <PaymentModal
           isOpen={showPaymentModal}

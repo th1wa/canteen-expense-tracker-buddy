@@ -44,11 +44,8 @@ const UserSummaryTable: React.FC<UserSummaryTableProps> = ({
             {filteredData.map((user, index) => (
               <Card 
                 key={user.user_name} 
-                className="border-l-4 border-l-orange-500 hover:shadow-md transition-all duration-200 opacity-0 animate-slideInUp w-full overflow-hidden"
-                style={{ 
-                  animationDelay: `${index * 100}ms`,
-                  animationFillMode: 'forwards'
-                }}
+                className="border-l-4 border-l-orange-500 hover:shadow-md transition-all duration-200 animate-fade-in w-full overflow-hidden"
+                style={{ animationDelay: `${index * 100}ms` }}
               >
                 <CardContent className="p-3 sm:p-4 md:p-6">
                   <UserDetailRow
@@ -63,23 +60,6 @@ const UserSummaryTable: React.FC<UserSummaryTableProps> = ({
             ))}
           </div>
         )}
-
-        <style>{`
-          @keyframes slideInUp {
-            from {
-              opacity: 0;
-              transform: translateY(20px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-          
-          .animate-slideInUp {
-            animation: slideInUp 0.5s ease-out forwards;
-          }
-        `}</style>
       </CardContent>
     </Card>
   );
