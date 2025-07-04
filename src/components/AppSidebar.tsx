@@ -111,7 +111,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
     }
   };
 
-  const getRoleBadgeVariant = (role: string) => {
+  const getRoleBadgeVariant = (role: string): "default" | "destructive" | "secondary" | "outline" => {
     switch (role) {
       case 'admin': return 'default';
       case 'hr': return 'default';
@@ -144,25 +144,27 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-3 py-4 overflow-y-auto">
+      <SidebarContent className="px-2 py-4 overflow-y-auto">
         <SidebarGroup>
           <SidebarGroupLabel className="text-sm px-3 mb-2 group-data-[collapsible=icon]:hidden">
             Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
-              {menuItems.map((item, index) => (
+              {menuItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
                     onClick={() => onTabChange(item.id)}
                     isActive={activeTab === item.id}
                     tooltip={item.description}
-                    className="text-sm py-3 px-3 w-full justify-start hover:bg-sidebar-accent transition-all duration-200 gap-3"
+                    className="text-sm py-3 pl-3 pr-4 w-full flex items-center justify-start hover:bg-sidebar-accent transition-all duration-200"
                   >
-                    <item.icon className="w-5 h-5 flex-shrink-0" />
-                    <span className="truncate min-w-0 group-data-[collapsible=icon]:hidden">
-                      {item.title}
-                    </span>
+                    <div className="flex items-center gap-3 w-full">
+                      <item.icon className="w-5 h-5 flex-shrink-0" />
+                      <span className="truncate min-w-0 group-data-[collapsible=icon]:hidden text-left">
+                        {item.title}
+                      </span>
+                    </div>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -183,7 +185,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
           variant="outline"
           size="sm"
           onClick={signOut}
-          className="w-full flex items-center gap-3 text-sm py-2 px-3 transition-all duration-200"
+          className="w-full flex items-center justify-center gap-3 text-sm py-2 px-3 transition-all duration-200"
         >
           <LogOut className="w-4 h-4 flex-shrink-0" />
           <span className="group-data-[collapsible=icon]:hidden">Sign Out</span>
